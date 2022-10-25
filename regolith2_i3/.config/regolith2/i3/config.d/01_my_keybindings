@@ -15,4 +15,6 @@ mode "$mode_display" {
 
   exec --no-startup-id xrandr --auto --output HDMI-2 --right-of eDP-1
 
+  bindsym $mod+e layout toggle tabed splitv
+
 
