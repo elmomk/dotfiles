@@ -1,0 +1,26 @@
+#!/usr/bin/zsh
+
+# Kubernetes stuff
+alias k='kubectl'
+alias kc='kubectx'
+alias kns='kubens'
+
+# File stuff
+alias ls='exa --icons --all --across'
+alias ll='exa --icons --all --long'
+alias lt='exa --icons --all --tree'
+
+# Colorize grep output
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+
+# Ease reading of sizes
+alias df='df -h'
+alias free='free -m'
+
+# Top 5 processes consuming memory
+alias psmem='ps auxf | sort -nr -k 4 | head -5'
+
+# Top 5 processes consuming CPU
+alias pscpu='ps auxf | sort -nr -k 3 | head 5'

@@ -1,0 +1,18 @@
+# Moving workspaces between screens
+bindsym $mod+p move workspace to output right
+
+
+# Single and Dual screen
+
+set $mode_display (h) HDMI on, (y) HDMI off
+mode "$mode_display" {
+  bindsym h exec --no-startup-id xrandr --output HDMI-2 auto --right-of eDP-1 --primary, mode "default"
+  bindsym y exec --no-startup-id xrandr --output HDMI-2 auto --auto --off, mode "default"
+
+  bindsym Return mode "default"
+  bindsym Escape mode "default"
+  }
+
+  exec --no-startup-id xrandr --auto --output HDMI-2 --right-of eDP-1
+
+
