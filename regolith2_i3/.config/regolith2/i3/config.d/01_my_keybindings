@@ -13,12 +13,28 @@ mode "$mode_display" {
   bindsym Escape mode "default"
   }
 
-  exec --no-startup-id xrandr --auto --output HDMI-2 --right-of eDP-1
+exec --no-startup-id xrandr --auto --output HDMI-2 --right-of eDP-1
 
 
-  exec --no-startup-id  xinput set-prop "Kensington USB Orbit" "libinput Button Scrolling Button" 3
-  exec --no-startup-id xfce4-clipman
+exec --no-startup-id  xinput set-prop "Kensington USB Orbit" "libinput Button Scrolling Button" 3
+exec --no-startup-id xfce4-clipman
 
-  bindsym $mod+e layout toggle tabed splitv
+bindsym $mod+e layout toggle tabed splitv
+
+set $firstMonitor eDP-1
+set $secondMonitor HDMI-2
+
+workspace 1 output $firstMonitor
+workspace 2 output $firstMonitor
+workspace 3 output $firstMonitor
+workspace 4 output $firstMonitor
+workspace 5 output $firstMonitor
+workspace 6 output $secondMonitor
+workspace 7 output $secondMonitor
+workspace 8 output $secondMonitor
+workspace 9 output $secondMonitor
+workspace 10 output $secondMonitor
+
+
 
 
