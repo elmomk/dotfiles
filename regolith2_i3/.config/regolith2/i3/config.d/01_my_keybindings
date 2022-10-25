@@ -15,6 +15,10 @@ mode "$mode_display" {
 
   exec --no-startup-id xrandr --auto --output HDMI-2 --right-of eDP-1
 
+
+  exec --no-startup-id  xinput set-prop "Kensington USB Orbit" "libinput Button Scrolling Button" 3
+  exec --no-startup-id xfce4-clipman
+
   bindsym $mod+e layout toggle tabed splitv
 
 
