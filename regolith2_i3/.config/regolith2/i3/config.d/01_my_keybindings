@@ -6,23 +6,45 @@ bindsym $mod+p move workspace to output right
 
 set $mode_display (h) HDMI on, (y) HDMI off
 mode "$mode_display" {
-  bindsym h exec --no-startup-id xrandr --output HDMI-2 auto --right-of eDP-1 --primary, mode "default"
-  bindsym y exec --no-startup-id xrandr --output HDMI-2 auto --auto --off, mode "default"
+  bindsym h exec --no-startup-id xrandr --output HDMI-1 --auto --right-of eDP-1 --primary, mode "default"
+  bindsym y exec --no-startup-id xrandr --output HDMI-1 --auto --off, mode "default"
 
   bindsym Return mode "default"
   bindsym Escape mode "default"
   }
 
-exec --no-startup-id xrandr --auto --output HDMI-2 --right-of eDP-1
+bindsym $mod+x mode "$mode_display"
+
+bindsym control+$alt+X mode "$mode_system"
+
+set $mode_system System (k) lock, (l) logout, (u) suspend, (h) hibernate, (r) reboot, (s) shutdown
+mode "$mode_system" {
+    bindsym k exec --no-startup-id /usr/bin/i3lock -c 000000, mode "default"
+    bindsym l exec --no-startup-id i3-msg exit, mode "default"
+    bindsym u exec --no-startup-i systemctl suspend, mode "default"
+    bindsym h exec --no-startup-id systemctl hibernate, mode "default"
+    bindsym r exec --no-startup-id systemctl reboot, mode "default"
+    bindsym s exec --no-startup-id systemctl poweroff, mode "default"
+
+    # back to normal: Enter or Escape
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+
+
+
+
+
+exec --no-startup-id xrandr --auto --output HDMI-1 --right-of eDP-1
 
 
 exec --no-startup-id  xinput set-prop "Kensington USB Orbit" "libinput Button Scrolling Button" 3
 exec --no-startup-id xfce4-clipman
 
-bindsym $mod+e layout toggle tabed splitv
+bindsym $mod+e layout toggle tabbed splitv
 
 set $firstMonitor eDP-1
-set $secondMonitor HDMI-2
+set $secondMonitor HDMI-1
 
 workspace 1 output $firstMonitor
 workspace 2 output $firstMonitor
