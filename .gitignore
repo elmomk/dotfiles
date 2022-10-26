@@ -4,4 +4,4 @@ flags
 .zhistory
 plugins
 plugin
-packer_compiled.lua
+*packer_compiled*

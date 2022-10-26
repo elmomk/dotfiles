@@ -58,5 +58,5 @@ workspace 9 output $secondMonitor
 workspace 10 output $secondMonitor
 
 
-
-
+# screenshots
+bindsym Print exec --no-startup-id xfce4-screenshooter
