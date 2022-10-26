@@ -20,4 +20,13 @@ style = "blue bold"
 
 [kubernetes]
 disabled = false
-detect_extensions = ['yaml', 'yml']
+format = '[⛵$context on $namespace](purple) '
+#format = 'on [⛵ ($user on )($cluster in )$context \($namespace\)](dimmed green) '
+#detect_extensions = ['yaml', 'yml']
+#detect_files = ['k8s']
+
+[container]
+style = "bold red dimmed"
+format ="[$symbol distrobox ]($style) "
+symbol = "⬢"
+disabled = false

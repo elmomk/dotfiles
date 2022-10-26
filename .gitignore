@@ -1,0 +1,7 @@
+Xresources
+flags
+.zcompdump
+.zhistory
+plugins
+plugin
+packer_compiled.lua
