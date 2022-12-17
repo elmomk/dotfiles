@@ -15,6 +15,14 @@ return require('packer').startup(function(use)
   use 'sharkdp/fd'
   use 'nvim-treesitter/nvim-treesitter'
   use 'BurntSushi/ripgrep'
+  use 'ellisonleao/glow.nvim'
+  use {
+  'nvim-tree/nvim-tree.lua',
+  requires = {
+    'nvim-tree/nvim-web-devicons', -- optional, for file icons
+  },
+  tag = 'nightly' -- optional, updated every week. (see issue #1193)
+}
   use {
   'nvim-telescope/telescope.nvim', tag = '0.1.0',
 -- or                            , branch = '0.1.x',
