@@ -16,21 +16,6 @@ vim.g.mapleader = " "
 --   command_mode = "c",
 
 -- Normal --
-keymap("n", "<leader>a", require("harpoon.mark").add_file)
-keymap("n", "<leader>q", require("harpoon.ui").toggle_quick_menu)
-
-keymap("n", "<leader>1", function()
-	require("harpoon.ui").nav_file(1)
-end)
-keymap("n", "<leader>2", function()
-	require("harpoon.ui").nav_file(2)
-end)
-keymap("n", "<leader>3", function()
-	require("harpoon.ui").nav_file(3)
-end)
-keymap("n", "<leader>4", function()
-	require("harpoon.ui").nav_file(4)
-end)
 -- Better window navigation
 keymap("n", "<C-h>", "<C-w>h", opts)
 keymap("n", "<C-j>", "<C-w>j", opts)
@@ -80,8 +65,30 @@ keymap("v", ">", ">gv", opts)
 -- Plugins --
 
 -- theprimeagen setup
+-- keymap("n", "<leader><leader>e", ":UndotreeToggle<CR> :UndotreeFocus<CR>", opts)
 keymap("n", "<leader>u", ":UndotreeToggle<CR> :UndotreeFocus<CR>", opts)
 keymap("n", "gd", ":lua vim.lsp.buf.definition()<CR>", opts)
+
+-- harpoon setup
+keymap("n", "<leader>a", require("harpoon.mark").add_file)
+keymap("n", "<leader>q", require("harpoon.ui").toggle_quick_menu)
+
+keymap("n", "<leader>1", function()
+	require("harpoon.ui").nav_file(1)
+end)
+keymap("n", "<leader>2", function()
+	require("harpoon.ui").nav_file(2)
+end)
+keymap("n", "<leader>3", function()
+	require("harpoon.ui").nav_file(3)
+end)
+keymap("n", "<leader>4", function()
+	require("harpoon.ui").nav_file(4)
+end)
+
+-- zenmode
+keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
+
 
 -- NvimTree
 keymap("n", "<leader>e", ":NvimTreeToggle<CR>", opts)
