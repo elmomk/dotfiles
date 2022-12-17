@@ -1,3 +1,7 @@
+Based on https://github.com/LunarVim/nvim-basic-ide from chrisatmachine.com
+Added some other cool plugins (like harpoon from The Primeagen) and keybindings.
+
+
 # A Basic Stable IDE config for Neovim
 
 > Why does this repo exist?
