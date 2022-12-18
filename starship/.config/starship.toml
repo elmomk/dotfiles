@@ -54,3 +54,6 @@ symbol = 'go-'
 
 [rust]
 symbol = 'rs-'
+
+[terraform]
+symbol = 'tf-'
