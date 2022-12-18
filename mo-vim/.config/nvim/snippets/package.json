@@ -1,0 +1,19 @@
+{
+	"name": "mo-snippets",
+	"contributes": {
+		"snippets": [
+			{
+				"language": [
+					"all"
+				],
+				"path": "./all.json"
+			},
+			{
+				"language": [
+					"terraform"
+				],
+				"path": "./tf.json"
+			}
+		]
+	}
+}

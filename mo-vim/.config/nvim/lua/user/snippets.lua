@@ -3,12 +3,16 @@ require'luasnip'.filetype_extend("markdown", {"markdown"})
 require'luasnip'.filetype_extend("golang", {"go"})
 require'luasnip'.filetype_extend("python", {"python"})
 require'luasnip'.filetype_extend("rust", {"rust"})
-require'luasnip'.filetype_extend("yml", {"kubernetes"})
+require'luasnip'.filetype_extend("yaml", {"kubernetes"})
 require'luasnip'.filetype_extend("html", {"html"})
 require'luasnip'.filetype_extend("make", {"make"})
 
-require'luasnip'.filetype_extend("docker", {"docker"}) -- not yet working
+require'luasnip'.filetype_extend("yaml", {"docker-compose"}) -- not yet working
+require'luasnip'.filetype_extend("dockerfile", {"docker_file"}) -- not yet working
 
+
+require("luasnip.loaders.from_vscode").load({ paths = { "./snippets" } })
+-- require("luasnip.loaders.from_vscode").lazy_load({ paths = { "~/.config/nvim/snippets" } })
 
 -- -- lua snippet example  https://sbulav.github.io/vim/neovim-setting-up-luasnip/
 -- local ls = require("luasnip")
@@ -35,4 +39,3 @@ require'luasnip'.filetype_extend("docker", {"docker"}) -- not yet working
 --         }),
 --     },
 -- })
-
