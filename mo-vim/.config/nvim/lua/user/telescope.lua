@@ -12,6 +12,15 @@ telescope.setup {
     selection_caret = " ",
     path_display = { "smart" },
     file_ignore_patterns = { ".git/", "node_modules", "venv" },
+    -- layout_strategy = "horizontal",
+    -- layout_config = {
+    --   horizontal = {
+    --     mirror = false,
+    --   },
+    --   vertical = {
+    --     mirror = false,
+    --   },
+    -- },
 
     -- mappings = {
     --   i = {
@@ -22,15 +31,15 @@ telescope.setup {
     --   },
     -- },
   },
-  -- extensions = {
-  --   fzf = {
-  --     fuzzy = true,                    -- false will only do exact matching
-  --     override_generic_sorter = true,  -- override the generic sorter
-  --     override_file_sorter = true,     -- override the file sorter
-  --     case_mode = "smart_case",        -- or "ignore_case" or "respect_case"
-  --                                      -- the default case_mode is "smart_case"
-  --   }
-  -- },
+  extensions = {
+    fzf = {
+      fuzzy = true,                    -- false will only do exact matching
+      override_generic_sorter = true,  -- override the generic sorter
+      override_file_sorter = true,     -- override the file sorter
+      case_mode = "smart_case",        -- or "ignore_case" or "respect_case"
+                                       -- the default case_mode is "smart_case"
+    }
+  },
 }
--- require("telescope").load_extension('harpoon')
--- require('telescope').load_extension('fzf')
+-- pcall(require("telescope").load_extension, 'harpoon')
+pcall(require('telescope').load_extension, 'fzf')
