@@ -65,14 +65,14 @@ keymap("v", ">", ">gv", opts)
 -- Plugins --
 
 -- theprimeagen setup
--- keymap("n", "<leader><leader>e", ":UndotreeToggle<CR> :UndotreeFocus<CR>", opts)
 keymap("n", "<leader>u", ":UndotreeToggle<CR> :UndotreeFocus<CR>", opts)
-keymap("n", "gd", ":lua vim.lsp.buf.definition()<CR>", opts)
+-- keymap("n", "gd", ":lua vim.lsp.buf.definition()<CR>", opts) -- already mapped in lsp/handlers.lua
 
 -- harpoon setup
 keymap("n", "<leader>a", require("harpoon.mark").add_file)
 keymap("n", "<leader>q", require("harpoon.ui").toggle_quick_menu)
 
+-- more then 5 seems a bit over the top
 keymap("n", "<leader>1", function()
 	require("harpoon.ui").nav_file(1)
 end)
@@ -85,6 +85,9 @@ end)
 keymap("n", "<leader>4", function()
 	require("harpoon.ui").nav_file(4)
 end)
+keymap("n", "<leader>5", function()
+	require("harpoon.ui").nav_file(5)
+end)
 
 -- zenmode
 keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
@@ -94,11 +97,14 @@ keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
 keymap("n", "<leader>e", ":NvimTreeToggle<CR>", opts)
 
 -- Telescope
+keymap("n", "<leader>fo", ":Telescope oldfiles<CR>", opts)
 keymap("n", "<leader>ff", ":Telescope find_files<CR>", opts)
 keymap("n", "<leader>fg", ":Telescope live_grep<CR>", opts)
+keymap("n", "<leader>fs", ":Telescope grep_string<CR>", opts)
 keymap("n", "<leader>fp", ":Telescope projects<CR>", opts)
 keymap("n", "<leader>fb", ":Telescope buffers<CR>", opts)
 keymap("n", "<leader>fr", ":Telescope lsp_references<CR>", opts)
+keymap("n", "<leader><leader>", ":Telescope keymaps<CR>", opts)
 -- Glow
 keymap("n", "<leader>g", ":Glow<CR>", opts)
 

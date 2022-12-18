@@ -1,4 +1,4 @@
--- Install packer
+-- Install packer reference: https://github.com/nvim-lua/kickstart.nvim/blob/master/init.lua
 local install_path = vim.fn.stdpath 'data' .. '/site/pack/packer/start/packer.nvim'
 local is_bootstrap = false
 if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
@@ -90,9 +90,9 @@ require('packer').startup(function(use)
 
   -- Telescope
   use { "nvim-telescope/telescope.nvim", commit = "76ea9a898d3307244dce3573392dcf2cc38f340f" }
-  -- use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
+  use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
   use { "jremmen/vim-ripgrep" }
-  use { "nvim-lua/popup.nvim" }
+  -- use { "nvim-lua/popup.nvim" }
 
   -- Treesitter
   use {
