@@ -56,6 +56,7 @@ keymap("v", "p", '"_dP', opts)
 -- Insert --
 -- Press jk fast to enter
 keymap("i", "jk", "<ESC>", opts)
+keymap("n", "<leader>w", ":w<CR>", opts)
 
 -- Visual --
 -- Stay in indent mode
