@@ -93,7 +93,6 @@ end)
 -- zenmode
 keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
 
-
 -- NvimTree
 keymap("n", "<leader>e", ":NvimTreeToggle<CR>", opts)
 
@@ -116,6 +115,6 @@ keymap("n", "<leader>lg", "<cmd>lua _LAZYGIT_TOGGLE()<CR>", opts)
 keymap("n", "<leader>/", "<cmd>lua require('Comment.api').toggle.linewise.current()<CR>", opts)
 keymap("x", "<leader>/", '<ESC><CMD>lua require("Comment.api").toggle.linewise(vim.fn.visualmode())<CR>')
 
-
 -- Lsp
 keymap("n", "<leader>lf", "<cmd>lua vim.lsp.buf.format{ async = true }<cr>", opts)
+-- keymap("n", "<leader>lc", "<cmd>lua vim.lsp.buf.code_action()<cr>", opts) -- already mapped in lsp/handlers.lua
