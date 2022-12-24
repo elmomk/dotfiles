@@ -50,5 +50,6 @@ null_ls.setup {
     -- formatting.codespell,
     -- null_ls.builtins.completion.spell.with { filetypes = { "markdown", "text" } },
     code_actions.shellcheck,
+    code_actions.gomodifytags,
   },
 }
