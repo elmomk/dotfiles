@@ -40,11 +40,11 @@ format ="[$symbol distrobox ]($style) "
 symbol = "⬢"
 disabled = false
 
-[git_branch]
-symbol = '🌱 '
-truncation_length = 4
-truncation_symbol = ''
-ignore_branches = ['master', 'main']
+# [git_branch]
+# symbol = '🌱 '
+# truncation_length = 4
+# truncation_symbol = ''
+# ignore_branches = ['master', 'main']
 
 [python]
 symbol = 'py-'
