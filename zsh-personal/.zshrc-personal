@@ -1,0 +1,65 @@
+# Add this line to .zshrc
+# [[ -f ~/.zshrc-personal ]] && . ~/.zshrc-personal
+
+export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin
+
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+# reporting tools - install when not installed
+if [[ ! $(env | grep tmux 2>&1) ]]; then
+    neofetch
+fi
+
+# unset some of arcolinux default aliases
+unset PAGER
+# eval some stuff
+#thefuck for when you mess up
+eval $(thefuck --alias)
+eval "$(zoxide init zsh)"
+eval "$(fnm env --use-on-cd)"
+eval "$(direnv hook zsh)"
+eval "$(starship init zsh)"
+
+alias ls='exa --icons --color-scale -h'
+alias ll='exa -l --icons --color-scale -h'
+alias cat='bat'
+alias diff='delta'
+
+#terraform
+alias tf='terraform'
+
+#k8s
+alias k='kubectl'
+
+# lazygit
+alias lg='lazygit'
+
+
+
+#history
+source /usr/share/doc/mcfly/mcfly.zsh
+export MCFLY_FUZZY=2 
+export MCFLY_RESULTS=60
+#export MCFLY_INTERFACE_VIEW=BOTTOM
+
+
+alias zf='z `fd --type directory | fzf`'
+alias fim='nvim `fzf -m --preview "bat --color=always {}"`'
+alias rmf='rm `fzf -m --preview "bat --color=always {}"`'
+alias wttr='echo "checking weather" && curl --connect-timeout 0.1 wttr.in/Tervuren'
+
+alias tls='tmux list-sessions'
+alias tfz='tmux attach -t `tmux list-sessions | fzf | cut -d: -f1`'
+alias tnow="tmux attach -t `tls | awk -F':' '{print $1}' | head -n1`"
+
+#wttr
+
+alias vi="nvim"
+alias doco="docker-compose"
+
+
+
+# fzf git
+alias gzf='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'
+
+
