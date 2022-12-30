@@ -52,6 +52,9 @@ keymap("n", "<S-q>", "<cmd>Bdelete!<CR>", opts)
 
 -- Better paste
 keymap("v", "p", '"_dP', opts)
+-- move selected line / block of text in visual mode
+keymap("v", "J", ":m '>+1<CR>gv=gv'", opts)
+keymap("v", "K", ":m '<-2<CR>gv=gv'", opts)
 
 -- Insert --
 -- Press jk fast to enter
