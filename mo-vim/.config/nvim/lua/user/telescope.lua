@@ -42,16 +42,16 @@ telescope.setup {
       case_mode = "smart_case",        -- or "ignore_case" or "respect_case"
                                        -- the default case_mode is "smart_case"
     },
-    -- project = {
-    --   base_dirs = {
-    --     {"~/Documents/git", max_depth = 4},
-    --     "~/Documents",
-    --   },
-    --   hidden_files = true,
-    --   theme = "dropdown",
-    --   order_by = "asc",
-    --   sync_with_nvim_tree = true,
-    -- }
+    project = {
+      base_dirs = {
+        {"~/Documents/git", max_depth = 4},
+        "~/Documents",
+      },
+      hidden_files = true,
+      theme = "dropdown",
+      order_by = "asc",
+      sync_with_nvim_tree = true,
+    }
   },
 }
 -- pcall(require("telescope").load_extension, 'harpoon')
