@@ -5,7 +5,7 @@ end
 
 local actions = require "telescope.actions"
 
-pcall(require('telescope').load_extension, 'fzf')
+-- pcall(require('telescope').load_extension, 'fzf')
 
 telescope.setup {
   defaults = {
