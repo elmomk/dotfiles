@@ -1,6 +1,3 @@
--- local colorscheme = "torte"
--- local colorscheme = "carbonfox"
--- local colorscheme = "elflord"
 require("tokyonight").setup({
   style = "night",
   transparent = true,

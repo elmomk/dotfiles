@@ -42,6 +42,7 @@ require('packer').startup(function(use)
   use {"folke/trouble.nvim"} -- enables lsp trouble shooting
   -- use {"hashivim/vim-terraform"} -- nice syntax Colorschemes for terraform, covered by nvim-treesitter
   use { "ellisonleao/glow.nvim"} -- show markdown files
+  use { "nvim-lua/plenary.nvim", commit = "4b7e52044bbb84242158d977a50c4cbcd85070c7" } -- Useful lua functions used by lots of plugins
   use { "windwp/nvim-autopairs", commit = "4fc96c8f3df89b6d23e5092d31c866c53a346347" } -- Autopairs, integrates with both cmp and treesitter
   use { "numToStr/Comment.nvim", commit = "97a188a98b5a3a6f9b1b850799ac078faa17ab67" }
   use { "JoosepAlviste/nvim-ts-context-commentstring", commit = "32d9627123321db65a4f158b72b757bcaef1a3f4" }
@@ -89,9 +90,7 @@ require('packer').startup(function(use)
   use { "github/copilot.vim"}
 
   -- Telescope
-  -- use { "nvim-telescope/telescope.nvim", commit = "76ea9a898d3307244dce3573392dcf2cc38f340f" }
-  use { "nvim-telescope/telescope.nvim", tag = '0.1.0',
-  requires = { { "nvim-lua/plenary.nvim", commit = "4b7e52044bbb84242158d977a50c4cbcd85070c7"  } } }
+  use { "nvim-telescope/telescope.nvim", commit = "76ea9a898d3307244dce3573392dcf2cc38f340f" }
   use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
   use { "jremmen/vim-ripgrep" }
   -- use { "nvim-lua/popup.nvim" }
