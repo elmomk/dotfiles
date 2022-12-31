@@ -12,14 +12,15 @@ local diagnostics = {
   sources = { "nvim_diagnostic" },
   sections = { "error", "warn" },
   symbols = { error = " ", warn = " " },
-  colored = false,
-  always_visible = true,
+  colored = true,
+  always_visible = false,
 }
 
 local diff = {
   "diff",
-  colored = false,
-  symbols = { added = " ", modified = " ", removed = " " }, -- changes diff symbols
+  colored = true,
+  symbols = { added = "+", modified = " ", removed = " " }, -- changes diff symbols
+  -- symbols = { added = "加了", modified = "改了", removed = "刪了" }, -- changes diff symbols
   cond = hide_in_width,
 }
 
@@ -48,11 +49,11 @@ lualine.setup {
     always_divide_middle = true,
   },
   sections = {
-    lualine_a = { "mode" },
+    lualine_a = { "progress","mode"},
     lualine_b = {"branch"},
     lualine_c = { diagnostics },
-    lualine_x = { diff, spaces, "encoding", filetype },
+    lualine_x = { diff, spaces, "encoding" },
     lualine_y = { location },
-    lualine_z = { "progress" },
+    lualine_z = { filetype },
   },
 }
