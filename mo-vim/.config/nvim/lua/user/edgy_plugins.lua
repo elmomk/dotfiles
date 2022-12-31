@@ -11,7 +11,7 @@ end
 vim.cmd [[
   augroup packer_user_config
     autocmd!
-    autocmd BufWritePost plugins_bleadingedge.lua source <afile> | PackerSync
+    autocmd BufWritePost edgy_plugins.lua source <afile> | PackerSync
   augroup end
 ]]
 
