@@ -7,7 +7,7 @@
 languages=$(echo "golang lua bash python rust shell" | tr ' ' '\n' | sort)
 core_utils=$(echo "tmux vim nvim awk sed grep find sort uniq wc xargs bat fzf mv rm ssh systemctl docker kubectl terraform" | tr ' ' '\n' | sort)
 
-selected=$(printf '%s\n%s' "$languages" "$core_utils" | fzf) 
+selected=$(printf '%s\n%s' "$languages" "$core_utils" | fzf --preview 'curl -s cht.sh/{}' --preview-window=right:85%:wrap)
 echo "$selected"
 read -rp "Enter topic: " query
 
