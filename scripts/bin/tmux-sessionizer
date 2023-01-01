@@ -3,7 +3,7 @@
 if [[ $# -eq 1 ]]; then
     selected=$1
 else
-    selected=$(find ~/Documents/git ~/Documents ~/.config ~/.dotfiles  -mindepth 1 -maxdepth 3 -type d | fzf --preview 'tree -CL 1 {}' --preview-window=right:70%:wrap)
+    selected=$(find ~/Documents/git ~/Documents ~/.config ~/.dotfiles  -mindepth 1 -maxdepth 3 -type d | fzf --preview 'tree -CL 1 {}' --preview-window=bottom)
     # selected=$(find ~/Documents/git/experimentation/ ~/Documents/git ~/Documents ~/.config ~/.dotfiles ~/work/builds ~/projects ~/ ~/work ~/personal -mindepth 1 -maxdepth 3 -type d | fzf --preview 'tree -C {}' --preview-window=right:70%:wrap)
 fi
 

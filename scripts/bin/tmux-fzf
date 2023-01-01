@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+ 
 
-SESSION=$(tmux list-sessions | cut -d: -f1 |fzf --preview "tmux capture-pane -ep -t {}")
+SESSION=$(tmux list-sessions | cut -d: -f1 |fzf --preview-window=right:85%:wrap --preview "tmux capture-pane -ep -t {}" --preview-label="Switch to selected session")
 
 if ! env | grep -i tmux >/dev/null; then
     tmux attach -t "$SESSION"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # SESSION=$(tmux list-windows | fzf --height=~50% | cut -d: -f1)
-SESSION=$(tmux list-windows -a | cut -d: -f1,2 | fzf --preview "tmux capture-pane -ep -t {}")
+SESSION=$(tmux list-windows -a | cut -d: -f1,2 | fzf --preview-window=right:80%:wrap --preview "tmux capture-pane -ep -t {}" --preview-label="Swap current window with selected one")
 
 tmux swap-window -t "$SESSION"
 
