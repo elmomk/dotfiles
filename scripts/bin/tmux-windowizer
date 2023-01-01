@@ -6,9 +6,16 @@ else
     branch_name="$1"
 fi
 
+if [[ -z "$branch_name" ]]; then
+    echo "Usage: tmux-windowizer <window_name> [command]"
+    exit 1
+fi
+
 session_name=$(tmux display-message -p "#S")
 clean_name=$(echo "$branch_name" | tr "./" "__")
 target="$session_name:$clean_name"
+
+echo "Sending to $target" # will only be shown when using it as cli
 
 if ! tmux has-session -t "$target" 2>/dev/null; then
     tmux neww -dn "$clean_name"
