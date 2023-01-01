@@ -13,8 +13,12 @@ read -rp "Enter topic: " query
 
 if printf '%s' "$languages" | grep -qs "$selected"; then
   echo "https://cht.sh/$selected/$query"
-  tmux neww bash -c "curl cht.sh/$selected/$query & while [ : ]; do sleep 1; done"
+  curl cht.sh/$selected/$query 2>/dev/null | bat & while [ : ]; do sleep 1; done
+  # tmux neww bash -c "curl cht.sh/$selected/$query & while [ : ]; do sleep 1; done"
+  # tmux display-popup -E "curl cht.sh/$selected/$query & while [ : ]; do sleep 1; done"
 else
     echo "https://cht.sh/$selected~$query"
-  tmux neww bash -c "curl cht.sh/$selected~$query & while [ : ]; do sleep 1; done"
+  curl cht.sh/$selected~$query 2>/dev/null | bat & while [ : ]; do sleep 1; done
+  # tmux neww bash -c "curl cht.sh/$selected~$query & while [ : ]; do sleep 1; done"
+  # tmux display-popup -E "curl cht.sh/$selected~$query & while [ : ]; do sleep 1; done"
 fi

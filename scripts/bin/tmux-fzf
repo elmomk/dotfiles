@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SESSION=$(tmux list-sessions | fzf --height=~50% | cut -d: -f1)
+SESSION=$(tmux list-sessions | cut -d: -f1 |fzf --preview "tmux capture-pane -ep -t {}")
 
 if ! env | grep -i tmux >/dev/null; then
     tmux attach -t "$SESSION"
