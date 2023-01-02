@@ -7,6 +7,7 @@ local actions = require "telescope.actions"
 
 -- pcall(require('telescope').load_extension, 'fzf')
 
+pcall(require('telescope').load_extension, 'git_worktree')
 telescope.setup {
   defaults = {
 

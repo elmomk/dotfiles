@@ -26,6 +26,9 @@ keymap("n", "<leader>sv", "<C-w>v", opts) -- split window vertically
 keymap("n", "<leader>sh", "<C-w>s", opts) -- split window horizontally
 keymap("n", "<leader>se", "<C-w>=", opts) -- split window equal width
 keymap("n", "<leader>sx", ":close<CR>", opts) -- split window equal width
+-- git worktree
+keymap("n", "<leader>sc", "::lua require('telescope').extensions.git_worktree.create_git_worktree()<CR>", opts)
+keymap("n", "<leader>sd", "::lua require('telescope').extensions.git_worktree.git_worktrees()<CR>", opts)
 -- tabs
 -- keymap("n", "<leader>to", ":tabnew<CR>", opts) -- open new tab
 -- keymap("n", "<leader>tx", ":tabclose<CR>", opts) -- close current tab

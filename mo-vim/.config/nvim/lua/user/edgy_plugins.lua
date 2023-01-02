@@ -96,6 +96,10 @@ require('packer').startup(function(use)
   use { "tpope/vim-fugitive" }
   use { "ThePrimeagen/harpoon" }
   use { "folke/zen-mode.nvim" }
+  -- worktree
+  use { "ThePrimeagen/git-worktree.nvim" }
+  -- use { "ThePrimeagen/refactoring.nvim" }
+  -- use { "ThePrimeagen/vim-be-good" }
 
   -- Git
   use { "lewis6991/gitsigns.nvim" }
