@@ -8,6 +8,9 @@ local actions = require "telescope.actions"
 -- pcall(require('telescope').load_extension, 'fzf')
 
 pcall(require('telescope').load_extension, 'git_worktree')
+pcall(require("telescope").load_extension, 'harpoon')
+pcall(require('telescope').load_extension, 'project')
+
 telescope.setup {
   defaults = {
 
@@ -55,5 +58,3 @@ telescope.setup {
     }
   },
 }
--- pcall(require("telescope").load_extension, 'harpoon')
--- require'telescope'.extensions.project.project{}

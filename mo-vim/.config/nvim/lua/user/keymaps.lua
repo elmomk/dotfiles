@@ -78,6 +78,7 @@ keymap("n", "<leader>u", ":UndotreeToggle<CR> :UndotreeFocus<CR>", opts)
 -- harpoon setup
 keymap("n", "<leader>a", require("harpoon.mark").add_file)
 keymap("n", "<leader>q", require("harpoon.ui").toggle_quick_menu)
+keymap("n", "<leader><leader>q", ":Telescope harpoon marks<CR>")
 
 -- more then 5 seems a bit over the top
 keymap("n", "<leader>1", function()
@@ -114,6 +115,7 @@ keymap("n", "<leader>fr", ":Telescope lsp_references<CR>", opts)
 keymap("n", "<leader>fj", ":Telescope jumplist<CR>", opts)
 keymap("n", "<leader>fm", ":Telescope <CR>", opts)
 keymap("n", "<leader><leader>", ":Telescope keymaps<CR>", opts)
+keymap("n", "<leader>fh", ":Telescope help_tags<CR>", opts)
 -- Glow
 keymap("n", "<leader>g", ":Glow<CR>", opts)
 
