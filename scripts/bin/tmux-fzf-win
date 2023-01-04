@@ -6,7 +6,7 @@ if ! env | grep -i tmux >/dev/null; then
   exit 1
 fi
 
-SESSION=$(tmux list-windows -a | cut -d: -f1,2 | fzf --preview-window=right:80%:wrap --preview "tmux capture-pane -ep -t {}" --preview-label="Swap current window with selected one")
+SESSION=$(tmux list-windows -a | cut -d: -f1,2 | fzf --preview-window=right:70%:wrap --preview "tmux capture-pane -ep -t {}" --preview-label="Swap current window with selected one")
 
 tmux swap-window -t "$SESSION"
 
