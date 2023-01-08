@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+BRANCH=$1
+if [ -z "$BRANCH" ]; then
+    echo "Usage: worktree.sh <branch>"
+    echo "Example: worktree.sh master"
+    echo "this will create a new branch called master"
+    echo "and create a new worktree for it"
+    exit 1
+fi
+BRANCH_PATH=$(echo "$BRANCH" | tr '/' _)
+
+if [ -d "$BRANCH_PATH" ]; then
+    echo "Branch $BRANCH already exists"
+    exit 1
+fi
+
+git worktree add -b "$BRANCH" "$BRANCH_PATH"
+
+cd "$BRANCH_PATH" || exit 1
