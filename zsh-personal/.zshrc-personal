@@ -7,7 +7,8 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 
 # reporting tools - install when not installed
 if [[ ! $(env | grep tmux 2>&1) ]]; then
-    neofetch
+ufetch-arco | lolcat
+    # neofetch
 fi
 
 # unset some of arcolinux default aliases
@@ -60,6 +61,6 @@ alias doco="docker-compose"
 
 
 # fzf git
-alias gzf='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'
+alias git-brach-fzf='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'
 
-
+# xinput set-prop "Kensington USB Orbit" "libinput Button Scrolling Button" 3

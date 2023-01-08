@@ -5,7 +5,7 @@
 
 # This script is used to generate the cheat sheet for the cht.sh project.
 languages=$(echo "golang lua bash python rust shell" | tr ' ' '\n' | sort)
-core_utils=$(echo "pacman tmux vim nvim awk sed grep find sort uniq wc xargs bat fzf mv rm ssh systemctl docker kubectl terraform" | tr ' ' '\n' | sort)
+core_utils=$(echo "rsync  distrobox fd ripgrep pacman yay tmux vim nvim awk sed grep find sort uniq wc xargs bat fzf mv rm ssh systemctl docker kubectl terraform ansible scp" | tr ' ' '\n' | sort)
 
 selected=$(printf '%s\n%s' "$languages" "$core_utils" | fzf --preview 'curl -s cht.sh/{}' --preview-window=right:75%:wrap)
 echo "$selected"

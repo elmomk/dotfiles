@@ -21,10 +21,16 @@ truncation_length = 2
 [package]
 disabled = true
 
+[aws]
+style = "bold green"
+format = '| [$symbol$region]($style) '
+
+
 [azure]
 disabled = false
-format = "on [$symbol($subscription)]($style) "
-symbol = "🌩️ "
+format = "| [$symbol($subscription)]($style) "
+# symbol = "🌩️ "
+symbol = 'ﴃ '
 style = "blue bold"
 
 [kubernetes]
@@ -48,6 +54,8 @@ disabled = false
 
 [python]
 symbol = 'py-'
+format = '[$symbol$version]($style) '
+python_binary = ['./venv/bin/python', 'python', 'python3', 'python2']
 
 [golang]
 symbol = 'go-'
