@@ -73,6 +73,18 @@
         (command: Execute, value: "alacritty -e ~/bin/tmux-sessionizer", modifier: ["modkey", "Control"], key: "Return"),
 
 
+        /* (command: MoveWindowUp, value: "", modifier: ["modkey", "Shift"], key: "Up"), */
+        /* (command: MoveWindowDown, value: "", modifier: ["modkey", "Shift"], key: "Down"), */
+        /* (command: Execute, value: "leftwm-command SwapScreens", modifier: ["modkey"], key: "Left"), */
+        /* (command: Execute, value: "leftwm-command SwapScreens", modifier: ["modkey"], key: "Right"), */
+        /* (command: MoveWindowToNextWorkspace, value: "", modifier: ["modkey", "Shift"], key: "Left"), */
+        /* (command: MoveWindowToNextWorkspace, value: "", modifier: ["modkey", "Shift"], key: "Right"), */
+        /* (command: FocusPreviousTag, value: "", modifier: ["Control", "Alt"], key: "Left"), */
+        /* (command: FocusNextTag, value: "", modifier: ["Control", "Alt"], key: "Right"), */
+        /* (command: FocusPreviousTag, value: "", modifier: ["Control", "Alt"], key: "Up"), */
+        /* (command: FocusNextTag, value: "", modifier: ["Control", "Alt"], key: "Down"), */
+
+        (command: ReturnToLastTag, modifier: ["modkey"], key: "u"),
         (command: TileToFloating, modifier: ["modkey", "Control", "Shift"], key: "f"),
         (command: ToggleFloating, modifier: ["modkey", "Control"], key: "f"),
         (command: ToggleScratchPad, value: "Alacritty", modifier: ["modkey", "Control"], key: "u"),
@@ -83,8 +95,6 @@
         (command: SwapTags, value: "", modifier: ["modkey"], key: "w"),
         (command: MoveWindowUp, value: "", modifier: ["modkey", "Shift"], key: "k"),
         (command: MoveWindowDown, value: "", modifier: ["modkey", "Shift"], key: "j"),
-        (command: MoveWindowUp, value: "", modifier: ["modkey", "Shift"], key: "Up"),
-        (command: MoveWindowDown, value: "", modifier: ["modkey", "Shift"], key: "Down"),
         (command: FocusWindowUp, value: "", modifier: ["modkey"], key: "k"),
         (command: FocusWindowDown, value: "", modifier: ["modkey"], key: "j"),
         (command: NextLayout, value: "", modifier: ["modkey"], key: "space"),
@@ -95,14 +105,6 @@
         (command: PreviousLayout, value: "", modifier: ["modkey", "Control"], key: "Down"),
         (command: FocusNextTag, value: "", modifier: ["modkey"], key: "Down"),
         (command: FocusPreviousTag, value: "", modifier: ["modkey"], key: "Up"),
-        (command: Execute, value: "leftwm-command SwapScreens", modifier: ["modkey"], key: "Left"),
-        (command: Execute, value: "leftwm-command SwapScreens", modifier: ["modkey"], key: "Right"),
-        (command: MoveWindowToNextWorkspace, value: "", modifier: ["modkey", "Shift"], key: "Left"),
-        (command: MoveWindowToNextWorkspace, value: "", modifier: ["modkey", "Shift"], key: "Right"),
-        (command: FocusPreviousTag, value: "", modifier: ["Control", "Alt"], key: "Left"),
-        (command: FocusNextTag, value: "", modifier: ["Control", "Alt"], key: "Right"),
-        (command: FocusPreviousTag, value: "", modifier: ["Control", "Alt"], key: "Up"),
-        (command: FocusNextTag, value: "", modifier: ["Control", "Alt"], key: "Down"),
         (command: FocusNextTag, value: "", modifier: ["modkey"], key: "Tab"),
         (command: FocusPreviousTag, value: "", modifier: ["modkey", "Shift"], key: "Tab"),
         (command: FocusNextTag, value: "", modifier: ["Alt"], key: "Tab"),
