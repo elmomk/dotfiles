@@ -44,17 +44,20 @@
     scratchpad: [
       (name: "Alacritty",
       value: "alacritty",
-      x: 400, y: 100, height: 1200, width: 1600),
+      x: 400, y: 100, height: 1200, width: 1800),
       (name: "Keybase",
       value: "run_keybase",
       x: 860, width: 800),
       (name: "Spotify",
       value: "spotify",
       x: 400, y: 100, height: 1200, width: 1800),
+    ( name: "Brave",
+    value: "brave",
+    x: 400, y: 100, height: 1200, width: 1800),
     ],
     window_rules: [
-    (window_class: "firefox", spawn_on_tag: 2),
-    (window_class: "microsoft teams - preview", spawn_on_tag: 1),
+    (window_class: "brave-browser", spawn_on_tag: 2),
+    /* (window_class: "microsoft teams - preview", spawn_on_tag: 1), */
     (window_class: "keybase", spawn_on_tag: 1),
     /* (window_class: "spotify", spawn_on_tag: 10), */
     ],
@@ -73,48 +76,51 @@
         /* (command: Execute, value: "alacritty", modifier: ["Control", "Alt"], key: "Return"), */
         /* (command: CloseWindow, value: "", modifier: ["modkey", "Shift"], key: "q"), */
         /* (command: Execute, value: "thunar", modifier: ["modkey", "Shift"], key: "Return"), */
+        /* (command: MoveWindowUp, value: "", modifier: ["modkey", "Shift"], key: "Up"), */
+        /* (command: MoveWindowDown, value: "", modifier: ["modkey", "Shift"], key: "Down"), */
+        /* (command: FocusPreviousTag, value: "", modifier: ["Control", "Alt"], key: "Left"), */
+        /* (command: FocusNextTag, value: "", modifier: ["Control", "Alt"], key: "Right"), */
+        /* (command: FocusPreviousTag, value: "", modifier: ["Control", "Alt"], key: "Up"), */
+        /* (command: FocusNextTag, value: "", modifier: ["Control", "Alt"], key: "Down"), */
+        /* (command: FocusNextTag, value: "", modifier: ["Alt"], key: "Tab"), */
+        /* (command: FocusPreviousTag, value: "", modifier: ["Alt", "Shift"], key: "Tab"), */
+        /* (command: NextLayout, value: "", modifier: ["modkey", "Control"], key: "Up"), */
+        /* (command: PreviousLayout, value: "", modifier: ["modkey", "Control"], key: "Down"), */
+        /* (command: FocusNextTag, value: "", modifier: ["modkey"], key: "Down"), */
+        /* (command: FocusPreviousTag, value: "", modifier: ["modkey"], key: "Up"), */
 
+        /* (command: RotateTag, value: "", modifier: ["modkey"], key: "w"), */
         (command: Execute, value: "killall conky", modifier: ["modkey"], key: "c"),
         (command: TileToFloating, modifier: ["modkey", "Control", "Shift"], key: "f"),
         (command: ToggleFloating, modifier: ["modkey", "Control"], key: "f"),
         (command: ToggleScratchPad, value: "Alacritty", modifier: ["modkey", "Control"], key: "u"),
+        (command: ToggleScratchPad, value: "Brave", modifier: ["modkey", "Control"], key: "o"),
         (command: ToggleScratchPad, value: "Keybase", modifier: ["modkey", "Control"], key: "i"),
         (command: ToggleScratchPad, value: "Spotify", modifier: ["modkey", "Control"], key: "p"),
         (command: Execute, value: "xfce4-terminal --drop-down", modifier: [], key: "F10"),
         (command: Execute, value: "dmenu_run -i -nb \'#191919\' -nf \'#fea63c\' -sb \'#fea63c\' -sf \'#191919\' -fn \'NotoMonoRegular:bold:pixelsize=14\'", modifier: ["modkey"], key: "d"),
         (command: Execute, value: "archlinux-logout", modifier: ["modkey"], key: "x"),
         (command: Execute, value: "leftwm-command ToggleFullScreen", modifier: ["modkey"], key: "f"),
-        (command: Execute, value: "alacritty", modifier: ["modkey"], key: "Return"),
+        (command: Execute, value: "alacritty -e tmux-fzf", modifier: ["modkey"], key: "Return"),
+        (command: Execute, value: "alacritty -e tmux-sessionizer", modifier: ["modkey","Control"], key: "Return"),
         (command: CloseWindow, value: "", modifier: ["modkey"], key: "q"),
         (command: SoftReload, value: "", modifier: ["modkey", "Shift"], key: "r"),
         (command: MoveToLastWorkspace, value: "", modifier: ["modkey", "Shift"], key: "w"),
         (command: SwapTags, value: "", modifier: ["modkey"], key: "w"),
         (command: MoveWindowUp, value: "", modifier: ["modkey", "Shift"], key: "k"),
         (command: MoveWindowDown, value: "", modifier: ["modkey", "Shift"], key: "j"),
-        (command: MoveWindowUp, value: "", modifier: ["modkey", "Shift"], key: "Up"),
-        (command: MoveWindowDown, value: "", modifier: ["modkey", "Shift"], key: "Down"),
         (command: FocusWindowUp, value: "", modifier: ["modkey"], key: "k"),
         (command: FocusWindowDown, value: "", modifier: ["modkey"], key: "j"),
         (command: NextLayout, value: "", modifier: ["modkey"], key: "space"),
         (command: PreviousLayout, value: "", modifier: ["modkey", "Shift"], key: "space"),
         (command: FocusWorkspaceNext, value: "", modifier: ["modkey"], key: "l"),
         (command: FocusWorkspacePrevious, value: "", modifier: ["modkey"], key: "h"),
-        (command: NextLayout, value: "", modifier: ["modkey", "Control"], key: "Up"),
-        (command: PreviousLayout, value: "", modifier: ["modkey", "Control"], key: "Down"),
-        (command: FocusNextTag, value: "", modifier: ["modkey"], key: "Down"),
-        (command: FocusPreviousTag, value: "", modifier: ["modkey"], key: "Up"),
+        (command: FocusNextTag, value: "", modifier: ["modkey"], key: "Tab"),
+        (command: FocusPreviousTag, value: "", modifier: ["modkey", "Shift"], key: "Tab"),
         (command: Execute, value: "leftwm-command SwapScreens", modifier: ["modkey"], key: "Left"),
         (command: Execute, value: "leftwm-command SwapScreens", modifier: ["modkey"], key: "Right"),
         (command: MoveWindowToNextWorkspace, value: "", modifier: ["modkey", "Shift"], key: "Left"),
         (command: MoveWindowToNextWorkspace, value: "", modifier: ["modkey", "Shift"], key: "Right"),
-        (command: FocusPreviousTag, value: "", modifier: ["Control", "Alt"], key: "Left"),
-        (command: FocusNextTag, value: "", modifier: ["Control", "Alt"], key: "Right"),
-        (command: FocusPreviousTag, value: "", modifier: ["Control", "Alt"], key: "Up"),
-        (command: FocusNextTag, value: "", modifier: ["Control", "Alt"], key: "Down"),
-        (command: FocusNextTag, value: "", modifier: ["modkey"], key: "Tab"),
-        (command: FocusPreviousTag, value: "", modifier: ["modkey", "Shift"], key: "Tab"),
-        (command: FocusNextTag, value: "", modifier: ["Alt"], key: "Tab"),
-        (command: FocusPreviousTag, value: "", modifier: ["Alt", "Shift"], key: "Tab"),
         (command: GotoTag, value: "1", modifier: ["modkey"], key: "1"),
         (command: GotoTag, value: "2", modifier: ["modkey"], key: "2"),
         (command: GotoTag, value: "3", modifier: ["modkey"], key: "3"),
