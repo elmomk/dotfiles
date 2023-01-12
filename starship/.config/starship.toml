@@ -53,15 +53,15 @@ disabled = false
 # ignore_branches = ['master', 'main']
 
 [python]
-symbol = 'py-'
+# symbol = 'py-'
 format = '[$symbol$version]($style) '
 python_binary = ['./venv/bin/python', 'python', 'python3', 'python2']
 
 [golang]
-symbol = 'go-'
+# symbol = 'go-'
 
 [rust]
-symbol = 'rs-'
+# symbol = 'rs-'
 
 [terraform]
-symbol = 'tf-'
+# symbol = 'tf-'
