@@ -190,11 +190,6 @@ local movim1 = {
 	[[,8'         `         `8.`8888.  `8888888P'                        `8.`           8 8888 ,8'         `         `8.`8888.  ]],
 }
 
--- local dashboard = require("alpha.themes.dashboard")
--- local function switch_ascii_art()
--- 	local ascii_arts = { chunjie, ren, meng, movim, movim1 }
--- 	dashboard.section.header.val = ascii_arts[random_index]
--- end
 require("os")
 require("math")
 
@@ -211,8 +206,8 @@ local function switch_ascii_art()
     dashboard.section.header.val = ascii_arts[asciiarts_index]
   end
   end
--- dashboard.section.header.val = ren
 switch_ascii_art()
+
 dashboard.section.buttons.val = {
 	dashboard.button("f", " " .. " Find file", ":Telescope find_files <CR>"),
 	dashboard.button("e", " " .. " New file", ":ene <BAR> startinsert <CR>"),
