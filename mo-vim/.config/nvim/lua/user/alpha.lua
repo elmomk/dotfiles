@@ -841,7 +841,7 @@ require("os")
 require("math")
 
 local dashboard = require("alpha.themes.dashboard")
-local function switch_ascii_art()
+function Switch_ascii_art()
 	local work = false
 	local ascii_arts =
 		{ ren, meng, movim, movim1, jiayou, long, bison, bat, monke_noevil, lord_of_the_rings, drseus, fractal, castle, angry_dog, dog, super, unixdevil, linuxrules, redhat, yoda, littledevil }
@@ -869,7 +869,7 @@ local function switch_ascii_art()
 		dashboard.section.header.val = ascii_arts[asciiarts_index]
 	end
 end
-switch_ascii_art()
+Switch_ascii_art()
 -- dashboard.section.header.val = yoda
 
 dashboard.section.buttons.val = {
@@ -882,6 +882,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("u", " " .. " Plugins", ":PackerStatus <CR>"),
 	dashboard.button("a", " " .. " See Planets", ":Telescope planets<CR>"),
 	dashboard.button("m", " " .. " Mason", ":Mason <CR>"),
+	dashboard.button("s", " " .. " ascii arts", ":lua Switch_ascii_art() <CR>:AlphaRedraw<CR>"),
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()
