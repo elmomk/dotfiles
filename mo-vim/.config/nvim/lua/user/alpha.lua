@@ -642,27 +642,27 @@ local jiayou = {
 	[[                                                           liza 4.19.94]],
 }
 
-local chunjie = {
-	[[             ?                       ?           ]],
-	[[           #####                   #####         ]],
-	[[          (SPRING)               ( FESTIVAL )    ]],
-	[[       ###       ###           ###       ###     ]],
-	[[     #      ||       #       #    ||   ||    #   ]],
-	[[   #    ==========     #    #   ===========    # ]],
-	[[  #       ==||==        # #       ||   ||       #]],
-	[[  #    ============     # #    ==============   #]],
-	[[  #       //  \\        # #          ||    ||   #]],
-	[[  #     //|====|\\      # #          ||    ||   #]],
-	[[   #  // ||====|| \\   #   #         ||   ==   # ]],
-	[[    #    ||====||     #     #        ||       #  ]],
-	[[       ###       ###           ###       ###     ]],
-	[[         #########               #########       ]],
-	[[           |||||                   |||||         ]],
-	[[           |||||                   |||||         ]],
-	[[          /////                   /////          ]],
-	[[         /////                   /////           ]],
-	[[                                                                          ]],
-}
+-- local chunjie = {
+-- 	[[             ?                       ?           ]],
+-- 	[[           #####                   #####         ]],
+-- 	[[          (SPRING)               ( FESTIVAL )    ]],
+-- 	[[       ###       ###           ###       ###     ]],
+-- 	[[     #      ||       #       #    ||   ||    #   ]],
+-- 	[[   #    ==========     #    #   ===========    # ]],
+-- 	[[  #       ==||==        # #       ||   ||       #]],
+-- 	[[  #    ============     # #    ==============   #]],
+-- 	[[  #       //  \\        # #          ||    ||   #]],
+-- 	[[  #     //|====|\\      # #          ||    ||   #]],
+-- 	[[   #  // ||====|| \\   #   #         ||   ==   # ]],
+-- 	[[    #    ||====||     #     #        ||       #  ]],
+-- 	[[       ###       ###           ###       ###     ]],
+-- 	[[         #########               #########       ]],
+-- 	[[           |||||                   |||||         ]],
+-- 	[[           |||||                   |||||         ]],
+-- 	[[          /////                   /////          ]],
+-- 	[[         /////                   /////           ]],
+-- 	[[                                                                          ]],
+-- }
 local ren = {
 	[[          ____________________________________________________________  ]],
 	[[         / o                                                        o \ ]],
@@ -833,6 +833,8 @@ local yoda = {
 [[          :-""-.`./-.'     /    `.___.']],
 [[                \ `t  ._  /      :F_P:]],
 [[                 "-.t-._:']],
+[[                    """" ]],
+[[ May the force be with you.]],
 }
 
 require("os")
@@ -851,6 +853,9 @@ local function switch_ascii_art()
 		dashboard.section.header.val = dcp_ascii_art
   elseif current_month == 3 and current_day == 8 then
     dashboard.section.header.val = laosebri
+  -- may the force be with you
+  elseif current_month == 5 and current_day == 4 then
+    dashboard.section.header.val = yoda
   elseif current_month == 12 and current_day == 25 then
     dashboard.section.header.val = shengri
   elseif current_month == 10 and current_day == 31 then
@@ -880,7 +885,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()
-	return "Based on chrisatmachine.com"
+	return "Created by Mo\nBased on chrisatmachine.com"
 end
 
 dashboard.section.footer.val = footer()
