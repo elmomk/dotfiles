@@ -57,7 +57,8 @@
     ],
     window_rules: [
     (window_class: "brave-browser", spawn_on_tag: 1),
-    (window_class: "keybase", spawn_on_tag: 2),
+    (window_class: "Keybase: chat", spawn_floating: true),
+    (window_class: "keybase", spawn_floating: true),
     ],
     disable_current_tag_swap: true,
     disable_tile_drag: false,
@@ -125,6 +126,7 @@
         (command: ToggleFloating, modifier: ["modkey", "Control"], key: "f"),
         (command: ToggleScratchPad, value: "Alacritty", modifier: ["modkey", "Control"], key: "u"),
         (command: ToggleScratchPad, value: "Spotify", modifier: ["modkey", "Control"], key: "p"),
+        (command: ToggleScratchPad, value: "Keybase", modifier: ["modkey", "Control"], key: "k"),
         (command: CloseWindow, value: "", modifier: ["modkey"], key: "q"),
         (command: SoftReload, value: "", modifier: ["modkey", "Shift"], key: "r"),
         (command: MoveToLastWorkspace, value: "", modifier: ["modkey", "Shift"], key: "w"),
