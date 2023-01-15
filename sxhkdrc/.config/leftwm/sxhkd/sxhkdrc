@@ -1,10 +1,5 @@
-#Picom Toggle
-ctrl + alt + o
-    ~/.config/leftwm/scripts/picom-toggle.sh
-
-#Urxvt
-super + t
-    urxvt
+super + shift + d
+    rofi -show drun
 
 #Pavucontrol
 super + v
@@ -18,14 +13,12 @@ super + Escape
 super + shift + Return
 	thunar
 
+super + shift + control + Return
+  alacritty
+
 #dmenu
-super + control + d
-  rofi -show drun
-	# dmenu_run -i -nb '#191919' -nf '#fea63c' -sb '#fea63c' -sf '#191919' -fn 'NotoMonoRegular:bold:pixelsize=14'
-#Xlunch app launcher
-super + shift + d
-  xlunch
-   # xlunch --config ~/.config/xlunch/default.conf --input ~/.config/xlunch/entries.dsv   
+super + d
+	dmenu_run -i -nb '#191919' -nf '#fea63c' -sb '#fea63c' -sf '#191919' -fn 'NotoMonoRegular:bold:pixelsize=18'
 
 #reload sxhkd:
 super + shift + s
@@ -83,25 +76,21 @@ alt + shift + f
 alt + shift + u
     wal -i $(cat $HOME/.config/variety/wallpaper/wallpaper.jpg.txt)&
 
-#Scrot
-super + ctrl + Print
-    xfce4-screenshooter
-
 #screenshooter
-ctrl + Print
-    scrot 'ArcoLinux-%Y-%m-%d-%s_screenshot_$wx$h.jpg' -e 'mv $f $$(xdg-user-dir PICTURES)'
-
-#Gnome-Screenshot
-# ctrl + shift + Print
-#      gnome-screenshot -i
-
-Flameshot
 Print
     flameshot gui
 
-#################################################################
-#     MULTIMEDIA KEYS
-#################################################################
+#Scrot
+ctrl + Print
+    scrot 'ArcoLinux-%Y-%m-%d-%s_screenshot_$wx$h.jpg' -e 'mv $f $$(xdg-user-dir PICTURES)'
+#Flameshot
+super + ctrl + Print
+    xfce4-screenshooter
+
+
+#Picom Toggle
+ctrl + alt + o
+    ~/.config/leftwm/scripts/picom-toggle.sh
 
 #Raises volume
 XF86AudioRaiseVolume
@@ -114,15 +103,6 @@ XF86AudioLowerVolume
 #Mute
 XF86AudioMute
     amixer -D pulse set Master 1+ toggle
-
-#Playerctl works for Pragha, Spotify and others
-#Delete the line for playerctl if you want to use mpc
-#and replace it with the corresponding code
-#mpc works for e.g.ncmpcpp
-#mpc toggle
-#mpc next
-#mpc prev
-#mpc stop
 
 #PLAY
 XF86AudioPlay

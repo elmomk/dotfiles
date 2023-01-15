@@ -3,7 +3,7 @@
 
 export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin
 
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+# plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 
 # reporting tools - install when not installed
 if [[ ! $(env | grep tmux 2>&1) ]]; then

@@ -908,6 +908,11 @@ function Switch_ascii_art()
 		dashboard.section.header.val = ascii_arts[asciiarts_index]
 	end
 end
+function Switch_dcp_ascii_art()
+  local dcp_ascii_arts = { dcp, dcp1, dcp2, dcp3, dcp4 }
+  local dcp_ascii_art = dcp_ascii_arts[math.random(#dcp_ascii_arts)]
+  dashboard.section.header.val = dcp_ascii_art
+end
 Switch_ascii_art()
 -- dashboard.section.header.val = jessri
 
@@ -922,6 +927,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("a", " " .. " See Planets", ":Telescope planets<CR>"),
 	dashboard.button("m", " " .. " Mason", ":Mason <CR>"),
 	dashboard.button("s", " " .. " ascii arts", ":lua Switch_ascii_art() <CR>:AlphaRedraw<CR>"),
+	dashboard.button("d", " " .. " DCP ascii arts", ":lua Switch_dcp_ascii_art() <CR>:AlphaRedraw<CR>"),
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()
