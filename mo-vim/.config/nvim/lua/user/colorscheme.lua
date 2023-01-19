@@ -3,6 +3,9 @@
 --   style = "night",
 --   transparent = false,
 -- })
+require("kanagawa").setup({
+  transparent = false,
+})
 
 local colorscheme = "kanagawa"
 
