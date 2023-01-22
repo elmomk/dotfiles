@@ -115,13 +115,21 @@ require("packer").startup(function(use)
   --   }
   -- end,
   }
-	use({
-		"chentoast/marks.nvim",
-		event = "BufReadPre",
-		config = function()
-			require("marks").setup()
-		end,
-	})
+	-- use({
+	-- 	"chentoast/marks.nvim",
+	-- 	event = "BufReadPre",
+	-- 	config = function()
+	-- 		require("marks").setup()
+	-- 	end,
+	-- })
+-- use {
+--   'phaazon/mind.nvim',
+--   branch = 'v2.2',
+--   requires = { 'nvim-lua/plenary.nvim' },
+--   config = function()
+--     require'mind'.setup()
+--   end
+-- }
 
 	-- -- DAP
 	-- use { "ravenxrz/DAPInstall.nvim" }
