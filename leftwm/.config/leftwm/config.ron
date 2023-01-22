@@ -54,6 +54,9 @@
     ( name: "Brave",
     value: "brave",
     x: 400, y: 100, height: 1200, width: 1800),
+    ( name: "EdgyTeams",
+    value: "/opt/microsoft/msedge/microsoft-edge --profile-directory=Default --app-id=cifhbcnohmdccbgoicgdjpfamggdegmo '--app-url=https://teams.microsoft.com/?clientType=pwa'",
+    x: 400, y: 100, height: 1200, width: 1800),
     ],
     window_rules: [
     (window_class: "brave-browser", spawn_on_tag: 1),
@@ -79,12 +82,13 @@
         (command: ToggleScratchPad, value: "Brave", modifier: ["modkey", "Control"], key: "o"),
         (command: ToggleScratchPad, value: "Keybase", modifier: ["modkey", "Control"], key: "i"),
         (command: ToggleScratchPad, value: "Spotify", modifier: ["modkey", "Control"], key: "p"),
+        (command: ToggleScratchPad, value: "EdgyTeams", modifier: ["modkey", "Control"], key: "o"),
         (command: Execute, value: "xfce4-terminal --drop-down", modifier: [], key: "F10"),
         (command: Execute, value: "dmenu_run -i -nb \'#191919\' -nf \'#fea63c\' -sb \'#fea63c\' -sf \'#191919\' -fn \'NotoMonoRegular:bold:pixelsize=14\'", modifier: ["modkey"], key: "d"),
         (command: Execute, value: "archlinux-logout", modifier: ["modkey"], key: "x"),
         (command: Execute, value: "leftwm-command ToggleFullScreen", modifier: ["modkey"], key: "f"),
-        (command: Execute, value: "alacritty -e tmux-fzf", modifier: ["modkey"], key: "Return"),
-        (command: Execute, value: "alacritty -e tmux-sessionizer", modifier: ["modkey","Control"], key: "Return"),
+        (command: Execute, value: "alacritty -e ~/bin/tmux-fzf", modifier: ["modkey"], key: "Return"),
+        (command: Execute, value: "alacritty -e ~/bin/tmux-sessionizer", modifier: ["modkey","Control"], key: "Return"),
 
         (command: ReturnToLastTag, modifier: ["modkey"], key: "u"),
         /* (command: TileToFloating, modifier: ["modkey", "Control", "Shift"], key: "f"), */
