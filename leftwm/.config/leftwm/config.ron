@@ -46,7 +46,7 @@
       value: "alacritty",
       x: 400, y: 100, height: 1200, width: 1800),
       (name: "Keybase",
-      value: "run_keybase",
+      value: "keybase-gui",
       x: 860, width: 800),
       (name: "Spotify",
       value: "spotify",
