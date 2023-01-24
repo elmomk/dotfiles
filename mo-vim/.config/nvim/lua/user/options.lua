@@ -46,7 +46,7 @@ opt.whichwrap:append("<,>,[,],h,l")         -- keys allowed to move to the previ
 opt.iskeyword:append("-")                   -- treats words with `-` as single words
 opt.formatoptions:remove({ "c", "r", "o" }) -- This is a sequence of letters which describes how automatic formatting is to be done
 opt.linebreak = true
--- set ntreesitter folding
+-- set ntreesitter folding                  -- use zR and zM to toggle folds, zc and zo to close and open folds, za to toggle fold
 opt.foldmethod = "expr"
 opt.foldexpr = "nvim_treesitter#foldexpr()"
 opt.foldenable = false
