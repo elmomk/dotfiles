@@ -47,8 +47,7 @@ opt.iskeyword:append("-")                   -- treats words with `-` as single w
 opt.formatoptions:remove({ "c", "r", "o" }) -- This is a sequence of letters which describes how automatic formatting is to be done
 opt.linebreak = true
 -- set ntreesitter folding
--- opt.foldmethod = "expr"
--- opt.foldexpr = "nvim_treesitter#foldexpr()"
--- set nofoldenable
--- opt.foldenable = false
-opt.foldmethod = "manual"
+opt.foldmethod = "expr"
+opt.foldexpr = "nvim_treesitter#foldexpr()"
+opt.foldenable = false
+-- opt.foldmethod = "manual"

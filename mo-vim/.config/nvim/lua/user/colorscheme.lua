@@ -4,7 +4,7 @@
 --   transparent = false,
 -- })
 require("kanagawa").setup({
-  transparent = false,
+  transparent = true,
 })
 
 local colorscheme = "kanagawa"
