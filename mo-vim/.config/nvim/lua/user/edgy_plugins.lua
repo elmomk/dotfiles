@@ -74,7 +74,6 @@ require("packer").startup(function(use)
 	use({ "neovim/nvim-lspconfig" }) -- enable LSP
 	use({ "williamboman/mason.nvim" })
 	use({ "williamboman/mason-lspconfig.nvim" })
-	-- use { "jose-elias-alvarez/null-ls.nvim" } -- for formatters and linters
 	use({ "jose-elias-alvarez/null-ls.nvim" }) -- for formatters and linters
 	use({ "RRethy/vim-illuminate" })
 	use({ "github/copilot.vim" })
@@ -92,6 +91,7 @@ require("packer").startup(function(use)
 
 	-- Treesitter
 	use({ "nvim-treesitter/nvim-treesitter", run = ":TSUpdate" })
+	use({ "nvim-treesitter/playground" })
 
 	-- the primeagen's plugins setup
 	use({ "mbbill/undotree" })
