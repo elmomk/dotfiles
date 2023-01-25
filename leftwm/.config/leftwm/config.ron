@@ -127,7 +127,7 @@
         (command: Execute, value: "leftwm-command \"SendWindowToTag 7\"", modifier: ["modkey", "Control"], key: "7"),
         (command: Execute, value: "leftwm-command \"SendWindowToTag 8\"", modifier: ["modkey", "Control"], key: "8"),
         (command: Execute, value: "leftwm-command \"SendWindowToTag 9\"", modifier: ["modkey", "Control"], key: "9"),
-        (command: Execute, value: "leftwm-command \"SendWindowToTag 0\"", modifier: ["modkey", "Control"], key: "0"),
+        (command: Execute, value: "leftwm-command \"SendWindowToTag 10\"", modifier: ["modkey", "Control"], key: "0"),
         (command: Execute, value: "leftwm-command \"SendWindowToTag 1\" \"SendWorkspaceToTag 0 0\"", modifier: ["modkey", "Shift"], key: "1"),
         (command: Execute, value: "leftwm-command \"SendWindowToTag 2\" \"SendWorkspaceToTag 0 1\"", modifier: ["modkey", "Shift"], key: "2"),
         (command: Execute, value: "leftwm-command \"SendWindowToTag 3\" \"SendWorkspaceToTag 0 2\"", modifier: ["modkey", "Shift"], key: "3"),

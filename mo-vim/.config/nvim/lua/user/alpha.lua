@@ -33,7 +33,7 @@ local littledevil = {
 }
 
 local unixdevil = {
-	[[                                   ,        ,]],
+	[[                                 ,        ,]],
 	[[                                /(        )`]],
 	[[                                \ \___   / |]],
 	[[                                /- _  `-/  ']],
@@ -434,7 +434,7 @@ local monke_noevil = {
 }
 
 local bat = {
-	[[                *         *      *         *]],
+	[[              *         *      *         *]],
 	[[          ***          **********          ***]],
 	[[       *****           **********           *****]],
 	[[     *******           **********           *******]],
@@ -924,6 +924,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("t", " " .. " Find text", ":Telescope live_grep <CR>"),
 	dashboard.button("c", " " .. " Config", ":e $MYVIMRC <CR>"),
 	dashboard.button("u", " " .. " Plugins", ":PackerStatus <CR>"),
+	dashboard.button("U", " " .. " Plugins Update", ":PackerSync <CR>"),
 	dashboard.button("a", " " .. " See Planets", ":Telescope planets<CR>"),
 	dashboard.button("m", " " .. " Mason", ":Mason <CR>"),
 	dashboard.button("s", " " .. " ascii arts", ":lua Switch_ascii_art() <CR>:AlphaRedraw<CR>"),
