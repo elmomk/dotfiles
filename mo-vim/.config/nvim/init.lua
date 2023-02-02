@@ -1,5 +1,6 @@
 -- require "user.plugins"
-require "user.edgy_plugins"
+require "user.lazy" -- testing lazy loading, if it fails do checkhealth lazy and rm the recommanded packer files
+-- require "user.edgy_plugins"
 require "user.impatient"
 require "user.options"
 require "user.keymaps"
