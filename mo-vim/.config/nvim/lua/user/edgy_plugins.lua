@@ -115,6 +115,8 @@ require("packer").startup(function(use)
   --   }
   -- end,
   }
+
+  use({ "folke/neoconf.nvim" })
 	-- use({
 	-- 	"chentoast/marks.nvim",
 	-- 	event = "BufReadPre",
@@ -175,3 +177,6 @@ if is_bootstrap then
 	print("==================================")
 	return
 end
+
+require("neoconf").setup({})
+
