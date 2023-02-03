@@ -22,10 +22,10 @@ keymap("n", "<C-j>", "<C-w>j", opts)
 keymap("n", "<C-k>", "<C-w>k", opts)
 keymap("n", "<C-l>", "<C-w>l", opts)
 -- window splitting
-keymap("n", "<leader>sv", "<C-w>v", opts) -- split window vertically
-keymap("n", "<leader>sh", "<C-w>s", opts) -- split window horizontally
-keymap("n", "<leader>se", "<C-w>=", opts) -- split window equal width
-keymap("n", "<leader>sx", ":close<CR>", opts) -- split window equal width
+keymap("n", "<leader>sv", "<C-w>v", {silent = true, desc = "vertical split"} ) -- split window vertically
+keymap("n", "<leader>sh", "<C-w>s", {silent = true , desc = "horizontal split"}) -- split window horizontally
+keymap("n", "<leader>se", "<C-w>=", {silent = true, desc = "equal windows out"}) -- split window equal width
+keymap("n", "<leader>sx", ":close<CR>", {silent = true, desc = "close window"}) -- split window equal width
 -- git worktree
 keymap("n", "<leader>sc", "::lua require('telescope').extensions.git_worktree.create_git_worktree()<CR>", opts)
 keymap("n", "<leader>sd", "::lua require('telescope').extensions.git_worktree.git_worktrees()<CR>", opts)
@@ -76,26 +76,26 @@ keymap("n", "<leader>u", ":UndotreeToggle<CR> :UndotreeFocus<CR>", opts)
 -- keymap("n", "gd", ":lua vim.lsp.buf.definition()<CR>", opts) -- already mapped in lsp/handlers.lua
 
 -- harpoon setup
-keymap("n", "<leader>a", require("harpoon.mark").add_file)
-keymap("n", "<leader>q", require("harpoon.ui").toggle_quick_menu)
-keymap("n", "<leader><leader>q", ":Telescope harpoon marks<CR>")
+keymap("n", "<leader>a", require("harpoon.mark").add_file, { silent = false, desc = "add file to harpoon" })
+keymap("n", "<leader>q", require("harpoon.ui").toggle_quick_menu, { silent = false, desc = "toggle harpoon quick menu" })
+keymap("n", "<leader><leader>q", ":Telescope harpoon marks<CR>", { silent = false, desc = "toggle harpoon quick menu" })
 
 -- more then 5 seems a bit over the top
 keymap("n", "<leader>1", function()
 	require("harpoon.ui").nav_file(1)
-end)
+end, { silent = false, desc = "nav to file 1" })
 keymap("n", "<leader>2", function()
 	require("harpoon.ui").nav_file(2)
-end)
+end, { silent = false, desc = "nav to file 2" })
 keymap("n", "<leader>3", function()
 	require("harpoon.ui").nav_file(3)
-end)
+end, { silent = false, desc = "nav to file 3" })
 keymap("n", "<leader>4", function()
 	require("harpoon.ui").nav_file(4)
-end)
+end, { silent = false, desc = "nav to file 4" })
 keymap("n", "<leader>5", function()
 	require("harpoon.ui").nav_file(5)
-end)
+end, { silent = false, desc = "nav to file 5" })
 
 -- zenmode
 keymap("n", "<leader>zz", ":ZenMode<CR>", opts)

@@ -1,4 +1,5 @@
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({
     "git",
@@ -9,12 +10,21 @@ if not vim.loop.fs_stat(lazypath) then
     lazypath,
   })
 end
+--
+-- vim.cmd([[
+--   augroup lazy_user_config
+--     autocmd!
+--     autocmd BufWritePost lazy.lua | Lazy update
+--   augroup end
+-- ]])
+
 local opts = { silent = true }
 vim.keymap.set("", "<Space>", "<Nop>", opts)
 vim.g.mapleader = " "
 local plugins = {
+  {"folke/lazy.nvim"},
 	{ "folke/trouble.nvim" }, -- enables lsp trouble shooting
-	{ "ellisonleao/glow.nvim" }, -- show markdown files
+	{ "ellisonleao/glow.nvim", config = true, cmd = "Glow" }, -- show markdown files
 	{ "windwp/nvim-autopairs" }, -- Autopairs, integrates with both cmp and treesitter
 	{ "numToStr/Comment.nvim" },
 	{ "JoosepAlviste/nvim-ts-context-commentstring" },
@@ -76,6 +86,7 @@ local plugins = {
 
 	{"ggandor/leap.nvim"},
   -- { "folke/neoconf.nvim" }
+  {"folke/which-key.nvim"},
 }
 vim.opt.rtp:prepend(lazypath)
 
