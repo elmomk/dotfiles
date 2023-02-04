@@ -932,7 +932,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()
-	return "Created by Mo\nBased on chrisatmachine.com"
+	return "Created by Mo\nBased on chrisatmachine.com\n & Lazygit"
 end
 
 dashboard.section.footer.val = footer()
