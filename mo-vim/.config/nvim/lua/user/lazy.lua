@@ -87,6 +87,7 @@ local plugins = {
 	{"ggandor/leap.nvim"},
   -- { "folke/neoconf.nvim" }
   {"folke/which-key.nvim"},
+  {"LazyVim/LazyVim"},
 }
 vim.opt.rtp:prepend(lazypath)
 

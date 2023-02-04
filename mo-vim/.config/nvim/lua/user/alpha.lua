@@ -932,8 +932,20 @@ dashboard.section.buttons.val = {
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()
-	return "Created by Mo\nBased on chrisatmachine.com"
+  -- local stats = require("lazy").stats()
+  local stats = "mo"
+	return "Created by Mo\nBased on chrisatmachine.com\n" .. stats
 end
+-- vim.api.nvim_create_autocmd("User", {
+--   -- pattern = "LazyVimStarted",
+--   callback = function()
+--     local stats = require("lazy").stats()
+--     local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
+--     local pad_footer = string.rep(" ", 8)
+--     dashboard.config.footer.val = pad_footer .. "⚡ Neovim loaded " .. stats.count .. " plugins in " .. ms .. "ms"
+--     pcall(dashboard.refresh)
+--   end,
+-- })
 
 dashboard.section.footer.val = footer()
 
