@@ -62,7 +62,7 @@ keymap("v", "K", ":m '<-2<CR>gv=gv'", opts)
 -- Insert --
 -- Press jk fast to enter
 keymap("i", "jk", "<ESC>", opts)
-keymap("n", "<leader>w", ":w<CR>", opts)
+keymap("n", "<leader>w", "<cmd>w<cr><esc>", opts)
 
 -- Visual --
 -- Stay in indent mode
@@ -100,8 +100,9 @@ end, { silent = false, desc = "nav to file 5" })
 -- zenmode
 keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
 
--- NvimTree
+-- NvimTrNeoTreeShowToggleee
 keymap("n", "<leader>e", ":NvimTreeToggle<CR>", opts)
+keymap("n", "<leader>E", ":NeoTreeFocusToggle<CR>", opts)
 
 -- Telescope
 keymap("n", "<leader>fo", ":Telescope oldfiles<CR>", opts)
@@ -129,3 +130,7 @@ keymap("x", "<leader>/", '<ESC><CMD>lua require("Comment.api").toggle.linewise(v
 -- Lsp
 keymap("n", "<leader>lf", "<cmd>lua vim.lsp.buf.format{ async = true }<cr>", opts)
 -- keymap("n", "<leader>lc", "<cmd>lua vim.lsp.buf.code_action()<cr>", opts) -- already mapped in lsp/handlers.lua
+---- floating terminal
+--keymap("n", "<leader>ft", function() Util.float_term(nil, { cwd = Util.get_root() }) end, { desc = "Terminal (ro
+--keymap("n", "<leader>fT", function() Util.float_term() end, { desc = "Terminal (cwd)" })
+--keymap("t", "<esc><esc>", "<c-\\><c-n>", {desc = "Enter Normal Mode"})
