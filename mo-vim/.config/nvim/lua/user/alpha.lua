@@ -923,7 +923,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("r", " " .. " Recent files", ":Telescope oldfiles <CR>"),
 	dashboard.button("t", " " .. " Find text", ":Telescope live_grep <CR>"),
 	dashboard.button("c", " " .. " Config", ":e $MYVIMRC <CR>"),
-	dashboard.button("u", " " .. " Plugins", ":Lazy show<CR>"),
+	dashboard.button("l", " " .. " Plugins", ":Lazy show<CR>"),
 	dashboard.button("U", " " .. " Plugins Update", ":Lazy update<CR>"),
 	dashboard.button("a", " " .. " See Planets", ":Telescope planets<CR>"),
 	dashboard.button("m", " " .. " Mason", ":Mason <CR>"),
