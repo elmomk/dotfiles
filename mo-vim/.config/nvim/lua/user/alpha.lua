@@ -925,20 +925,20 @@ Switch_ascii_art()
     -- vim.api.nvim_set_keymap("n", "<leader>qd", [[<cmd>lua require("persistence").stop()<cr>]], {})
 
 dashboard.section.buttons.val = {
-	dashboard.button("f", " " .. " Find file", ":Telescope find_files <CR>"),
-	dashboard.button("e", " " .. " New file", ":ene <BAR> startinsert <CR>"),
-	dashboard.button("p", " " .. " Find project", ":lua require('telescope').extensions.projects.projects()<CR>"),
-	-- dashboard.button("r", " " .. " Recent files", ":Telescope oldfiles <CR>"),
 	dashboard.button("r", " " .. " Restore session for current dir", ":lua require('persistence').load()<CR>"),
 	dashboard.button("R", " " .. " Restore last session", ":lua require('persistence').load({ last = true })<CR>"),
+	dashboard.button("f", " " .. " Find file", ":Telescope find_files <CR>"),
 	dashboard.button("t", " " .. " Find text", ":Telescope live_grep <CR>"),
+	dashboard.button("e", " " .. " New file", ":ene <BAR> startinsert <CR>"),
+	dashboard.button("p", " " .. " Find project", ":lua require('telescope').extensions.projects.projects()<CR>"),
+	dashboard.button("P", " " .. " Recent files", ":Telescope oldfiles <CR>"),
 	dashboard.button("c", " " .. " Config", ":e $MYVIMRC <CR>"),
 	dashboard.button("l", " " .. " Plugins", ":Lazy show<CR>"),
 	dashboard.button("U", " " .. " Plugins Update", ":Lazy update<CR>"),
-	dashboard.button("a", " " .. " See Planets", ":Telescope planets<CR>"),
-	dashboard.button("m", " " .. " Mason", ":Mason <CR>"),
+	dashboard.button("m", " " .. " Mason", ":Mason <CR>"),
 	dashboard.button("s", " " .. " ascii arts", ":lua Switch_ascii_art() <CR>:AlphaRedraw<CR>"),
 	dashboard.button("d", " " .. " DCP ascii arts", ":lua Switch_dcp_ascii_art() <CR>:AlphaRedraw<CR>"),
+	dashboard.button("a", " " .. " See Planets", ":Telescope planets<CR>"),
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()
