@@ -914,13 +914,23 @@ function Switch_dcp_ascii_art()
   dashboard.section.header.val = dcp_ascii_art
 end
 Switch_ascii_art()
--- dashboard.section.header.val = jessri
+-- dashboard.section.header.val = ren
+    -- -- restore the session for the current directory
+    -- vim.api.nvim_set_keymap("n", "<leader>qs", [[<cmd>lua require("persistence").load()<cr>]], {})
+    -- 
+    -- -- restore the last session
+    -- vim.api.nvim_set_keymap("n", "<leader>ql", [[<cmd>lua require("persistence").load({ last = true })<cr>]], {})
+    -- 
+    -- -- stop Persistence => session won't be saved on exit
+    -- vim.api.nvim_set_keymap("n", "<leader>qd", [[<cmd>lua require("persistence").stop()<cr>]], {})
 
 dashboard.section.buttons.val = {
 	dashboard.button("f", " " .. " Find file", ":Telescope find_files <CR>"),
 	dashboard.button("e", " " .. " New file", ":ene <BAR> startinsert <CR>"),
 	dashboard.button("p", " " .. " Find project", ":lua require('telescope').extensions.projects.projects()<CR>"),
-	dashboard.button("r", " " .. " Recent files", ":Telescope oldfiles <CR>"),
+	-- dashboard.button("r", " " .. " Recent files", ":Telescope oldfiles <CR>"),
+	dashboard.button("r", " " .. " Restore session for current dir", ":lua require('persistence').load()<CR>"),
+	dashboard.button("R", " " .. " Restore last session", ":lua require('persistence').load({ last = true })<CR>"),
 	dashboard.button("t", " " .. " Find text", ":Telescope live_grep <CR>"),
 	dashboard.button("c", " " .. " Config", ":e $MYVIMRC <CR>"),
 	dashboard.button("l", " " .. " Plugins", ":Lazy show<CR>"),
@@ -932,7 +942,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()
-	return "Created by Mo\nBased on chrisatmachine.com\n & Lazygit"
+	return "Created by Mo\nBased on Lazygit\nand chrisatmachine.com\n"
 end
 
 dashboard.section.footer.val = footer()
