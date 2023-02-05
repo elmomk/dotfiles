@@ -1,4 +1,5 @@
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+local opts = { silent = true }
 
 if not vim.loop.fs_stat(lazypath) then
 	vim.fn.system({
@@ -18,9 +19,6 @@ end
 --   augroup end
 -- ]])
 
-local opts = { silent = true }
-vim.keymap.set("", "<Space>", "<Nop>", opts)
-vim.g.mapleader = " "
 local plugins = {
 	{ "folke/lazy.nvim" },
 	{ "folke/trouble.nvim" }, -- enables lsp trouble shooting
@@ -108,28 +106,6 @@ local plugins = {
   },
 },
 
--- Better `vim.notify()`
-{
- "rcarriga/nvim-notify",
- keys = {
-   {
-     "<leader>n",
-     function()
-       require("notify").dismiss({ silent = true, pending = true })
-     end,
-     desc = "Delete all Notifications",
-   },
- },
- opts = {
-   timeout = 3000,
-   max_height = function()
-     return math.floor(vim.o.lines * 0.75)
-   end,
-   max_width = function()
-     return math.floor(vim.o.columns * 0.75)
-   end,
- },
-},
 
 -- {
 --   "stevearc/dressing.nvim",
@@ -186,6 +162,30 @@ local plugins = {
     { "<leader>sna", function() require("noice").cmd("all") end, desc = "Noice All" },
     { "<c-f>", function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end, silent = true, expr = true, desc = "Scroll forward", mode = {"i", "n", "s"} },
     { "<c-b>", function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end, silent = true, expr = true, desc = "Scroll forward", mode = {"i", "n", "s"} },
+  },
+  dependencies = {
+-- Better `vim.notify()`
+{
+ "rcarriga/nvim-notify",
+ keys = {
+   {
+     "<leader>n",
+     function()
+       require("notify").dismiss({ silent = true, pending = true })
+     end,
+     desc = "Delete all Notifications",
+   },
+ },
+ opts = {
+   timeout = 3000,
+   max_height = function()
+     return math.floor(vim.o.lines * 0.75)
+   end,
+   max_width = function()
+     return math.floor(vim.o.columns * 0.75)
+   end,
+ },
+},
   },
 },
 

@@ -1,4 +1,6 @@
 local opt = vim.opt
+vim.keymap.set("", "<Space>", "<Nop>", { silent = true})
+vim.g.mapleader = " "
 -- vim.opt.guicursor = ""
 -- vim.opt.colorcolumn = "80"
 
