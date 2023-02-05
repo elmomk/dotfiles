@@ -49,12 +49,17 @@ local plugins = {
 	{ "folke/tokyonight.nvim" },
 	{ "rebelot/kanagawa.nvim" },
 
-	{ "hrsh7th/nvim-cmp" }, -- The completion plugin
-	{ "hrsh7th/cmp-buffer" }, -- buffer completions
-	{ "hrsh7th/cmp-path" }, -- path completions
-	{ "saadparwaiz1/cmp_luasnip" }, -- snippet completions
-	{ "hrsh7th/cmp-nvim-lsp" },
-	{ "hrsh7th/cmp-nvim-lua" },
+	-- The completion plugin
+	{
+		"hrsh7th/nvim-cmp",
+		dependencies = {
+			{ "hrsh7th/cmp-buffer" }, -- buffer completions
+			{ "hrsh7th/cmp-path" }, -- path completions
+			{ "saadparwaiz1/cmp_luasnip" }, -- snippet completions
+			{ "hrsh7th/cmp-nvim-lsp" },
+			{ "hrsh7th/cmp-nvim-lua" },
+		},
+	},
 
 	{ "L3MON4D3/LuaSnip" }, --snippet engine
 	{ "rafamadriz/friendly-snippets" }, -- a bunch of snippets to use
@@ -67,17 +72,23 @@ local plugins = {
 	{ "RRethy/vim-illuminate" },
 	{ "github/copilot.vim" },
 
-	{ "nvim-telescope/telescope.nvim", dependencies = { { "nvim-lua/plenary.nvim" } } },
-	{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
-	{ "nvim-telescope/telescope-project.nvim" },
-	{ "nvim-telescope/telescope-file-browser.nvim" },
+	{ "nvim-lua/plenary.nvim" },
+	{
+		"nvim-telescope/telescope.nvim",
+		dependencies = {
+			{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+			{ "nvim-telescope/telescope-project.nvim" },
+			{ "nvim-telescope/telescope-file-browser.nvim" },
+		},
+	},
 	{ "jremmen/vim-ripgrep" },
 	{ "nvim-lua/popup.nvim" },
 
 	{ "junegunn/fzf.vim" },
 
-	{ "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
-	{ "nvim-treesitter/playground" },
+	{ "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", dependencies = {
+		{ "nvim-treesitter/playground" },
+	} },
 
 	{ "mbbill/undotree" },
 	{ "tpope/vim-fugitive" },
@@ -132,7 +143,7 @@ local plugins = {
 		opts = {
 			-- char = "▏",
 			char = "│",
-			filetype_exclude = { "help", "alpha", "dashboard", "neo-tree", "Trouble", "lazy" },
+			filetype_exclude = { "help", "alpha", "dashboard", "neo-tree", "NvimTree", "Trouble", "lazy" },
 			show_trailing_blankline_indent = false,
 			show_current_context = true,
 			show_current_context_start = true,
