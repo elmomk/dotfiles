@@ -24,7 +24,8 @@ M.setup = function()
 	end
 
 	local config = {
-		virtual_text = true, -- disable virtual text
+		-- virtual_text = false, -- disable virtual text debugging within vim
+		virtual_text = true, -- normally on true, just for helm on false
 		signs = {
 			active = signs, -- show signs
 		},

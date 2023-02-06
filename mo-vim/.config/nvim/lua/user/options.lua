@@ -1,6 +1,5 @@
 local opt = vim.opt
 -- vim.opt.guicursor = ""
--- vim.opt.colorcolumn = "80"
 
 
 opt.backup = false                          -- creates a backup file
@@ -29,6 +28,8 @@ opt.expandtab = true                        -- convert tabs to spaces
 opt.shiftwidth = 2                          -- the number of spaces inserted for each indentation
 opt.tabstop = 2                             -- insert 2 spaces for a tab
 opt.cursorline = true                       -- highlight the current line
+opt.cursorcolumn = true                     -- highlight the current column
+-- opt.colorcolumn = "80"
 opt.number = true                           -- set numbered lines
 opt.relativenumber = true                           -- set numbered lines
 opt.laststatus = 3                          -- only the last window will always have a status line

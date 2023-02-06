@@ -1,7 +1,7 @@
 # Add this line to .zshrc
 # [[ -f ~/.zshrc-personal ]] && . ~/.zshrc-personal
 
-export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin
+export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin:$HOME/work/experimentation/venv/bin
 
 # plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 
@@ -31,18 +31,17 @@ alias tf='terraform'
 
 #k8s
 alias k='kubectl'
+alias kctx='kubie ctx'
+alias kns='kubie ns'
 
 # lazygit
 alias lg='lazygit'
-
-
 
 #history
 source /usr/share/doc/mcfly/mcfly.zsh
 export MCFLY_FUZZY=2 
 export MCFLY_RESULTS=60
 #export MCFLY_INTERFACE_VIEW=BOTTOM
-
 
 alias zf='z `fd --type directory | fzf`'
 alias fim='nvim `fzf -m --preview "bat --color=always {}"`'
