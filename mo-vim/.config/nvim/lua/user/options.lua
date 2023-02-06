@@ -1,7 +1,10 @@
 local opt = vim.opt
+vim.keymap.set("", "<Space>", "<Nop>", { silent = true})
+vim.g.mapleader = " "
 -- vim.opt.guicursor = ""
 
 
+opt.winbar = "%=%m %f"
 opt.backup = false                          -- creates a backup file
 opt.clipboard = "unnamedplus"               -- allows neovim to access the system clipboard
 opt.cmdheight = 1                           -- more space in the neovim command line for displaying messages
