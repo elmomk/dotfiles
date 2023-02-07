@@ -22,10 +22,10 @@ keymap("n", "<C-j>", "<C-w>j", opts)
 keymap("n", "<C-k>", "<C-w>k", opts)
 keymap("n", "<C-l>", "<C-w>l", opts)
 -- window splitting
-keymap("n", "<leader>sv", "<C-w>v", {silent = true, desc = "vertical split"} ) -- split window vertically
-keymap("n", "<leader>sh", "<C-w>s", {silent = true , desc = "horizontal split"}) -- split window horizontally
-keymap("n", "<leader>se", "<C-w>=", {silent = true, desc = "equal windows out"}) -- split window equal width
-keymap("n", "<leader>sx", ":close<CR>", {silent = true, desc = "close window"}) -- split window equal width
+keymap("n", "<leader>sv", "<C-w>v", { silent = true, desc = "vertical split" }) -- split window vertically
+keymap("n", "<leader>sh", "<C-w>s", { silent = true, desc = "horizontal split" }) -- split window horizontally
+keymap("n", "<leader>se", "<C-w>=", { silent = true, desc = "equal windows out" }) -- split window equal width
+keymap("n", "<leader>sx", ":close<CR>", { silent = true, desc = "close window" }) -- split window equal width
 -- git worktree
 keymap("n", "<leader>sc", "::lua require('telescope').extensions.git_worktree.create_git_worktree()<CR>", opts)
 keymap("n", "<leader>sd", "::lua require('telescope').extensions.git_worktree.git_worktrees()<CR>", opts)
@@ -58,6 +58,13 @@ keymap("v", "p", '"_dP', opts)
 -- move selected line / block of text in visual mode
 keymap("v", "J", ":m '>+1<CR>gv=gv'", opts)
 keymap("v", "K", ":m '<-2<CR>gv=gv'", opts)
+-- Move Lines
+keymap("n", "<A-j>", ":m .+1<cr>==", { silent = true, desc = "Move down" })
+keymap("v", "<A-j>", ":m '>+1<cr>gv=gv", { silent = true, desc = "Move down" })
+keymap("i", "<A-j>", "<Esc>:m .+1<cr>==gi", { silent = true, desc = "Move down" })
+keymap("n", "<A-k>", ":m .-2<cr>==", { silent = true, desc = "Move up" })
+keymap("v", "<A-k>", ":m '<-2<cr>gv=gv", { silent = true, desc = "Move up" })
+keymap("i", "<A-k>", "<Esc>:m .-2<cr>==gi", { silent = true, desc = "Move up" })
 
 -- Insert --
 -- Press jk fast to enter
@@ -77,7 +84,12 @@ keymap("n", "<leader>u", ":UndotreeToggle<CR> :UndotreeFocus<CR>", opts)
 
 -- harpoon setup
 keymap("n", "<leader>a", require("harpoon.mark").add_file, { silent = false, desc = "add file to harpoon" })
-keymap("n", "<leader>q", require("harpoon.ui").toggle_quick_menu, { silent = false, desc = "toggle harpoon quick menu" })
+keymap(
+	"n",
+	"<leader>q",
+	require("harpoon.ui").toggle_quick_menu,
+	{ silent = false, desc = "toggle harpoon quick menu" }
+)
 keymap("n", "<leader><leader>q", ":Telescope harpoon marks<CR>", { silent = false, desc = "toggle harpoon quick menu" })
 
 -- more then 5 seems a bit over the top
@@ -101,8 +113,8 @@ end, { silent = false, desc = "nav to file 5" })
 keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
 
 -- NvimTrNeoTreeShowToggleee
-keymap("n", "<leader>E", ":NvimTreeToggle<CR>", opts)
-keymap("n", "<leader>e", ":NeoTreeFocusToggle<CR>", { silent = true , desc = "toggle neotree" })
+keymap("n", "<leader>e", ":NvimTreeToggle<CR>", opts)
+keymap("n", "<leader>E", ":NeoTreeFocusToggle<CR>", { silent = true, desc = "toggle neotree" })
 
 -- Telescope
 keymap("n", "<leader>fo", ":Telescope oldfiles<CR>", opts)
@@ -117,6 +129,10 @@ keymap("n", "<leader>fj", ":Telescope jumplist<CR>", opts)
 keymap("n", "<leader>fm", ":Telescope <CR>", opts)
 keymap("n", "<leader><leader>", ":Telescope keymaps<CR>", opts)
 keymap("n", "<leader>fh", ":Telescope help_tags<CR>", opts)
+-- bufferline
+keymap("n", "<leader>b", ":BufferLinePick<CR>", opts)
+keymap("n", "<leader>B", ":BufferLinePickClose<CR>", opts)
+-- use gt and gT to jump between recent buffers 
 -- Glow
 keymap("n", "<leader>g", ":Glow<CR>", opts)
 
