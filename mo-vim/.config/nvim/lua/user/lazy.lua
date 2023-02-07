@@ -165,6 +165,12 @@ local plugins = {
 				command_palette = true,
 				long_message_to_split = true,
 			},
+			routes = {
+				{
+					view = "notify",
+					filter = { event = "msg_showmode" },
+				},
+			},
 		},
   -- stylua: ignore
   keys = {
