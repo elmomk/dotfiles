@@ -30,7 +30,7 @@ null_ls.setup {
     -- lua
     formatting.stylua,
     -- java
-    formatting.google_java_format,
+    -- formatting.google_java_format,
     -- rust
     formatting.rustfmt,
     -- golang
