@@ -1,8 +1,8 @@
 local servers = {
 	"sumneko_lua",
-	"cssls",
-	"html",
-	"tsserver",
+	-- "cssls",
+	-- "html",
+	-- "tsserver",
 	"pyright",
 	"bashls",
 	"jsonls",
@@ -12,7 +12,7 @@ local servers = {
 	"marksman",
 	"gopls",
 	"rust_analyzer",
-  "awk_ls",
+  -- "awk_ls",
   "ansiblels",
   "dockerls",
   "golangci_lint_ls",
@@ -26,7 +26,7 @@ local servers = {
   -- "ruff_lsp", -- python
   -- "ruby_ls", -- ruby
   -- "solargraph", -- ruby
-  "taplo", -- toml
+  -- "taplo", -- toml
 }
 
 local settings = {
