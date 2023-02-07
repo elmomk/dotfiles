@@ -154,6 +154,18 @@ local plugins = {
 		"folke/noice.nvim",
 		event = "VeryLazy",
 		opts = {
+			-- views = {
+			-- 	cmdline_popup = {
+			-- 		position = {
+			-- 			row = 50,
+			-- 			col = "50%",
+			-- 		},
+			-- 		size = {
+			-- 			width = 60,
+			-- 			height = "auto",
+			-- 		},
+			-- 	},
+			-- },
 			lsp = {
 				override = {
 					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
@@ -165,12 +177,12 @@ local plugins = {
 				command_palette = true,
 				long_message_to_split = true,
 			},
-			routes = {
-				{
-					view = "notify",
-					filter = { event = "msg_showmode" },
-				},
-			},
+			-- routes = {
+			-- 	{
+			-- 		view = "notify",
+			-- 		filter = { event = "msg_showmode" },
+			-- 	},
+			-- },
 		},
   -- stylua: ignore
   keys = {
