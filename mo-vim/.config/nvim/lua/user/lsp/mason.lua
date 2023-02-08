@@ -11,6 +11,7 @@ local servers = {
 	"tflint",
 	"marksman",
 	"gopls",
+  "staticcheck",
 	"rust_analyzer",
   -- "awk_ls",
   "ansiblels",
