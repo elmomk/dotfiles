@@ -25,7 +25,7 @@ local plugins = {
 	{ "ellisonleao/glow.nvim", config = true, cmd = "Glow" }, -- show markdown files
 	{ "windwp/nvim-autopairs" }, -- Autopairs, integrates with both cmp and treesitter
 	{ "numToStr/Comment.nvim" },
-	{ "JoosepAlviste/nvim-ts-context-commentstring" },
+	-- { "JoosepAlviste/nvim-ts-context-commentstring" },
 	-- { "kyazdani42/nvim-web-devicons" },
 	{ "kyazdani42/nvim-tree.lua" },
 	{
@@ -36,6 +36,7 @@ local plugins = {
 		},
 	},
 	{ "akinsho/bufferline.nvim" },
+	-- close buffers
 	{ "moll/vim-bbye" },
 	{ "nvim-lualine/lualine.nvim" },
 	{ "akinsho/toggleterm.nvim" },
@@ -82,7 +83,7 @@ local plugins = {
 		},
 	},
 	{ "jremmen/vim-ripgrep" },
-	{ "nvim-lua/popup.nvim" },
+	-- { "nvim-lua/popup.nvim" },
 
 	{ "junegunn/fzf.vim" },
 
@@ -91,11 +92,11 @@ local plugins = {
 	} },
 
 	{ "mbbill/undotree" },
-	{ "tpope/vim-fugitive" },
+	-- { "tpope/vim-fugitive" },
 	{ "ThePrimeagen/harpoon" },
 	{ "folke/zen-mode.nvim" },
 	{ "ThePrimeagen/git-worktree.nvim" },
-	{ "ThePrimeagen/refactoring.nvim" },
+	-- { "ThePrimeagen/refactoring.nvim" },
 	-- { "ThePrimeagen/vim-be-good" },
 
 	{ "lewis6991/gitsigns.nvim" },
@@ -137,32 +138,31 @@ local plugins = {
 	-- },
 
 	-- indent guides for Neovim
-	{
-		"lukas-reineke/indent-blankline.nvim",
-		event = "BufReadPost",
-		opts = {
-			-- char = "▏",
-			char = "│",
-			filetype_exclude = { "help", "alpha", "dashboard", "neo-tree", "NvimTree", "Trouble", "lazy" },
-			show_trailing_blankline_indent = false,
-			show_current_context = true,
-			show_current_context_start = true,
-		},
-	},
+	-- {
+	-- 	"lukas-reineke/indent-blankline.nvim",
+	-- 	event = "BufReadPost",
+	-- 	opts = {
+	-- 		-- char = "▏",
+	-- 		char = "│",
+	-- 		filetype_exclude = { "help", "alpha", "dashboard", "neo-tree", "NvimTree", "Trouble", "lazy" },
+	-- 		show_trailing_blankline_indent = false,
+	-- 		show_current_context = true,
+	-- 		show_current_context_start = true,
+	-- 	},
+	-- },
 	-- noicer ui
 	{
 		"folke/noice.nvim",
 		event = "VeryLazy",
 		opts = {
-			-- views = {
-			-- 	cmdline_popup = {
-			-- 		position = {
-			-- 			row = 50,
-			-- 			col = "50%",
+			-- cmdline = {
+   --      view = "cmdline",
+			-- 	format = {
+			-- 		search_down = {
+			-- 			view = "cmdline",
 			-- 		},
-			-- 		size = {
-			-- 			width = 60,
-			-- 			height = "auto",
+			-- 		search_up = {
+			-- 			view = "cmdline",
 			-- 		},
 			-- 	},
 			-- },
@@ -177,12 +177,6 @@ local plugins = {
 				command_palette = true,
 				long_message_to_split = true,
 			},
-			-- routes = {
-			-- 	{
-			-- 		view = "notify",
-			-- 		filter = { event = "msg_showmode" },
-			-- 	},
-			-- },
 		},
   -- stylua: ignore
   keys = {
