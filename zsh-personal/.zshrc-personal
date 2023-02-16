@@ -3,6 +3,8 @@
 
 export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin:$HOME/work/experimentation/venv/bin
 
+export TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache
+
 # plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 
 # reporting tools - install when not installed
@@ -33,6 +35,7 @@ alias tf='terraform'
 alias k='kubectl'
 alias kctx='kubie ctx'
 alias kns='kubie ns'
+alias h='helm'
 
 # lazygit
 alias lg='lazygit'

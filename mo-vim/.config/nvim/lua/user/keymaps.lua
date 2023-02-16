@@ -150,3 +150,7 @@ keymap("n", "<leader>lf", "<cmd>lua vim.lsp.buf.format{ async = true }<cr>", opt
 --keymap("n", "<leader>ft", function() Util.float_term(nil, { cwd = Util.get_root() }) end, { desc = "Terminal (ro
 --keymap("n", "<leader>fT", function() Util.float_term() end, { desc = "Terminal (cwd)" })
 --keymap("t", "<esc><esc>", "<c-\\><c-n>", {desc = "Enter Normal Mode"})
+
+keymap("n", "<leader>ds", ":!dcp ls<CR>", {silent = true, desc = "List DCP stacks"})
+keymap("n", "<leader>dp", ":!dcp plan -e prd -s stack -t tenant ", {silent = false, desc = "plan DCP"})
+keymap("n", "<leader>da", ":!dcp apply -e prd -s stack -t tenant", {silent = false, desc = "apply DCP"})
