@@ -9,7 +9,7 @@ export TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache
 
 # reporting tools - install when not installed
 if [[ ! $(env | grep tmux 2>&1) ]]; then
-ufetch-arco | lolcat
+    ufetch-arco | lolcat
     # neofetch
 fi
 
@@ -42,7 +42,7 @@ alias lg='lazygit'
 
 #history
 source /usr/share/doc/mcfly/mcfly.zsh
-export MCFLY_FUZZY=2 
+export MCFLY_FUZZY=2
 export MCFLY_RESULTS=60
 #export MCFLY_INTERFACE_VIEW=BOTTOM
 
@@ -67,3 +67,34 @@ alias doco="docker-compose"
 alias git-brach-fzf='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'
 
 # xinput set-prop "Kensington USB Orbit" "libinput Button Scrolling Button" 3
+
+# my functions
+branches () {
+    BRANCH=$(git worktree list | awk '{print $1}' | fzf --cycle --preview 'cd {1}; git show --color=always')
+    RELATIVE_PATH=$(realpath --relative-to=${BRANCH} ${PWD} | cut -f 3- -d '/')
+    DESTINATION=${BRANCH}/${RELATIVE_PATH}
+    cd ${DESTINATION}
+}
+
+worktree () {
+    BRANCH=$1
+    if [ -z "$BRANCH" ]; then
+        echo "Usage: worktree.sh <branch>"
+        echo "Example: worktree.sh master"
+        echo "this will create a new branch called master"
+        echo "and create a new worktree for it"
+        exit 1
+    fi
+    BRANCH_PATH=$(echo "$BRANCH" | tr '/' _)
+    echo "Branch path: $BRANCH_PATH"
+
+    if [ -d "$BRANCH_PATH" ]; then
+        echo "Branch $BRANCH already exists"
+        exit 1
+    fi
+
+    echo "git worktree add -b $BRANCH $BRANCH_PATH"
+    git worktree add -b "$BRANCH" "$BRANCH_PATH"
+
+    cd "$BRANCH_PATH" || exit 1
+}
