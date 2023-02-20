@@ -19,10 +19,10 @@ null_ls.setup {
       extra_args = { "--no-semi", "--single-quote", "--jsx-single-quote" },
     },
     -- python
-    formatting.black.with { extra_args = { "--fast" } },
+    -- formatting.black.with { extra_args = { "--fast" } },
     formatting.isort,
-    formatting.autoflake,
-    diagnostics.flake8,
+    -- formatting.autoflake,
+    -- diagnostics.flake8,
     diagnostics.yamllint,
     diagnostics.jsonlint,
     -- diagnostics.mypy,

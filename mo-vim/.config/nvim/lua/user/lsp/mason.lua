@@ -3,7 +3,7 @@ local servers = {
 	-- "cssls",
 	-- "html",
 	-- "tsserver",
-	"pyright",
+	-- "pyright",
 	"bashls",
 	"jsonls",
 	"yamlls",
@@ -24,7 +24,7 @@ local servers = {
   -- "pyre", -- python
   -- "sourcery", -- python
   -- "pylsp", -- python
-  -- "ruff_lsp", -- python
+  "ruff_lsp", -- python
   -- "ruby_ls", -- ruby
   -- "solargraph", -- ruby
   -- "taplo", -- toml
