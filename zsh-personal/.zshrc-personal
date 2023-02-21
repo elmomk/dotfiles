@@ -85,11 +85,27 @@ enter () {
 
 
 # worktrees
-branches () {
+bra () {
     BRANCH=$(git worktree list | awk '{print $1}' | fzf --cycle --preview 'cd {1}; git show --color=always')
-    RELATIVE_PATH=$(realpath --relative-to=${BRANCH} ${PWD} | cut -f 3- -d '/')
-    DESTINATION=${BRANCH}/${RELATIVE_PATH}
-    cd ${DESTINATION}
+    echo "Branch: $BRANCH"
+    # TODO: fix when root of repo is selected
+    # if BRANCH is not empty, cd to DESTINATION
+    if [[ -n "$BRANCH" ]]; then
+        RELATIVE_PATH=$(realpath --relative-to=${BRANCH} ${PWD} | cut -f 3- -d '/')
+        echo "Relative path: $RELATIVE_PATH"
+        # if relative path equals .. then DESTINATION is BRANCH else DESTINATION is BRANCH/RELATIVE_PATH
+        if [[ "$RELATIVE_PATH" == ".." ]]; then
+            DESTINATION=${BRANCH}
+        else
+            DESTINATION=${BRANCH}/${RELATIVE_PATH}
+        fi
+        # DESTINATION=${BRANCH}/${RELATIVE_PATH}
+        echo "cd $DESTINATION"
+        cd ${DESTINATION}
+    else
+        echo "No branch selected"
+    fi
+    # cd ${DESTINATION}
 }
 
 worktree () {
