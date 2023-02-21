@@ -74,7 +74,9 @@ alias git-brach-fzf='git branch --sort=-committerdate | fzf --header "checkout r
 enter () {
     if [[ $(distrobox list |grep $(date +%Y%m) 2> /dev/null) ]];
     then
-        distrobox enter $(distrobox list|grep $(date +%Y%m) 2> /dev/null | awk '{print $3}')
+        DISTROBOX=$(distrobox list|grep $(date +%Y%m) 2> /dev/null | awk '{print $3}')
+        echo "entering distrobox $DISTROBOX"
+        distrobox enter "$DISTROBOX"
     else
         echo "create a new distro"
         newdistro
