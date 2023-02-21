@@ -69,6 +69,20 @@ alias git-brach-fzf='git branch --sort=-committerdate | fzf --header "checkout r
 # xinput set-prop "Kensington USB Orbit" "libinput Button Scrolling Button" 3
 
 # my functions
+# distrobox
+
+enter () {
+    if [[ $(distrobox list |grep $(date +%Y%m) 2> /dev/null) ]];
+    then
+        distrobox enter $(distrobox list|grep $(date +%Y%m) 2> /dev/null | awk '{print $3}')
+    else
+        echo "create a new distro"
+        newdistro
+    fi
+}
+
+
+# worktrees
 branches () {
     BRANCH=$(git worktree list | awk '{print $1}' | fzf --cycle --preview 'cd {1}; git show --color=always')
     RELATIVE_PATH=$(realpath --relative-to=${BRANCH} ${PWD} | cut -f 3- -d '/')
