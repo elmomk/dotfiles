@@ -115,18 +115,30 @@ worktree () {
         echo "Example: worktree.sh master"
         echo "this will create a new branch called master"
         echo "and create a new worktree for it"
-        exit 1
     fi
     BRANCH_PATH=$(echo "$BRANCH" | tr '/' _)
     echo "Branch path: $BRANCH_PATH"
 
     if [ -d "$BRANCH_PATH" ]; then
         echo "Branch $BRANCH already exists"
-        exit 1
     fi
 
     echo "git worktree add -b $BRANCH $BRANCH_PATH"
     git worktree add -b "$BRANCH" "$BRANCH_PATH"
 
-    cd "$BRANCH_PATH" || exit 1
+    cd "$BRANCH_PATH" || echo "Could not cd to $BRANCH_PATH"
+}
+
+lnconfig () {
+
+    echo "ln -s /home/sbartholomees/work/dcp/config $PWD/dcp-config"
+    "Are you sure? [y/N] "
+    read -r  response
+    if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
+    then
+        ln -s /home/sbartholomees/work/dcp/config $PWD/dcp-config
+    else
+        echo "Aborted"
+    fi
+    # ln -s /home/sbartholomees/work/dcp/config $PWD/dcp-config
 }
