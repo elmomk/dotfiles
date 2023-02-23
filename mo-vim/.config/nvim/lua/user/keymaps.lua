@@ -132,6 +132,7 @@ keymap("n", "<leader>fh", ":Telescope help_tags<CR>", opts)
 -- bufferline
 keymap("n", "<leader>b", ":BufferLinePick<CR>", opts)
 keymap("n", "<leader>B", ":BufferLinePickClose<CR>", opts)
+keymap("n", "<leader>r", ":registers<CR>", opts)
 -- use gt and gT to jump between recent buffers 
 -- Glow
 keymap("n", "<leader>g", ":Glow<CR>", opts)
