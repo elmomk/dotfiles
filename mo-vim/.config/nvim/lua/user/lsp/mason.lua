@@ -18,7 +18,7 @@ local servers = {
   "dockerls",
   "golangci_lint_ls",
   "gopls",
-  "remark_ls",
+  -- "remark_ls",
   "zk", -- markdown
   -- "jedi_language_server", -- python
   -- "pyre", -- python
