@@ -45,9 +45,11 @@ local plugins = {
 	{ "lukas-reineke/indent-blankline.nvim" },
 	{
 		"goolord/alpha-nvim",
-		-- config = function()
-		-- 	require("alpha").setup(require("user.alpha"))
-		-- 	-- require("alpha").setup()
+  --   opts = function ()
+  --     return require "plugins.config.alpha"
+  --   end,
+		-- config = function(_, opt)
+		-- 	require("alpha").setup(opt)
 		-- end,
 	},
 
