@@ -18,10 +18,20 @@ local plugins = {
 			return require("plugins.config.autopairs")
 		end,
 	}, -- Autopairs, integrates with both cmp and treesitter
-	{ "numToStr/Comment.nvim" },
+	{
+		"numToStr/Comment.nvim",
+		opts = function()
+			return require("plugins.config.comment")
+		end,
+	},
 	-- { "JoosepAlviste/nvim-ts-context-commentstring" },
 	-- { "kyazdani42/nvim-web-devicons" },
-	{ "kyazdani42/nvim-tree.lua" },
+	{
+		"kyazdani42/nvim-tree.lua",
+		-- opts = function()
+		-- 	return require("plugins.config.nvim-tree")
+		-- end,
+	},
 	{
 		"nvim-neo-tree/neo-tree.nvim",
 		dependencies = {
@@ -29,12 +39,31 @@ local plugins = {
 			{ "MunifTanjim/nui.nvim" },
 		},
 	},
-	{ "akinsho/bufferline.nvim" },
+	{
+		"akinsho/bufferline.nvim",
+		-- lazy = false,
+		-- opts = function()
+		--   return require("plugins.config.bufferline")
+		-- end,
+	},
 	-- close buffers
 	{ "moll/vim-bbye" },
 	{ "nvim-lualine/lualine.nvim" },
-	{ "akinsho/toggleterm.nvim" },
-	{ "ahmedkhalf/project.nvim" },
+	{
+		"akinsho/toggleterm.nvim",
+		opts = function()
+			return require("plugins.config.toggleterm")
+		end,
+	},
+	{
+		"ahmedkhalf/project.nvim",
+		opt = function()
+			return require("plugins.config.project")
+		end,
+		config = function(_, opt)
+			require("project_nvim").setup(opt)
+		end,
+	},
 	{
 		"lewis6991/impatient.nvim",
 		config = function()
@@ -68,9 +97,9 @@ local plugins = {
 	-- The completion plugin
 	{
 		"hrsh7th/nvim-cmp",
-    opts = function()
-      return require("plugins.config.cmp")
-    end,
+		opts = function()
+			return require("plugins.config.cmp")
+		end,
 		dependencies = {
 			{ "hrsh7th/cmp-buffer" }, -- buffer completions
 			{ "hrsh7th/cmp-path" }, -- path completions
@@ -80,7 +109,12 @@ local plugins = {
 		},
 	},
 
-	{ "L3MON4D3/LuaSnip" }, --snippet engine
+	{
+		"L3MON4D3/LuaSnip",
+		opts = function()
+			return require("plugins.config.snippets")
+		end,
+	}, --snippet engine
 	{ "rafamadriz/friendly-snippets" }, -- a bunch of snippets to use
 
 	{ "williamboman/nvim-lsp-installer" }, -- simple to use language server installer
@@ -88,7 +122,12 @@ local plugins = {
 	{ "williamboman/mason.nvim" },
 	{ "williamboman/mason-lspconfig.nvim" },
 	{ "jose-elias-alvarez/null-ls.nvim" }, -- for formatters and linters
-	{ "RRethy/vim-illuminate" },
+	{
+		"RRethy/vim-illuminate",
+		-- opts = function()
+		-- 	return require("plugins.config.illuminate")
+		-- end,
+	},
 	{
 		"github/copilot.vim",
 		config = function()
@@ -98,6 +137,9 @@ local plugins = {
 
 	{
 		"nvim-telescope/telescope.nvim",
+		opts = function()
+			return require("plugins.config.telescope")
+		end,
 		dependencies = {
 			{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
 			{ "nvim-telescope/telescope-project.nvim" },
@@ -112,6 +154,9 @@ local plugins = {
 
 	{
 		"nvim-treesitter/nvim-treesitter",
+		opts = function()
+			return require("plugins.config.treesitter")
+		end,
 		build = ":TSUpdate",
 		dependencies = {
 			{ "nvim-treesitter/playground" },
@@ -127,19 +172,29 @@ local plugins = {
 		--     { "<leader>q",  require("harpoon.ui").toggle_quick_menu, silent = false,         desc = "toggle harpoon quick menu" },
 		--   }
 	},
-	{ "folke/zen-mode.nvim" },
+	{
+		"folke/zen-mode.nvim",
+		opts = function()
+			return require("plugins.config.zen")
+		end,
+	},
 	{ "ThePrimeagen/git-worktree.nvim" },
 	-- { "ThePrimeagen/refactoring.nvim" },
 	-- { "ThePrimeagen/vim-be-good" },
 
 	{
 		"lewis6991/gitsigns.nvim",
+		lazy = false,
 		opts = function()
 			return require("plugins.config.gitsigns")
 		end,
 	},
 
-	{ "ggandor/leap.nvim" },
+	{ "ggandor/leap.nvim",
+  config = function()
+    require("leap").add_default_mappings()
+  end
+  },
 	-- { "folke/neoconf.nvim" }
 	{ "LazyVim/LazyVim" },
 	{ "ggandor/leap.nvim" },

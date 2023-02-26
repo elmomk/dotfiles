@@ -1,9 +1,9 @@
-local status_ok, gitsigns = pcall(require, "gitsigns")
-if not status_ok then
-	return
-end
+-- local status_ok, gitsigns = pcall(require, "gitsigns")
+-- if not status_ok then
+-- 	return
+-- end
 
-gitsigns.setup({
+options = {
 	signs = {
 		add = { hl = "GitSignsAdd", text = "加", numhl = "GitSignsAddNr", linehl = "GitSignsAddLn" },
 		change = { hl = "GitSignsChange", text = "改", numhl = "GitSignsChangeNr", linehl = "GitSignsChangeLn" },
@@ -33,4 +33,6 @@ gitsigns.setup({
 		row = 0,
 		col = 1,
 	},
-})
+}
+
+return options

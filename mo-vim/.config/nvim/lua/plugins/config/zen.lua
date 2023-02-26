@@ -1,4 +1,4 @@
-require("zen-mode").setup {
+options = {
   window = {
     backdrop = 0.95, -- shade the backdrop of the Zen window. Set to 1 to keep the same as Normal
     width = 120, -- width of the Zen window
@@ -17,3 +17,4 @@ require("zen-mode").setup {
   --   },
 },
 }
+return options
