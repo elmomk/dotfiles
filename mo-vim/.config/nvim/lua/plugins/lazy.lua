@@ -12,7 +12,12 @@ local plugins = {
 	{ "folke/lazy.nvim" },
 	{ "folke/trouble.nvim" }, -- enables lsp trouble shooting
 	{ "ellisonleao/glow.nvim", config = true, cmd = "Glow" }, -- show markdown files
-	{ "windwp/nvim-autopairs" }, -- Autopairs, integrates with both cmp and treesitter
+	{
+		"windwp/nvim-autopairs",
+		opts = function()
+			return require("plugins.config.autopairs")
+		end,
+	}, -- Autopairs, integrates with both cmp and treesitter
 	{ "numToStr/Comment.nvim" },
 	-- { "JoosepAlviste/nvim-ts-context-commentstring" },
 	-- { "kyazdani42/nvim-web-devicons" },
@@ -30,16 +35,21 @@ local plugins = {
 	{ "nvim-lualine/lualine.nvim" },
 	{ "akinsho/toggleterm.nvim" },
 	{ "ahmedkhalf/project.nvim" },
-	{ "lewis6991/impatient.nvim" },
+	{
+		"lewis6991/impatient.nvim",
+		config = function()
+			require("impatient").enable_profile()
+		end,
+	},
 	{ "lukas-reineke/indent-blankline.nvim" },
 	{
 		"goolord/alpha-nvim",
-		  opts = function ()
-		    return require "plugins.alpha"
-		  end,
-		config = function(_, opt)
-			require("alpha").setup(opt)
+		opts = function()
+			return require("plugins.config.alpha")
 		end,
+		-- config = function(_, opt)
+		-- 	require("alpha").setup(opt)
+		-- end,
 	},
 
 	--	colorschemes
@@ -48,16 +58,19 @@ local plugins = {
 	{
 		"rebelot/kanagawa.nvim",
 		opts = function()
-			return require("plugins.colorscheme")
+			return require("plugins.config.colorscheme")
 		end,
-		config = function(_, opt)
-			require("kanagawa").setup(opt)
+		config = function(_)
+			require("kanagawa").setup({ transparent = false })
 		end,
 	},
 
 	-- The completion plugin
 	{
 		"hrsh7th/nvim-cmp",
+    opts = function()
+      return require("plugins.config.cmp")
+    end,
 		dependencies = {
 			{ "hrsh7th/cmp-buffer" }, -- buffer completions
 			{ "hrsh7th/cmp-path" }, -- path completions
@@ -76,15 +89,20 @@ local plugins = {
 	{ "williamboman/mason-lspconfig.nvim" },
 	{ "jose-elias-alvarez/null-ls.nvim" }, -- for formatters and linters
 	{ "RRethy/vim-illuminate" },
-	{ "github/copilot.vim" },
+	{
+		"github/copilot.vim",
+		config = function()
+			return require("plugins.config.copilot")
+		end,
+	},
 
-	{ "nvim-lua/plenary.nvim" },
 	{
 		"nvim-telescope/telescope.nvim",
 		dependencies = {
 			{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
 			{ "nvim-telescope/telescope-project.nvim" },
 			{ "nvim-telescope/telescope-file-browser.nvim" },
+			{ "nvim-lua/plenary.nvim" },
 		},
 	},
 	{ "jremmen/vim-ripgrep" },
@@ -102,13 +120,24 @@ local plugins = {
 
 	{ "mbbill/undotree" },
 	-- { "tpope/vim-fugitive" },
-	{ "ThePrimeagen/harpoon" },
+	{
+		"ThePrimeagen/harpoon",
+		-- keys = {
+		--     { "<leader>a",  require("harpoon.mark").add_file,        silent = false,         desc = "add file to harpoon" },
+		--     { "<leader>q",  require("harpoon.ui").toggle_quick_menu, silent = false,         desc = "toggle harpoon quick menu" },
+		--   }
+	},
 	{ "folke/zen-mode.nvim" },
 	{ "ThePrimeagen/git-worktree.nvim" },
 	-- { "ThePrimeagen/refactoring.nvim" },
 	-- { "ThePrimeagen/vim-be-good" },
 
-	{ "lewis6991/gitsigns.nvim" },
+	{
+		"lewis6991/gitsigns.nvim",
+		opts = function()
+			return require("plugins.config.gitsigns")
+		end,
+	},
 
 	{ "ggandor/leap.nvim" },
 	-- { "folke/neoconf.nvim" }

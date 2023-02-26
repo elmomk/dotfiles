@@ -1,5 +1,5 @@
 local servers = {
-	"sumneko_lua",
+	"lua_ls",
 	-- "cssls",
 	-- "html",
 	-- "tsserver",
@@ -11,7 +11,7 @@ local servers = {
 	"tflint",
 	"marksman",
 	"gopls",
-  "staticcheck",
+  -- "staticcheck",
 	"rust_analyzer",
   -- "awk_ls",
   "ansiblels",
