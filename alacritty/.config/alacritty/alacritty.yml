@@ -9,7 +9,8 @@ scrolling:
 
 # Font configuration
 font:
-  size: 12.0
+  size: 14.0
+  # size: 9.0
   normal:
     # Font family
     # Default:

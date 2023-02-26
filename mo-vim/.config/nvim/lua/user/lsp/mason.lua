@@ -1,31 +1,42 @@
 local servers = {
 	"sumneko_lua",
-	"cssls",
-	"html",
-	"tsserver",
-	"pyright",
+	-- "cssls",
+	-- "html",
+	-- "tsserver",
+	-- "pyright",
 	"bashls",
 	"jsonls",
 	"yamlls",
-  -- "terraform_lsp",
-  "terraformls",
-  "tflint",
-  "marksman",
+	"terraformls",
+	"tflint",
+	"marksman",
+	"gopls",
+  "staticcheck",
+	"rust_analyzer",
+  -- "awk_ls",
+  "ansiblels",
+  "dockerls",
+  "golangci_lint_ls",
   "gopls",
-  "rust_analyzer",
-  -- "shellcheck",
-  -- "dockerfile_language_server"
-  -- "rst_check",
-  -- "golangci_lint",
+  -- "remark_ls",
+  "zk", -- markdown
+  -- "jedi_language_server", -- python
+  -- "pyre", -- python
+  -- "sourcery", -- python
+  -- "pylsp", -- python
+  "ruff_lsp", -- python
+  -- "ruby_ls", -- ruby
+  -- "solargraph", -- ruby
+  -- "taplo", -- toml
 }
 
 local settings = {
 	ui = {
 		border = "none",
 		icons = {
-			package_installed = "◍",
-			package_pending = "◍",
-			package_uninstalled = "◍",
+			package_installed = "✓",
+			package_pending = "➜",
+			package_uninstalled = "✗",
 		},
 	},
 	log_level = vim.log.levels.INFO,
