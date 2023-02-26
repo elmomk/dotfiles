@@ -1,17 +1,6 @@
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 local opts = { silent = true }
 
-if not vim.loop.fs_stat(lazypath) then
-	vim.fn.system({
-		"git",
-		"clone",
-		"--filter=blob:none",
-		"https://github.com/folke/lazy.nvim.git",
-		"--branch=stable", -- latest stable release
-		lazypath,
-	})
-end
---
 -- vim.cmd([[
 --   augroup lazy_user_config
 --     autocmd!
@@ -45,18 +34,26 @@ local plugins = {
 	{ "lukas-reineke/indent-blankline.nvim" },
 	{
 		"goolord/alpha-nvim",
-  --   opts = function ()
-  --     return require "plugins.config.alpha"
-  --   end,
-		-- config = function(_, opt)
-		-- 	require("alpha").setup(opt)
-		-- end,
+		  opts = function ()
+		    return require "plugins.alpha"
+		  end,
+		config = function(_, opt)
+			require("alpha").setup(opt)
+		end,
 	},
 
 	--	colorschemes
 	{ "folke/lsp-colors.nvim" },
 	{ "folke/tokyonight.nvim" },
-	{ "rebelot/kanagawa.nvim" },
+	{
+		"rebelot/kanagawa.nvim",
+		opts = function()
+			return require("plugins.colorscheme")
+		end,
+		config = function(_, opt)
+			require("kanagawa").setup(opt)
+		end,
+	},
 
 	-- The completion plugin
 	{
@@ -194,12 +191,12 @@ local plugins = {
 		},
     -- stylua: ignore
     keys = {
-      { "<S-Enter>",   function() require("noice").redirect(vim.fn.getcmdline()) end,                 mode = "c",                 desc = "Redirect" },
-      { "<leader>snl", function() require("noice").cmd("last") end,                                   desc = "Noice Last Message" },
-      { "<leader>snh", function() require("noice").cmd("history") end,                                desc = "Noice History" },
-      { "<leader>sna", function() require("noice").cmd("all") end,                                    desc = "Noice All" },
-      { "<c-f>",       function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end,  silent = true,              expr = true,      desc = "Scroll forward", mode = { "i", "n", "s" } },
-      { "<c-b>",       function() if not require("noice.lsp").scroll( -4) then return "<c-b>" end end, silent = true,             expr = true,      desc = "Scroll forward", mode = { "i", "n", "s" } },
+      { "<S-Enter>",   function() require("noice").redirect(vim.fn.getcmdline()) end,                  mode = "c",                 desc = "Redirect" },
+      { "<leader>snl", function() require("noice").cmd("last") end,                                    desc = "Noice Last Message" },
+      { "<leader>snh", function() require("noice").cmd("history") end,                                 desc = "Noice History" },
+      { "<leader>sna", function() require("noice").cmd("all") end,                                     desc = "Noice All" },
+      { "<c-f>",       function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end,   silent = true,              expr = true,      desc = "Scroll forward", mode = { "i", "n", "s" } },
+      { "<c-b>",       function() if not require("noice.lsp").scroll( -4) then return "<c-b>" end end, silent = true,              expr = true,      desc = "Scroll forward", mode = { "i", "n", "s" } },
     },
 		dependencies = {
 			-- Better `vim.notify()`
@@ -252,6 +249,7 @@ local plugins = {
 	-- makes some plugins dot-repeatable like leap
 	-- { "tpope/vim-repeat", event = "VeryLazy" },
 }
+
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup(plugins, opts)

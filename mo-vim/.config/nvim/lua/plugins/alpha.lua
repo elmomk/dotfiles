@@ -1,8 +1,3 @@
-local status_ok, alpha = pcall(require, "alpha")
-if not status_ok then
-	return
-end
-
 local littledevil = {
 	[[                              .\]],
 	[[                        .\   / _\   .\]],
@@ -962,4 +957,5 @@ dashboard.section.header.opts.hl = "Include"
 dashboard.section.buttons.opts.hl = "Keyword"
 
 dashboard.opts.opts.noautocmd = true
-alpha.setup(dashboard.opts)
+-- alpha.setup(dashboard.opts)
+return dashboard.opts
