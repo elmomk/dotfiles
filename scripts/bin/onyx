@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+IP=$2
+
+case "$1" in
+    k | kill)
+        adb kill-server
+        ;;
+    d | devices)
+        adb devices -l
+        ;;
+    i | ip)
+        adb tcpip 5555
+        ;;
+    c | connect)
+        scrcpy --tcpip
+        ;;
+    s | start)
+        adb connect "${IP}":5555
+        ;;
+    *)
+        echo "Usage: $0 {k|kill|d|devices|i|ip|c|connect|s|start}"
+        echo "  k|kill: kill adb server"
+        echo "  s|start: start adb server: adb connect IP:5555"
+        echo "  i|ip: set adb to listen on tcpip: adb tcpip 5555"
+        echo "  d|devices: list devices"
+        echo "  c|connect: connect to device via tcpip"
+        ;;
+esac
