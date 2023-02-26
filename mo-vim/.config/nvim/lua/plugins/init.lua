@@ -1,5 +1,5 @@
 require "plugins.lazy"
-require "plugins.config.keymaps"
+require "plugins.keymaps"
 require "plugins.config.bufferline"
 require "plugins.config.nvim-tree"
 require "plugins.config.lualine"
