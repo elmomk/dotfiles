@@ -10,10 +10,3 @@ project.setup({
 	-- patterns used to detect root dir, when **"pattern"** is in detection_methods
 	patterns = { ".git", "Makefile", "package.json", "main.go", "Cargo.toml" },
 })
-
-local tele_status_ok, telescope = pcall(require, "telescope")
-if not tele_status_ok then
-	return
-end
-
-telescope.load_extension('projects')
