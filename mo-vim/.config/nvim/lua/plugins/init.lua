@@ -1,0 +1,8 @@
+require "plugins.lazy"
+require "plugins.config.keymaps"
+require "plugins.config.bufferline"
+require "plugins.config.nvim-tree"
+require "plugins.config.lualine"
+require "plugins.config.illuminate"
+require "plugins.lsp"
+require "plugins.config.harpoon"

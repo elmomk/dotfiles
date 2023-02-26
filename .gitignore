@@ -2,7 +2,7 @@ Xresources
 flags
 .zcompdump
 .zhistory
-plugins
+# plugins
 plugin
 *packer_compiled*
 snippets

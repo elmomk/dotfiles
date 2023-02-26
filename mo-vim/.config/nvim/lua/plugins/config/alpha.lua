@@ -1,8 +1,3 @@
-local status_ok, alpha = pcall(require, "alpha")
-if not status_ok then
-	return
-end
-
 local littledevil = {
 	[[                              .\]],
 	[[                        .\   / _\   .\]],
@@ -944,6 +939,16 @@ dashboard.section.buttons.val = {
 local function footer()
 	return "Created by Mo\nBased on Lazygit\nand chrisatmachine.com\n"
 end
+-- vim.api.nvim_create_autocmd("User", {
+--   -- pattern = "LazyVimStarted",
+--   callback = function()
+--     local stats = require("lazy").stats()
+--     local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
+--     local pad_footer = string.rep(" ", 8)
+--     dashboard.config.footer.val = pad_footer .. "⚡ Neovim loaded " .. stats.count .. " plugins in " .. ms .. "ms"
+--     pcall(dashboard.refresh)
+--   end,
+-- })
 
 dashboard.section.footer.val = footer()
 
@@ -952,4 +957,5 @@ dashboard.section.header.opts.hl = "Include"
 dashboard.section.buttons.opts.hl = "Keyword"
 
 dashboard.opts.opts.noautocmd = true
-alpha.setup(dashboard.opts)
+-- alpha.setup(dashboard.opts)
+return dashboard.opts
