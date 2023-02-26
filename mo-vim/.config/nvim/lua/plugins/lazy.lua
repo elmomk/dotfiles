@@ -1,5 +1,4 @@
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-local opts = { silent = true }
 
 -- vim.cmd([[
 --   augroup lazy_user_config
@@ -190,11 +189,12 @@ local plugins = {
 		end,
 	},
 
-	{ "ggandor/leap.nvim",
-  config = function()
-    require("leap").add_default_mappings()
-  end
-  },
+	{
+		"ggandor/leap.nvim",
+		config = function()
+			require("leap").add_default_mappings()
+		end,
+	},
 	-- { "folke/neoconf.nvim" }
 	{ "LazyVim/LazyVim" },
 	{ "ggandor/leap.nvim" },
@@ -336,4 +336,4 @@ local plugins = {
 
 vim.opt.rtp:prepend(lazypath)
 
-require("lazy").setup(plugins, opts)
+require("lazy").setup(plugins, { silent = true })
