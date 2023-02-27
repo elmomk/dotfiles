@@ -33,9 +33,9 @@ local plugins = {
 	},
 	{
 		"nvim-neo-tree/neo-tree.nvim",
-    config = function()
-      require("plugins.config.neotree")
-    end,
+    -- config = function()
+    --   require("plugins.config.neotree")
+    -- end,
 		dependencies = {
 			{ "kyazdani42/nvim-web-devicons" },
 			{ "MunifTanjim/nui.nvim" },
