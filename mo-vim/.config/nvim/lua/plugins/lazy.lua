@@ -33,6 +33,9 @@ local plugins = {
 	},
 	{
 		"nvim-neo-tree/neo-tree.nvim",
+    config = function()
+      require("plugins.config.neotree")
+    end,
 		dependencies = {
 			{ "kyazdani42/nvim-web-devicons" },
 			{ "MunifTanjim/nui.nvim" },
@@ -196,7 +199,7 @@ local plugins = {
 		end,
 	},
 	-- { "folke/neoconf.nvim" }
-	{ "LazyVim/LazyVim" },
+	-- { "LazyVim/LazyVim" },
 	{ "ggandor/leap.nvim" },
 	-- { "folke/which-key.nvim" },
 	-- todo comments
