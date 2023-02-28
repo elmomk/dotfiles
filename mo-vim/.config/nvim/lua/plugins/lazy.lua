@@ -33,9 +33,18 @@ local plugins = {
 	},
 	{
 		"nvim-neo-tree/neo-tree.nvim",
+		-- config = function()
+		--   require("plugins.config.neotree")
+		-- end,
 		dependencies = {
 			{ "kyazdani42/nvim-web-devicons" },
 			{ "MunifTanjim/nui.nvim" },
+			{
+				"s1n7ax/nvim-window-picker",
+				config = function()
+					require("window-picker").setup()
+				end,
+			},
 		},
 	},
 	{
@@ -196,7 +205,7 @@ local plugins = {
 		end,
 	},
 	-- { "folke/neoconf.nvim" }
-	{ "LazyVim/LazyVim" },
+	-- { "LazyVim/LazyVim" },
 	{ "ggandor/leap.nvim" },
 	-- { "folke/which-key.nvim" },
 	-- todo comments
@@ -326,7 +335,7 @@ local plugins = {
     keys = {
       -- { "<leader>qs", function() require("persistence").load() end,                desc = "Restore Session" },
       -- { "<leader>ql", function() require("persistence").load({ last = true }) end, desc = "Restore Last Session" },
-      { "<leader>qd", function() require("persistence").stop() end,                desc = "Don't Save Current Session" },
+      { "<leader>qd", function() require("persistence").stop() end, desc = "Don't Save Current Session" },
     },
 	},
 
