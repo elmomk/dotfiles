@@ -908,8 +908,8 @@ function Switch_dcp_ascii_art()
   local dcp_ascii_art = dcp_ascii_arts[math.random(#dcp_ascii_arts)]
   dashboard.section.header.val = dcp_ascii_art
 end
-Switch_ascii_art()
--- dashboard.section.header.val = ren
+-- Switch_ascii_art()
+dashboard.section.header.val = ren
     -- -- restore the session for the current directory
     -- vim.api.nvim_set_keymap("n", "<leader>qs", [[<cmd>lua require("persistence").load()<cr>]], {})
     -- 
