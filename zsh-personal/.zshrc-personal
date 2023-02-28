@@ -130,15 +130,18 @@ worktree () {
 }
 
 lnconfig () {
-
-    echo "ln -s /home/sbartholomees/work/dcp/config $PWD/dcp-config"
+    echo "ln -s $HOME/work/dcp/config $PWD/dcp-config"
+    echo "cp $HOME/.runcli/config $PWD/.runrsenv"
+    echo "current status: "
+    ls -halt | grep -E "dcp-config|runrsenv"
     "Are you sure? [y/N] "
     read -r  response
     if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
     then
-        ln -s /home/sbartholomees/work/dcp/config $PWD/dcp-config
+        ln -s $HOME/work/dcp/config $PWD/dcp-config
+        cp $HOME/.runcli/config $PWD/.runrsenv
+        vi $PWD/.runrsenv
     else
         echo "Aborted"
     fi
-    # ln -s /home/sbartholomees/work/dcp/config $PWD/dcp-config
 }
