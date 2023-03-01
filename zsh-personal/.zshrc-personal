@@ -78,7 +78,7 @@ enter () {
         echo "entering distrobox $DISTROBOX"
         distrobox enter "$DISTROBOX"
     else
-        echo "create a new distro"
+        echo "create a new monthly toolbox"
         newdistro
     fi
 }
