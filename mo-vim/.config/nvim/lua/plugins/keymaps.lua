@@ -157,3 +157,9 @@ keymap("n", "<leader>lf", "<cmd>lua vim.lsp.buf.format{ async = true }<cr>", opt
 keymap("n", "<leader>ds", ":!dcp ls<CR>", { silent = true, desc = "List DCP stacks" })
 keymap("n", "<leader>dp", ":!dcp plan -e prd -s stack -t tenant ", { silent = false, desc = "plan DCP" })
 keymap("n", "<leader>da", ":!dcp apply -e prd -s stack -t tenant", { silent = false, desc = "apply DCP" })
+
+keymap("n", "<leader>gpd", ":lua require('goto-preview').goto_preview_definition()<cr>", { silent = true })
+keymap("n", "<leader>gpt", ":lua require('goto-preview').goto_preview_type_definition()<CR>", { silent = true })
+keymap("n", "<leader>gpi", ":lua require('goto-preview').goto_preview_implementation()<CR>", { silent = true })
+keymap("n", "<leader>gp", ":lua require('goto-preview').close_all_win()<cr>", { silent = true })
+keymap("n", "<leader>gpr", ":lua require('goto-preview').goto_preview_references()<cr>", { silent = true })

@@ -102,16 +102,33 @@ local plugins = {
 		end,
 	},
 
-{"someone-stole-my-name/yaml-companion.nvim",
-dependencies = {
-            { "neovim/nvim-lspconfig" },
-      { "nvim-lua/plenary.nvim" },
-      { "nvim-telescope/telescope.nvim" },
-    },
-    config = function()
-      require("telescope").load_extension("yaml_schema")
-    end,
-  },
+	{
+		"someone-stole-my-name/yaml-companion.nvim",
+		dependencies = {
+			{ "neovim/nvim-lspconfig" },
+			{ "nvim-lua/plenary.nvim" },
+			{ "nvim-telescope/telescope.nvim" },
+		},
+		config = function()
+			require("telescope").load_extension("yaml_schema")
+		end,
+	},
+	{
+		"rmagatti/goto-preview",
+		config = function()
+			require("goto-preview").setup()
+		end,
+	},
+	-- testing
+	-- {"ray-x/navigator.lua",
+	--   dependencies = {
+	--     { "ray-x/guihua.lua", run = "cd lua/fzy && make" },
+	--     { "neovim/nvim-lspconfig" },
+	--   },
+	--   config = function()
+	--     require("navigator").setup()
+	--   end,
+	-- },
 	-- The completion plugin
 	{
 		"hrsh7th/nvim-cmp",
