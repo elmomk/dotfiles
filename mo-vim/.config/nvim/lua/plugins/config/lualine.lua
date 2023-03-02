@@ -13,7 +13,7 @@ local diagnostics = {
 	sections = { "error", "warn" },
 	symbols = { error = " ", warn = " " },
 	colored = true,
-	always_visible = false,
+	always_visible = true,
 }
 
 local diff = {
@@ -44,6 +44,26 @@ local macro = {
 	color = { fg = "#ff9e64" },
 }
 
+local lsp = {
+	function()
+		local msg = "No Active Lsp"
+		local buf_ft = vim.api.nvim_buf_get_option(0, "filetype")
+		local clients = vim.lsp.get_active_clients()
+		if next(clients) == nil then
+			return msg
+		end
+		for _, client in ipairs(clients) do
+			local filetypes = client.config.filetypes
+			if filetypes and vim.fn.index(filetypes, buf_ft) ~= -1 then
+				return client.name
+			end
+		end
+		return msg
+	end,
+  icon = " ",
+  color = { fg = "#7ebae4", gui = "bold" },
+}
+
 lualine.setup({
 	options = {
 		globalstatus = true,
@@ -57,7 +77,7 @@ lualine.setup({
 	sections = {
 		lualine_a = { filetype, "progress" },
 		lualine_b = { "mode", "branch" },
-		lualine_c = { diagnostics },
+		lualine_c = { lsp, diagnostics },
 		lualine_x = { macro, diff },
 		lualine_y = { spaces, "encoding" },
 		lualine_z = { location },
