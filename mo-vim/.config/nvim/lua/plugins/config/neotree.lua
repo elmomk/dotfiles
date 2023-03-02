@@ -1,13 +1,13 @@
 -- return {
 -- 	function()
 		-- Unless you are still migrating, remove the deprecated commands from v1.x
-		vim.cmd([[ let g:neo_tree_remove_legacy_commands = 1 ]])
+		-- vim.cmd([[ let g:neo_tree_remove_legacy_commands = 1 ]])
 
 		-- If you want icons for diagnostic errors, you'll need to define them somewhere:
-		vim.fn.sign_define("DiagnosticSignError", { text = " ", texthl = "DiagnosticSignError" })
-		vim.fn.sign_define("DiagnosticSignWarn", { text = " ", texthl = "DiagnosticSignWarn" })
-		vim.fn.sign_define("DiagnosticSignInfo", { text = " ", texthl = "DiagnosticSignInfo" })
-		vim.fn.sign_define("DiagnosticSignHint", { text = "", texthl = "DiagnosticSignHint" })
+		-- vim.fn.sign_define("DiagnosticSignError", { text = " ", texthl = "DiagnosticSignError" })
+		-- vim.fn.sign_define("DiagnosticSignWarn", { text = " ", texthl = "DiagnosticSignWarn" })
+		-- vim.fn.sign_define("DiagnosticSignInfo", { text = " ", texthl = "DiagnosticSignInfo" })
+		-- vim.fn.sign_define("DiagnosticSignHint", { text = "", texthl = "DiagnosticSignHint" })
 		-- NOTE: this is changed from v1.x, which used the old style of highlight groups
 		-- in the form "LspDiagnosticsSignWarning"
 
@@ -67,19 +67,13 @@
 						added = "", -- or "✚", but this is redundant info if you use git_status_colors on the name
 						modified = "", -- or "", but this is redundant info if you use git_status_colors on the name
 						deleted = "✖", -- this can only be used in the git_status source
-						-- renamed   = "",-- this can only be used in the git_status source
 						-- Status type
 						unstaged = "",
 						staged = "S",
 						unmerged = "",
 						renamed = "➜",
 						untracked = "U",
-						-- deleted = "",
 						ignored = "◌",
-						-- untracked = "",
-						-- ignored   = "",
-						-- unstaged  = "",
-						-- staged    = "",
 						conflict = "",
 					},
 				},
@@ -101,10 +95,10 @@
 					["<esc>"] = "revert_preview",
 					["P"] = { "toggle_preview", config = { use_float = true } },
 					["l"] = "focus_preview",
-					["S"] = "open_split",
-					["s"] = "open_vsplit",
-					-- ["S"] = "split_with_window_picker",
-					-- ["s"] = "vsplit_with_window_picker",
+					-- ["S"] = "open_split",
+					-- ["s"] = "open_vsplit",
+					["S"] = "split_with_window_picker",
+					["s"] = "vsplit_with_window_picker",
 					["t"] = "open_tabnew",
 					-- ["<cr>"] = "open_drop",
 					-- ["t"] = "open_tab_drop",
@@ -113,7 +107,7 @@
 					["C"] = "close_node",
 					-- ['C'] = 'close_all_subnodes',
 					["z"] = "close_all_nodes",
-					--["Z"] = "expand_all_nodes",
+					["Z"] = "expand_all_nodes",
 					["a"] = {
 						"add",
 						-- this command supports BASH style brace expansion ("x{a,b,c}" -> xa,xb,xc). see `:h neo-tree-file-actions` for details
@@ -168,7 +162,7 @@
 						--".null-ls_*",
 					},
 				},
-				follow_current_file = false, -- This will find and focus the file in the active buffer every
+				follow_current_file = true, -- This will find and focus the file in the active buffer every
 				-- time the current file is changed while the tree is open.
 				group_empty_dirs = false, -- when true, empty folders will be grouped together
 				hijack_netrw_behavior = "open_default", -- netrw disabled, opening a directory opens neo-tree

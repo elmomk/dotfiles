@@ -10,17 +10,17 @@ end
 local diagnostics = {
 	"diagnostics",
 	sources = { "nvim_diagnostic" },
-	sections = { "error", "warn" },
-	symbols = { error = " ", warn = " " },
+	sections = { "error", "warn", "info", "hint" },
+	symbols = { error = " ", warn = " ", info = " ", hint = " " },
 	colored = true,
 	always_visible = true,
+	update_in_insert = true,
 }
 
 local diff = {
 	"diff",
 	colored = true,
 	symbols = { added = "+ ", modified = " ", removed = " " }, -- changes diff symbols
-	-- symbols = { added = "加了", modified = "改了", removed = "刪了" }, -- changes diff symbols
 	cond = hide_in_width,
 }
 
@@ -46,7 +46,7 @@ local macro = {
 
 local lsp = {
 	function()
-		local msg = "No Active Lsp"
+		local msg = "No Lsp"
 		local buf_ft = vim.api.nvim_buf_get_option(0, "filetype")
 		local clients = vim.lsp.get_active_clients()
 		if next(clients) == nil then
@@ -60,8 +60,8 @@ local lsp = {
 		end
 		return msg
 	end,
-  icon = " ",
-  color = { fg = "#7ebae4", gui = "bold" },
+	icon = " ",
+	color = { fg = "#7ebae4", gui = "bold" },
 }
 
 lualine.setup({
@@ -75,9 +75,9 @@ lualine.setup({
 		always_divide_middle = true,
 	},
 	sections = {
-		lualine_a = { filetype, "progress" },
-		lualine_b = { "mode", "branch" },
-		lualine_c = { lsp, diagnostics },
+		lualine_a = { filetype, "progress", "mode" },
+		lualine_b = { lsp, "branch" },
+		lualine_c = { diagnostics },
 		lualine_x = { macro, diff },
 		lualine_y = { spaces, "encoding" },
 		lualine_z = { location },
