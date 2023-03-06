@@ -137,9 +137,9 @@ local plugins = {
 	-- The completion plugin
 	{
 		"hrsh7th/nvim-cmp",
-		opts = function()
-			return require("plugins.config.cmp")
-		end,
+		-- opts = function()
+		-- 	return require("plugins.config.cmp")
+		-- end,
 		dependencies = {
 			{ "hrsh7th/cmp-buffer" }, -- buffer completions
 			{ "hrsh7th/cmp-path" }, -- path completions
