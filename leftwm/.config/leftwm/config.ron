@@ -57,6 +57,7 @@
     /* (window_name:  "teams.microsoft.com is sharing your screen.", spawn_on_tag: 10), */
     (window_class: "firefox", spawn_on_tag: 3),
     (window_class: "Microsoft-edge", spawn_on_tag: 1),
+    (window_class: "NewsFlashGTK", spawn_on_tag: 10)
     ],
     disable_current_tag_swap: true,
     disable_tile_drag: false,
