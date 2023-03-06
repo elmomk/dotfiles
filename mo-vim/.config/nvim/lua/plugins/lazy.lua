@@ -26,6 +26,11 @@ local plugins = {
 	-- { "JoosepAlviste/nvim-ts-context-commentstring" },
 	-- { "kyazdani42/nvim-web-devicons" },
 	{
+		"cbochs/portal.nvim",
+		-- Ootional dependencies
+		dependencies = { "cbochs/grapple.nvim" },
+	},
+	{
 		"kyazdani42/nvim-tree.lua",
 		-- opts = function()
 		-- 	return require("plugins.config.nvim-tree")
