@@ -5,8 +5,6 @@ export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin:$HOME/work/experimenta
 
 export TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache
 
-# plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
-
 # reporting tools - install when not installed
 if [[ ! $(env | grep tmux 2>&1) ]]; then
     ufetch-arco | lolcat
@@ -53,7 +51,10 @@ alias wttr='echo "checking weather" && curl --connect-timeout 0.1 wttr.in/Tervur
 
 alias tls='tmux list-sessions'
 alias tfz='tmux attach -t `tmux list-sessions | fzf | cut -d: -f1`'
-alias tnow="tmux attach -t `tls | awk -F':' '{print $1}' | head -n1`"
+
+tnow () {
+    tmux attach -t `tls | awk -F':' '{print $1}' | head -n1`
+}
 
 #wttr
 
