@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SESSIONS=$(tmux list-sessions | cut -d: -f1 |fzf --cycle -m --preview-window=right:75%:wrap --preview "tmux capture-pane -ep -t {}" --preview-label="Kill selected session")
+SESSIONS=$(tmux list-sessions | cut -d: -f1 |fzf --cycle -m --preview-window=right:65%:wrap --preview "tmux capture-pane -ep -t {}" --preview-label="Kill selected session")
 
 for SESSION in $SESSIONS; do
     tmux kill-session -t "$SESSION" 
