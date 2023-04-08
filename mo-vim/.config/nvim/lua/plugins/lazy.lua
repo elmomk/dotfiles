@@ -38,9 +38,9 @@ local plugins = {
 	},
 	{
 		"nvim-neo-tree/neo-tree.nvim",
-		-- config = function()
-		--   require("plugins.config.neotree")
-		-- end,
+		config = function()
+			require("plugins.config.neotree")
+		end,
 		dependencies = {
 			{ "kyazdani42/nvim-web-devicons" },
 			{ "MunifTanjim/nui.nvim" },
@@ -169,11 +169,29 @@ local plugins = {
 		-- end,
 	},
 	{
-		"github/copilot.vim",
+		"ExaFunction/codeium.vim",
 		config = function()
-			return require("plugins.config.copilot")
+			-- Change '<C-g>' here to any keycode you like.
+			vim.keymap.set("i", "<C-g>", function()
+				return vim.fn["codeium#Accept"]()
+			end, { expr = true })
+			-- vim.keymap.set("i", "<c-;>", function()
+			-- 	return vim.fn["codeium#CycleCompletions"](1)
+			-- end, { expr = true })
+			-- vim.keymap.set("i", "<c-,>", function()
+			-- 	return vim.fn["codeium#CycleCompletions"](-1)
+			-- end, { expr = true })
+			vim.keymap.set("i", "<c-x>", function()
+				return vim.fn["codeium#Clear"]()
+			end, { expr = true })
 		end,
 	},
+	-- {
+	-- 	"github/copilot.vim",
+	-- 	config = function()
+	-- 		return require("plugins.config.copilot")
+	-- 	end,
+	-- },
 
 	{
 		"nvim-telescope/telescope.nvim",
@@ -204,7 +222,7 @@ local plugins = {
 	},
 
 	{ "mbbill/undotree" },
-	-- { "tpope/vim-fugitive" },
+	{ "tpope/vim-fugitive" },
 	{
 		"ThePrimeagen/harpoon",
 		-- keys = {
@@ -316,12 +334,46 @@ local plugins = {
 		},
     -- stylua: ignore
     keys = {
-      { "<S-Enter>",   function() require("noice").redirect(vim.fn.getcmdline()) end,                  mode = "c",                 desc = "Redirect" },
-      { "<leader>snl", function() require("noice").cmd("last") end,                                    desc = "Noice Last Message" },
-      { "<leader>snh", function() require("noice").cmd("history") end,                                 desc = "Noice History" },
-      { "<leader>sna", function() require("noice").cmd("all") end,                                     desc = "Noice All" },
-      { "<c-f>",       function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end,   silent = true,              expr = true,      desc = "Scroll forward", mode = { "i", "n", "s" } },
-      { "<c-b>",       function() if not require("noice.lsp").scroll( -4) then return "<c-b>" end end, silent = true,              expr = true,      desc = "Scroll forward", mode = { "i", "n", "s" } },
+      {
+        "<S-Enter>",
+        function() require("noice").redirect(vim.fn.getcmdline()) end,
+        mode = "c",
+        desc =
+        "Redirect"
+      },
+      {
+        "<leader>snl",
+        function() require("noice").cmd("last") end,
+        desc =
+        "Noice Last Message"
+      },
+      {
+        "<leader>snh",
+        function() require("noice").cmd("history") end,
+        desc =
+        "Noice History"
+      },
+      { "<leader>sna", function() require("noice").cmd("all") end, desc = "Noice All" },
+      {
+        "<c-f>",
+        function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end,
+        silent = true,
+        expr = true,
+        desc =
+        "Scroll forward",
+        mode = {
+          "i", "n", "s" }
+      },
+      {
+        "<c-b>",
+        function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end,
+        silent = true,
+        expr = true,
+        desc =
+        "Scroll forward",
+        mode = {
+          "i", "n", "s" }
+      },
     },
 		dependencies = {
 			-- Better `vim.notify()`
