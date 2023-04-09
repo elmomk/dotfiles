@@ -96,14 +96,22 @@ local plugins = {
 
 	--	colorschemes
 	{ "folke/lsp-colors.nvim" },
-	{ "folke/tokyonight.nvim" },
+	-- { "folke/tokyonight.nvim" },
+	-- { "catppuccin/nvim", name = "catppuccin",
+	-- 	opts = function()
+	-- 		return require("plugins.config.colorscheme")
+	-- 	end,
+	-- 	config = function(_)
+	-- 		require("catppuccin").setup({ transparent = false })
+	-- 	end,
+	--  },
 	{
 		"rebelot/kanagawa.nvim",
 		opts = function()
 			return require("plugins.config.colorscheme")
 		end,
 		config = function(_)
-			require("kanagawa").setup({ transparent = false })
+			require("kanagawa").setup({ transparent = true })
 		end,
 	},
 
