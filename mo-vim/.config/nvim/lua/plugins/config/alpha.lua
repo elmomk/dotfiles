@@ -856,25 +856,25 @@ function Switch_ascii_art()
 	local ascii_arts = {
 		ren,
 		meng,
-		movim,
-		movim1,
+		-- movim,
+		-- movim1,
 		jiayou,
-		long,
-		bison,
-		bat,
-		monke_noevil,
-		lord_of_the_rings,
-		drseus,
+		-- long,
+		-- bison,
+		-- bat,
+		-- monke_noevil,
+		-- lord_of_the_rings,
+		-- drseus,
 		fractal,
-		castle,
-		angry_dog,
-		dog,
-		super,
+		-- castle,
+		-- angry_dog,
+		-- dog,
+		-- super,
 		unixdevil,
-		linuxrules,
-		redhat,
+		-- linuxrules,
+		-- redhat,
 		yoda,
-		littledevil,
+		-- littledevil,
 	}
 	local dcp_ascii_arts = { dcp, dcp1, dcp2, dcp3, dcp4 }
 	local current_month = tonumber(os.date("%m"))
@@ -909,7 +909,7 @@ function Switch_dcp_ascii_art()
   dashboard.section.header.val = dcp_ascii_art
 end
 Switch_ascii_art()
--- dashboard.section.header.val = ren
+-- dashboard.section.header.val = dcp1
     -- -- restore the session for the current directory
     -- vim.api.nvim_set_keymap("n", "<leader>qs", [[<cmd>lua require("persistence").load()<cr>]], {})
     -- 
