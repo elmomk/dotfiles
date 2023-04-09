@@ -1,9 +1,13 @@
 # Add this line to .zshrc
 # [[ -f ~/.zshrc-personal ]] && . ~/.zshrc-personal
 
-export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin:$HOME/work/experimentation/venv/bin
+export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin:$HOME/stibbin:$HOME/work/experimentation/venv/bin
 
 export TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache
+
+export EDITOR='nvim'
+export VISUAL='nvim'
+export KUBE_EDITOR='nvim'
 
 # reporting tools - install when not installed
 if [[ ! $(env | grep tmux 2>&1) ]]; then
@@ -145,4 +149,8 @@ lnconfig () {
     else
         echo "Aborted"
     fi
+}
+
+admcheck () {
+    az account show | grep adm || az login
 }

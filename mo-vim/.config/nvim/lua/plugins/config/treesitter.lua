@@ -12,7 +12,7 @@ configs.setup({
   ensure_installed = {
     "lua", "markdown", "markdown_inline", "bash",
     "python", "go", "gomod", "rust", "hcl", "comment", "json", "yaml",
-    "sxhkdrc", "terraform" --, "dockerfile" --, "helm", "jsonnet", "typescript", "astro", 
+    "sxhkdrc", "terraform", "rego" --, "dockerfile" --, "helm", "jsonnet", "typescript", "astro", 
   }, -- put the language you want in this array
   -- ensure_installed = { "lua", "markdown", "markdown_inline", "bash", "python", "golang", "rust" }, -- put the language you want in this array
   -- ensure_installed = "all", -- one of "all" or a list of languages
