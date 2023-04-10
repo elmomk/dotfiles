@@ -133,10 +133,10 @@ keymap("n", "<leader>fj", ":Telescope jumplist<CR>", opts)
 keymap("n", "<leader>fm", ":Telescope <CR>", opts)
 keymap("n", "<leader><leader>", ":Telescope keymaps<CR>", opts)
 keymap("n", "<leader>fh", ":Telescope help_tags<CR>", opts)
+keymap("n", "<leader>r", ":Telescope registers<CR>", opts)
 -- bufferline
 keymap("n", "<leader>b", ":BufferLinePick<CR>", opts)
 keymap("n", "<leader>B", ":BufferLinePickClose<CR>", opts)
-keymap("n", "<leader>r", ":registers<CR>", opts)
 -- use gt and gT to jump between recent buffers
 -- Glow
 keymap("n", "<leader>g", ":Glow<CR>", opts)
