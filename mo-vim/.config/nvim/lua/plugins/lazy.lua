@@ -28,9 +28,6 @@ local plugins = {
 		-- Ootional dependencies
 		dependencies = { "cbochs/grapple.nvim" },
 	},
-	-- {
-	-- 	"kyazdani42/nvim-tree.lua",
-	-- },
 	{
 		"nvim-neo-tree/neo-tree.nvim",
 		config = function()
@@ -84,20 +81,33 @@ local plugins = {
 
 	--	colorschemes
 	{ "folke/lsp-colors.nvim" },
--- { "folke/tokyonight.nvim",
---     config = function()
---   require("tokyonight").setup({
---   style = "night"
---   })
---     end,
---   },
+	-- { "folke/tokyonight.nvim",
+	--     config = function()
+	--   require("tokyonight").setup({
+	--   style = "night"
+	--   })
+	--     end,
+	--   },
 	{
-		"rebelot/kanagawa.nvim",
-		config = function(_)
-			require("kanagawa").setup({ transparent = true })
-      require("kanagawa").load("dragon")
+		"catppuccin/nvim",
+		name = "catppuccin",
+		lazy = false,
+		priority = 1000,
+		config = function()
+			local catppuccin = require("catppuccin")
+			catppuccin.setup({
+				flavour = "mocha",
+			})
+			catppuccin.load()
 		end,
 	},
+	-- {
+	-- 	"rebelot/kanagawa.nvim",
+	-- 	config = function(_)
+	-- 		require("kanagawa").setup({ transparent = true })
+	-- 		require("kanagawa").load("dragon")
+	-- 	end,
+	-- },
 
 	{
 		"someone-stole-my-name/yaml-companion.nvim",
@@ -144,17 +154,16 @@ local plugins = {
 	{
 		"RRethy/vim-illuminate",
 	},
-    {
-    "jcdickinson/codeium.nvim",
-    dependencies = {
-        "nvim-lua/plenary.nvim",
-        "hrsh7th/nvim-cmp",
-    },
-    config = function()
-        require("codeium").setup({
-        })
-    end
-},
+	{
+		"jcdickinson/codeium.nvim",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"hrsh7th/nvim-cmp",
+		},
+		config = function()
+			require("codeium").setup({})
+		end,
+	},
 	-- {
 	-- 	"ExaFunction/codeium.vim",
 	-- 	config = function()
