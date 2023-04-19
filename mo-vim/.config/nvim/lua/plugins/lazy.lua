@@ -28,12 +28,9 @@ local plugins = {
 		-- Ootional dependencies
 		dependencies = { "cbochs/grapple.nvim" },
 	},
-	{
-		"kyazdani42/nvim-tree.lua",
-		-- opts = function()
-		-- 	return require("plugins.config.nvim-tree")
-		-- end,
-	},
+	-- {
+	-- 	"kyazdani42/nvim-tree.lua",
+	-- },
 	{
 		"nvim-neo-tree/neo-tree.nvim",
 		config = function()
@@ -52,10 +49,6 @@ local plugins = {
 	},
 	{
 		"akinsho/bufferline.nvim",
-		-- lazy = false,
-		-- opts = function()
-		--   return require("plugins.config.bufferline")
-		-- end,
 	},
 	-- close buffers
 	{ "moll/vim-bbye" },
@@ -91,6 +84,13 @@ local plugins = {
 
 	--	colorschemes
 	{ "folke/lsp-colors.nvim" },
+-- { "folke/tokyonight.nvim",
+--     config = function()
+--   require("tokyonight").setup({
+--   style = "night"
+--   })
+--     end,
+--   },
 	{
 		"rebelot/kanagawa.nvim",
 		config = function(_)
@@ -143,9 +143,6 @@ local plugins = {
 	{ "jose-elias-alvarez/null-ls.nvim" }, -- for formatters and linters
 	{
 		"RRethy/vim-illuminate",
-		-- opts = function()
-		-- 	return require("plugins.config.illuminate")
-		-- end,
 	},
     {
     "jcdickinson/codeium.nvim",
