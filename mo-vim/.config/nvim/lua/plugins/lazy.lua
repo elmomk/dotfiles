@@ -23,8 +23,6 @@ local plugins = {
 			return require("plugins.config.comment")
 		end,
 	},
-	-- { "JoosepAlviste/nvim-ts-context-commentstring" },
-	-- { "kyazdani42/nvim-web-devicons" },
 	{
 		"cbochs/portal.nvim",
 		-- Ootional dependencies
@@ -89,29 +87,15 @@ local plugins = {
 		opts = function()
 			return require("plugins.config.alpha")
 		end,
-		-- config = function(_, opt)
-		-- 	require("alpha").setup(opt)
-		-- end,
 	},
 
 	--	colorschemes
 	{ "folke/lsp-colors.nvim" },
-	-- { "folke/tokyonight.nvim" },
-	-- { "catppuccin/nvim", name = "catppuccin",
-	-- 	opts = function()
-	-- 		return require("plugins.config.colorscheme")
-	-- 	end,
-	-- 	config = function(_)
-	-- 		require("catppuccin").setup({ transparent = false })
-	-- 	end,
-	--  },
 	{
 		"rebelot/kanagawa.nvim",
-		opts = function()
-			return require("plugins.config.colorscheme")
-		end,
 		config = function(_)
 			require("kanagawa").setup({ transparent = true })
+      require("kanagawa").load("dragon")
 		end,
 	},
 
@@ -132,22 +116,9 @@ local plugins = {
 			require("goto-preview").setup()
 		end,
 	},
-	-- testing
-	-- {"ray-x/navigator.lua",
-	--   dependencies = {
-	--     { "ray-x/guihua.lua", run = "cd lua/fzy && make" },
-	--     { "neovim/nvim-lspconfig" },
-	--   },
-	--   config = function()
-	--     require("navigator").setup()
-	--   end,
-	-- },
 	-- The completion plugin
 	{
 		"hrsh7th/nvim-cmp",
-		-- opts = function()
-		-- 	return require("plugins.config.cmp")
-		-- end,
 		dependencies = {
 			{ "hrsh7th/cmp-buffer" }, -- buffer completions
 			{ "hrsh7th/cmp-path" }, -- path completions
@@ -176,24 +147,35 @@ local plugins = {
 		-- 	return require("plugins.config.illuminate")
 		-- end,
 	},
-	{
-		"ExaFunction/codeium.vim",
-		config = function()
-			-- Change '<C-g>' here to any keycode you like.
-			vim.keymap.set("i", "<C-g>", function()
-				return vim.fn["codeium#Accept"]()
-			end, { expr = true })
-			-- vim.keymap.set("i", "<c-;>", function()
-			-- 	return vim.fn["codeium#CycleCompletions"](1)
-			-- end, { expr = true })
-			-- vim.keymap.set("i", "<c-,>", function()
-			-- 	return vim.fn["codeium#CycleCompletions"](-1)
-			-- end, { expr = true })
-			vim.keymap.set("i", "<c-x>", function()
-				return vim.fn["codeium#Clear"]()
-			end, { expr = true })
-		end,
-	},
+    {
+    "jcdickinson/codeium.nvim",
+    dependencies = {
+        "nvim-lua/plenary.nvim",
+        "hrsh7th/nvim-cmp",
+    },
+    config = function()
+        require("codeium").setup({
+        })
+    end
+},
+	-- {
+	-- 	"ExaFunction/codeium.vim",
+	-- 	config = function()
+	-- 		-- Change '<C-g>' here to any keycode you like.
+	-- 		vim.keymap.set("i", "<C-g>", function()
+	-- 			return vim.fn["codeium#Accept"]()
+	-- 		end, { expr = true })
+	-- 		-- vim.keymap.set("i", "<c-;>", function()
+	-- 		-- 	return vim.fn["codeium#CycleCompletions"](1)
+	-- 		-- end, { expr = true })
+	-- 		-- vim.keymap.set("i", "<c-,>", function()
+	-- 		-- 	return vim.fn["codeium#CycleCompletions"](-1)
+	-- 		-- end, { expr = true })
+	-- 		vim.keymap.set("i", "<c-x>", function()
+	-- 			return vim.fn["codeium#Clear"]()
+	-- 		end, { expr = true })
+	-- 	end,
+	-- },
 	-- {
 	-- 	"github/copilot.vim",
 	-- 	config = function()
