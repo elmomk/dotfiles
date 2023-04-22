@@ -182,12 +182,13 @@ local plugins = {
 	-- 		end, { expr = true })
 	-- 	end,
 	-- },
-	-- {
-	-- 	"github/copilot.vim",
-	-- 	config = function()
-	-- 		return require("plugins.config.copilot")
-	-- 	end,
-	-- },
+	{ "hrsh7th/cmp-copilot" },
+	{
+		"github/copilot.vim",
+		config = function()
+			return require("plugins.config.copilot")
+		end,
+	},
 
 	{
 		"nvim-telescope/telescope.nvim",
