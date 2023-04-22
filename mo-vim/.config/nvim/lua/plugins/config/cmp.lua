@@ -104,6 +104,7 @@ cmp.setup({
 				path = "path",
 				emoji = "emoji",
         codeium = "codeium",
+        copilot = "copilot",
 			})[entry.source.name]
 			return vim_item
 		end,
@@ -115,6 +116,7 @@ cmp.setup({
 		{ name = "buffer" },
 		{ name = "path" },
     { name = "codeium"},
+    { name = "copilot"},
 	},
 	confirm_opts = {
 		behavior = cmp.ConfirmBehavior.Replace,
