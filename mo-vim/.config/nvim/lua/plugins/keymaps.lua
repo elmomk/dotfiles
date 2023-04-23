@@ -165,3 +165,6 @@ keymap("n", "<leader>gpt", ":lua require('goto-preview').goto_preview_type_defin
 keymap("n", "<leader>gpi", ":lua require('goto-preview').goto_preview_implementation()<CR>", { silent = true })
 keymap("n", "<leader>gp", ":lua require('goto-preview').close_all_win()<cr>", { silent = true })
 keymap("n", "<leader>gpr", ":lua require('goto-preview').goto_preview_references()<cr>", { silent = true })
+
+keymap("n", "<leader>mh", ":lua require('rust-tools').hover_actions.hover_actions()<CR>")
+keymap("n", "<leader>ma", ":lua reuire('rust-tools').code_action_group.code_action_group<CR>")

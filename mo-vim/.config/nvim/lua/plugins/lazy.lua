@@ -109,6 +109,41 @@ local plugins = {
 	-- 	end,
 	-- },
 
+	-- Debugging
+  { "simrat39/rust-tools.nvim",
+   config = function ()
+  local rt = require("rust-tools")
+   rt.setup({
+   server = {
+    on_attach = function(_, bufnr)
+      -- Hover actions
+      vim.keymap.set("n", "<Leader>mh", rt.hover_actions.hover_actions, { buffer = bufnr })
+      -- Code action groups
+      vim.keymap.set("n", "<Leader>ma", rt.code_action_group.code_action_group, { buffer = bufnr })
+    end,
+  },
+  })
+   end
+  },
+	{
+		"mfussenegger/nvim-dap",
+		opt = true,
+		event = "BufReadPre",
+		module = { "dap" },
+		wants = { "nvim-dap-virtual-text", "DAPInstall.nvim", "nvim-dap-ui", "nvim-dap-python"}, --, "which-key.nvim" },
+		dependencies = {
+			"Pocco81/DAPInstall.nvim",
+			"theHamsta/nvim-dap-virtual-text",
+			"rcarriga/nvim-dap-ui",
+			"mfussenegger/nvim-dap-python",
+			"nvim-telescope/telescope-dap.nvim",
+			{ "leoluz/nvim-dap-go", module = "dap-go" },
+			{ "jbyuki/one-small-step-for-vimkind", module = "osv" },
+		},
+		-- config = function()
+		-- 	require("plugins.config.dap").setup()
+		-- end,
+	},
 	{
 		"someone-stole-my-name/yaml-companion.nvim",
 		dependencies = {
