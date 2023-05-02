@@ -29,8 +29,7 @@ format = '| [$symbol$region]($style) '
 [azure]
 disabled = false
 format = "| [$symbol($subscription)]($style) "
-# symbol = "🌩️ "
-symbol = 'ﴃ '
+symbol = " "
 style = "blue bold"
 
 [kubernetes]
@@ -64,4 +63,4 @@ python_binary = ['./venv/bin/python', 'python', 'python3', 'python2']
 # symbol = 'rs-'
 
 [terraform]
-# symbol = 'tf-'
+symbol = "󱁢 "
