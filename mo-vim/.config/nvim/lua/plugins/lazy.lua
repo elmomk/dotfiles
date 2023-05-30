@@ -11,6 +11,7 @@ local plugins = {
 	{ "folke/lazy.nvim" },
 	{ "folke/trouble.nvim" }, -- enables lsp trouble shooting
 	{ "ellisonleao/glow.nvim", config = true, cmd = "Glow" }, -- show markdown files
+	{ "towolf/vim-helm", lazy = false },
 	{
 		"windwp/nvim-autopairs",
 		opts = function()
@@ -145,15 +146,49 @@ local plugins = {
 		end,
 	}, --snippet engine
 	{ "rafamadriz/friendly-snippets" }, -- a bunch of snippets to use
-
-	{ "williamboman/nvim-lsp-installer" }, -- simple to use language server installer
 	{ "neovim/nvim-lspconfig" }, -- enable LSP
-	{ "williamboman/mason.nvim" },
+	{
+		"williamboman/mason.nvim",
+		build = ":MasonUpdate",
+	},
 	{ "williamboman/mason-lspconfig.nvim" },
+	-- {
+	-- 	"WhoIsSethDaniel/mason-tool-installer.nvim",
+	-- 	opt = function()
+	-- 		return require("plugins.config.masontool")
+	-- 	end,
+	-- },
 	{ "jose-elias-alvarez/null-ls.nvim" }, -- for formatters and linters
 	{
 		"RRethy/vim-illuminate",
 	},
+	-- {
+	-- 	"Bryley/neoai.nvim",
+	-- 	opts = function()
+	-- 		return {
+	-- 			cmd = {
+	-- 				"NeoAI",
+	-- 				"NeoAIOpen",
+	-- 				"NeoAIClose",
+	-- 				"NeoAIToggle",
+	-- 				"NeoAIContext",
+	-- 				"NeoAIContextOpen",
+	-- 				"NeoAIContextClose",
+	-- 				"NeoAIInject",
+	-- 				"NeoAIInjectCode",
+	-- 				"NeoAIInjectContext",
+	-- 				"NeoAIInjectContextCode",
+	-- 			},
+	-- 			keys = {
+	-- 				{ "<leader>as", desc = "summarize text" },
+	-- 				{ "<leader>ag", desc = "generate git message" },
+	-- 			},
+	-- 			config = function()
+	-- 				require("neoai").setup({})
+	-- 			end,
+	-- 		}
+	-- 	end,
+	-- },
 	{
 		"jcdickinson/codeium.nvim",
 		dependencies = {
