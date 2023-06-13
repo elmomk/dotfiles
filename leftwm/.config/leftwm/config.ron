@@ -29,15 +29,15 @@
         Fibonacci,
         Monocle,
         MainAndVertStack,
+        RightWiderLeftStack,
         LeftWiderRightStack,
         MainAndHorizontalStack,
-        /* MainAndDeck, */
+        MainAndDeck,
         GridHorizontal,
-        /* EvenHorizontal, */
-        /* EvenVertical, */
-        /* CenterMain, */
+        EvenHorizontal,
+        EvenVertical,
+        CenterMain,
         CenterMainBalanced,
-        /* RightWiderLeftStack, */
     ],
     layout_mode: Tag,
     insert_behavior: Bottom,

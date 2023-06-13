@@ -85,6 +85,7 @@ enter () {
     else
         echo "create a new monthly toolbox"
         newdistro
+        enter
     fi
 }
 
@@ -138,7 +139,7 @@ lnconfig () {
     echo "ln -s $HOME/work/dcp/config $PWD/dcp-config"
     echo "cp $HOME/.runcli/config $PWD/.runrsenv"
     echo "current status: "
-    ls -halt | grep -E "dcp-config|runrsenv"
+    /usr/bin/ls -halt | grep -E "dcp-config|runrsenv"
     "Are you sure? [y/N] "
     read -r  response
     if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
@@ -173,4 +174,4 @@ nvims() {
 }
 
 # bindkey -s ^a "nvims\n"
-
+eval "$(github-copilot-cli alias -- "$0")"
