@@ -281,16 +281,49 @@ local plugins = {
 	},
 
 	{
-		"ggandor/leap.nvim",
-		config = function()
-			require("leap").add_default_mappings()
-		end,
+		"folke/flash.nvim",
+		event = "VeryLazy",
+		---@type Flash.Config
+		opts = {},
+		keys = {
+			{
+				"s",
+				mode = { "n", "x", "o" },
+				function()
+					-- default options: exact mode, multi window, all directions, with a backdrop
+					require("flash").jump()
+				end,
+				desc = "Flash",
+			},
+			{
+				"S",
+				mode = { "n", "o", "x" },
+				function()
+					-- show labeled treesitter nodes around the cursor
+					require("flash").treesitter()
+				end,
+				desc = "Flash Treesitter",
+			},
+			{
+				"r",
+				mode = "o",
+				function()
+					-- jump to a remote location to execute the operator
+					require("flash").remote()
+				end,
+				desc = "Remote Flash",
+			},
+			{
+				"R",
+				mode = { "n", "o", "x" },
+				function()
+					-- show labeled treesitter nodes around the search matches
+					require("flash").treesitter_search()
+				end,
+				desc = "Treesitter Search",
+			},
+		},
 	},
-	-- { "folke/neoconf.nvim" }
-	-- { "LazyVim/LazyVim" },
-	{ "ggandor/leap.nvim" },
-	-- { "folke/which-key.nvim" },
-	-- todo comments
 	{
 		"folke/todo-comments.nvim",
 		cmd = { "TodoTrouble", "TodoTelescope" },
@@ -356,16 +389,16 @@ local plugins = {
 				override = {
 					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
 					["vim.lsp.util.stylize_markdown"] = true,
-          ["cmp.entry.get_documentation"] = true,
+					["cmp.entry.get_documentation"] = true,
 				},
 			},
 			presets = {
 				bottom_search = true,
 				command_palette = true,
 				long_message_to_split = true,
-        inc_rename = true,
-        lsp_doc_border = true,
-        cmdline_output_to_split = true,
+				inc_rename = true,
+				lsp_doc_border = true,
+				cmdline_output_to_split = true,
 			},
 		},
     -- stylua: ignore
