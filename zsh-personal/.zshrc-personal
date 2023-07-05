@@ -176,7 +176,7 @@ nvims() {
 # bindkey -s ^a "nvims\n"
 eval "$(github-copilot-cli alias -- "$0")"
 
-cluster() {
+kcfg() {
   ENV=$1
   az aks get-credentials -g rg-aks-$ENV-prd -n aks-$ENV-prd --admin -f ~/work/kubeconfig/kubeconfig-$ENV
 }
