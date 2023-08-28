@@ -1,12 +1,5 @@
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 
--- vim.cmd([[
---   augroup lazy_user_config
---     autocmd!
---     autocmd BufWritePost lazy.lua | Lazy update
---   augroup end
--- ]])
-
 local plugins = {
 	{ "folke/lazy.nvim" },
 	{ "folke/trouble.nvim" }, -- enables lsp trouble shooting
@@ -26,7 +19,6 @@ local plugins = {
 	},
 	{
 		"cbochs/portal.nvim",
-		-- Ootional dependencies
 		dependencies = { "cbochs/grapple.nvim" },
 	},
 	{
@@ -137,6 +129,9 @@ local plugins = {
 			{ "hrsh7th/cmp-nvim-lsp" },
 			{ "hrsh7th/cmp-nvim-lua" },
 		},
+    -- pin version to avoid breaking changes
+    --  6c84bc75c64f778e9f1dcb798ed41c7fcb93b639
+    commit = "6c84bc75c64f778e9f1dcb798ed41c7fcb93b639",
 	},
 
 	{
@@ -189,9 +184,14 @@ local plugins = {
 	-- 		}
 	-- 	end,
 	-- },
+	-- {
+	-- 	"jcdickinson/http.nvim",
+	-- 	build = "cargo build --workspace --release",
+	-- },
 	{
 		"jcdickinson/codeium.nvim",
 		dependencies = {
+			-- "jcdickinson/http.nvim",
 			"nvim-lua/plenary.nvim",
 			"hrsh7th/nvim-cmp",
 		},
@@ -199,24 +199,6 @@ local plugins = {
 			require("codeium").setup({})
 		end,
 	},
-	-- {
-	-- 	"ExaFunction/codeium.vim",
-	-- 	config = function()
-	-- 		-- Change '<C-g>' here to any keycode you like.
-	-- 		vim.keymap.set("i", "<C-g>", function()
-	-- 			return vim.fn["codeium#Accept"]()
-	-- 		end, { expr = true })
-	-- 		-- vim.keymap.set("i", "<c-;>", function()
-	-- 		-- 	return vim.fn["codeium#CycleCompletions"](1)
-	-- 		-- end, { expr = true })
-	-- 		-- vim.keymap.set("i", "<c-,>", function()
-	-- 		-- 	return vim.fn["codeium#CycleCompletions"](-1)
-	-- 		-- end, { expr = true })
-	-- 		vim.keymap.set("i", "<c-x>", function()
-	-- 			return vim.fn["codeium#Clear"]()
-	-- 		end, { expr = true })
-	-- 	end,
-	-- },
 	{ "hrsh7th/cmp-copilot" },
 	{
 		"github/copilot.vim",
@@ -238,10 +220,7 @@ local plugins = {
 		},
 	},
 	{ "jremmen/vim-ripgrep" },
-	-- { "nvim-lua/popup.nvim" },
-
 	{ "junegunn/fzf.vim" },
-
 	{
 		"nvim-treesitter/nvim-treesitter",
 		opts = function()
@@ -257,10 +236,6 @@ local plugins = {
 	{ "tpope/vim-fugitive" },
 	{
 		"ThePrimeagen/harpoon",
-		-- keys = {
-		--     { "<leader>a",  require("harpoon.mark").add_file,        silent = false,         desc = "add file to harpoon" },
-		--     { "<leader>q",  require("harpoon.ui").toggle_quick_menu, silent = false,         desc = "toggle harpoon quick menu" },
-		--   }
 	},
 	{
 		"folke/zen-mode.nvim",
@@ -271,7 +246,6 @@ local plugins = {
 	{ "ThePrimeagen/git-worktree.nvim" },
 	-- { "ThePrimeagen/refactoring.nvim" },
 	-- { "ThePrimeagen/vim-be-good" },
-
 	{
 		"lewis6991/gitsigns.nvim",
 		lazy = false,
@@ -338,53 +312,10 @@ local plugins = {
       { "<leader>st", "<cmd>TodoTelescope<cr>",                            desc = "Todo" },
     },
 	},
-
-	-- {
-	--   "stevearc/dressing.nvim",
-	--   lazy = true,
-	--   -- init = function()
-	--   --   ---@diagnostic disable-next-line: duplicate-set-field
-	--   --   vim.ui.select = function(...)
-	--   --     require("lazy").load({ plugins = { "dressing.nvim" } })
-	--   --     return vim.ui.select(...)
-	--   --   end
-	--   --   ---@diagnostic disable-next-line: duplicate-set-field
-	--   --   vim.ui.input = function(...)
-	--   --     require("lazy").load({ plugins = { "dressing.nvim" } })
-	--   --     return vim.ui.input(...)
-	--   --   end
-	--   -- end,
-	-- },
-
-	-- indent guides for Neovim
-	-- {
-	-- 	"lukas-reineke/indent-blankline.nvim",
-	-- 	event = "BufReadPost",
-	-- 	opts = {
-	-- 		-- char = "▏",
-	-- 		char = "│",
-	-- 		filetype_exclude = { "help", "alpha", "dashboard", "neo-tree", "NvimTree", "Trouble", "lazy" },
-	-- 		show_trailing_blankline_indent = false,
-	-- 		show_current_context = true,
-	-- 		show_current_context_start = true,
-	-- 	},
-	-- },
-	-- noicer ui
 	{
 		"folke/noice.nvim",
 		event = "VeryLazy",
 		opts = {
-			-- cmdline = {
-			--      view = "cmdline",
-			-- 	format = {
-			-- 		search_down = {
-			-- 			view = "cmdline",
-			-- 		},
-			-- 		search_up = {
-			-- 			view = "cmdline",
-			-- 		},
-			-- 	},
-			-- },
 			lsp = {
 				override = {
 					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
@@ -401,51 +332,70 @@ local plugins = {
 				cmdline_output_to_split = true,
 			},
 		},
-    -- stylua: ignore
-    keys = {
-      {
-        "<S-Enter>",
-        function() require("noice").redirect(vim.fn.getcmdline()) end,
-        mode = "c",
-        desc =
-        "Redirect"
-      },
-      {
-        "<leader>snl",
-        function() require("noice").cmd("last") end,
-        desc =
-        "Noice Last Message"
-      },
-      {
-        "<leader>snh",
-        function() require("noice").cmd("history") end,
-        desc =
-        "Noice History"
-      },
-      { "<leader>sna", function() require("noice").cmd("all") end, desc = "Noice All" },
-      {
-        "<c-f>",
-        function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end,
-        silent = true,
-        expr = true,
-        desc =
-        "Scroll forward",
-        mode = {
-          "i", "n", "s" }
-      },
-      {
-        "<c-b>",
-        function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end,
-        silent = true,
-        expr = true,
-        desc =
-        "Scroll forward",
-        mode = {
-          "i", "n", "s" }
-      },
-    },
+		keys = {
+			{
+				"<S-Enter>",
+				function()
+					require("noice").redirect(vim.fn.getcmdline())
+				end,
+				mode = "c",
+				desc = "Redirect",
+			},
+			{
+				"<leader>snl",
+				function()
+					require("noice").cmd("last")
+				end,
+				desc = "Noice Last Message",
+			},
+			{
+				"<leader>snh",
+				function()
+					require("noice").cmd("history")
+				end,
+				desc = "Noice History",
+			},
+			{
+				"<leader>sna",
+				function()
+					require("noice").cmd("all")
+				end,
+				desc = "Noice All",
+			},
+			{
+				"<c-f>",
+				function()
+					if not require("noice.lsp").scroll(4) then
+						return "<c-f>"
+					end
+				end,
+				silent = true,
+				expr = true,
+				desc = "Scroll forward",
+				mode = {
+					"i",
+					"n",
+					"s",
+				},
+			},
+			{
+				"<c-b>",
+				function()
+					if not require("noice.lsp").scroll(-4) then
+						return "<c-b>"
+					end
+				end,
+				silent = true,
+				expr = true,
+				desc = "Scroll forward",
+				mode = {
+					"i",
+					"n",
+					"s",
+				},
+			},
+		},
 		dependencies = {
-			-- Better `vim.notify()`
 			{
 				"rcarriga/nvim-notify",
 				keys = {
@@ -470,15 +420,6 @@ local plugins = {
 		},
 	},
 
-	-- -- measure startuptime
-	-- {
-	--   "dstein64/vim-startuptime",
-	--   cmd = "StartupTime",
-	--   config = function()
-	--     vim.g.startuptime_tries = 10
-	--   end,
-	-- },
-
 	-- session management
 	{
 		"folke/persistence.nvim",
@@ -491,9 +432,6 @@ local plugins = {
       { "<leader>qd", function() require("persistence").stop() end, desc = "Don't Save Current Session" },
     },
 	},
-
-	-- makes some plugins dot-repeatable like leap
-	-- { "tpope/vim-repeat", event = "VeryLazy" },
 }
 
 vim.opt.rtp:prepend(lazypath)
