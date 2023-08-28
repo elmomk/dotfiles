@@ -41,7 +41,7 @@ format = '[⛵$context on $namespace](purple) '
 
 [container]
 style = "bold yellow dimmed"
-format ="[$symbol distrobox ]($style) "
+format ="[$symbol devtainer]($style) "
 symbol = "⬢"
 disabled = false
 
