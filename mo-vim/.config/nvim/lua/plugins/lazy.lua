@@ -129,9 +129,9 @@ local plugins = {
 			{ "hrsh7th/cmp-nvim-lsp" },
 			{ "hrsh7th/cmp-nvim-lua" },
 		},
-    -- pin version to avoid breaking changes
-    --  6c84bc75c64f778e9f1dcb798ed41c7fcb93b639
-    commit = "6c84bc75c64f778e9f1dcb798ed41c7fcb93b639",
+		-- pin version to avoid breaking changes
+		--  6c84bc75c64f778e9f1dcb798ed41c7fcb93b639
+		commit = "6c84bc75c64f778e9f1dcb798ed41c7fcb93b639",
 	},
 
 	{
@@ -144,7 +144,7 @@ local plugins = {
 	{ "neovim/nvim-lspconfig" }, -- enable LSP
 	{
 		"williamboman/mason.nvim",
-		build = ":MasonUpdate",
+		-- build = ":MasonUpdate",
 	},
 	{ "williamboman/mason-lspconfig.nvim" },
 	-- {
@@ -199,9 +199,11 @@ local plugins = {
 			require("codeium").setup({})
 		end,
 	},
-	{ "hrsh7th/cmp-copilot" },
 	{
 		"github/copilot.vim",
+		dependencies = {
+			"hrsh7th/cmp-copilot",
+		},
 		config = function()
 			return require("plugins.config.copilot")
 		end,
