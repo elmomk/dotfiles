@@ -477,74 +477,6 @@ local bison = {
 	[[]],
 }
 
-local dcp = {
-	[[8 888888888o.          ,o888888o.    8 888888888o   ]],
-	[[8 8888    `^888.      8888     `88.  8 8888    `88. ]],
-	[[8 8888        `88. ,8 8888       `8. 8 8888     `88 ]],
-	[[8 8888         `88 88 8888           8 8888     ,88 ]],
-	[[8 8888          88 88 8888           8 8888.   ,88' ]],
-	[[8 8888          88 88 8888           8 888888888P'  ]],
-	[[8 8888         ,88 88 8888           8 8888         ]],
-	[[8 8888        ,88' `8 8888       .8' 8 8888         ]],
-	[[8 8888    ,o88P'      8888     ,88'  8 8888         ]],
-	[[8 888888888P'          `8888888P'    8 8888         ]],
-}
-local dcp1 = {
-	[[ _____     ______     ______   ]],
-	[[/\  __-.  /\  ___\   /\  == \  ]],
-	[[\ \ \/\ \ \ \ \____  \ \  _-/  ]],
-	[[ \ \____-  \ \_____\  \ \_\    ]],
-	[[  \/____/   \/_____/   \/_/    ]],
-}
-
-local dcp4 = {
-	[[  ;                               ]],
-	[[  ED.                             ]],
-	[[  E#Wi               .,           ]],
-	[[  E###G.            ,Wt t         ]],
-	[[  E#fD#W;          i#D. ED.       ]],
-	[[  E#t t##L        f#f   E#K:      ]],
-	[[  E#t  .E#K,    .D#i    E##W;     ]],
-	[[  E#t    j##f  :KW,     E#E##t    ]],
-	[[  E#t    :E#K: t#f      E#ti##f   ]],
-	[[  E#t   t##L    ;#G     E#t ;##D. ]],
-	[[  E#t .D#W;      :KE.   E#ELLE##K:]],
-	[[  E#tiW#G.        .DW:  E#L;;;;;;,]],
-	[[  E#K##i            L#, E#t       ]],
-	[[  E##D.              jt E#t       ]],
-	[[  E#t                             ]],
-	[[  L:                              ]],
-}
-local dcp3 = {
-	[[DDDDDDDDDDDDD                CCCCCCCCCCCCCPPPPPPPPPPPPPPPPP   ]],
-	[[D::::::::::::DDD          CCC::::::::::::CP::::::::::::::::P  ]],
-	[[D:::::::::::::::DD      CC:::::::::::::::CP::::::PPPPPP:::::P ]],
-	[[DDD:::::DDDDD:::::D    C:::::CCCCCCCC::::CPP:::::P     P:::::P]],
-	[[  D:::::D    D:::::D  C:::::C       CCCCCC  P::::P     P:::::P]],
-	[[  D:::::D     D:::::DC:::::C                P::::P     P:::::P]],
-	[[  D:::::D     D:::::DC:::::C                P::::PPPPPP:::::P ]],
-	[[  D:::::D     D:::::DC:::::C                P:::::::::::::PP  ]],
-	[[  D:::::D     D:::::DC:::::C                P::::PPPPPPPPP    ]],
-	[[  D:::::D     D:::::DC:::::C                P::::P            ]],
-	[[  D:::::D     D:::::DC:::::C                P::::P            ]],
-	[[  D:::::D    D:::::D  C:::::C       CCCCCC  P::::P            ]],
-	[[DDD:::::DDDDD:::::D    C:::::CCCCCCCC::::CPP::::::PP          ]],
-	[[D:::::::::::::::DD      CC:::::::::::::::CP::::::::P          ]],
-	[[D::::::::::::DDD          CCC::::::::::::CP::::::::P          ]],
-	[[DDDDDDDDDDDDD                CCCCCCCCCCCCCPPPPPPPPPP          ]],
-}
-local dcp2 = {
-	[[__/\\\\\\\\\\\\___________/\\\\\\\\\__/\\\\\\\\\\\\\___        ]],
-	[[ _\/\\\////////\\\______/\\\////////__\/\\\/////////\\\_       ]],
-	[[  _\/\\\______\//\\\___/\\\/___________\/\\\_______\/\\\_      ]],
-	[[   _\/\\\_______\/\\\__/\\\_____________\/\\\\\\\\\\\\\/__     ]],
-	[[    _\/\\\_______\/\\\_\/\\\_____________\/\\\/////////____    ]],
-	[[     _\/\\\_______\/\\\_\//\\\____________\/\\\_____________   ]],
-	[[      _\/\\\_______/\\\___\///\\\__________\/\\\_____________  ]],
-	[[       _\/\\\\\\\\\\\\/______\////\\\\\\\\\_\/\\\_____________ ]],
-	[[        _\////////////___________\/////////__\///______________]],
-}
-
 local shengri = {
 	[[                                                        *          ]],
 	[[                                                                   ]],
@@ -852,41 +784,33 @@ require("math")
 
 local dashboard = require("alpha.themes.dashboard")
 function Switch_ascii_art()
-	local work = false
 	local ascii_arts = {
 		ren,
 		meng,
 		-- movim,
 		-- movim1,
 		jiayou,
-		-- long,
-		-- bison,
-		-- bat,
-		-- monke_noevil,
-		-- lord_of_the_rings,
-		-- drseus,
+		long,
+		bison,
+		bat,
+		monke_noevil,
+		lord_of_the_rings,
+		drseus,
 		fractal,
-		-- castle,
-		-- angry_dog,
-		-- dog,
-		-- super,
+		castle,
+		angry_dog,
+		dog,
+		super,
 		unixdevil,
-		-- linuxrules,
-		-- redhat,
+		linuxrules,
+		redhat,
 		yoda,
-		-- littledevil,
+		littledevil,
 	}
-	local dcp_ascii_arts = { dcp, dcp1, dcp2, dcp3, dcp4 }
 	local current_month = tonumber(os.date("%m"))
 	local current_day = tonumber(os.date("%d"))
 
-	if work == true then
-		local dcp_ascii_art = dcp_ascii_arts[math.random(#dcp_ascii_arts)]
-		dashboard.section.header.val = dcp_ascii_art
-	elseif current_month == 3 and current_day == 8 then
-		dashboard.section.header.val = laosebri
-	-- may the force be with you
-	elseif current_month == 5 and current_day == 4 then
+	if current_month == 5 and current_day == 4 then
 		dashboard.section.header.val = yoda
 	elseif current_month == 12 and current_day == 25 then
 		dashboard.section.header.val = shengri
@@ -894,8 +818,6 @@ function Switch_ascii_art()
 		dashboard.section.header.val = jessri
 	elseif current_month == 10 and current_day == 31 then
 		dashboard.section.header.val = halloween
-	-- elseif current_month == 1 then
-	-- 	dashboard.section.header.val = chunjie
 	elseif current_month == 12 then
 		dashboard.section.header.val = christmas
 	else
@@ -903,21 +825,8 @@ function Switch_ascii_art()
 		dashboard.section.header.val = ascii_arts[asciiarts_index]
 	end
 end
-function Switch_dcp_ascii_art()
-  local dcp_ascii_arts = { dcp, dcp1, dcp2, dcp3, dcp4 }
-  local dcp_ascii_art = dcp_ascii_arts[math.random(#dcp_ascii_arts)]
-  dashboard.section.header.val = dcp_ascii_art
-end
+
 Switch_ascii_art()
--- dashboard.section.header.val = dcp1
-    -- -- restore the session for the current directory
-    -- vim.api.nvim_set_keymap("n", "<leader>qs", [[<cmd>lua require("persistence").load()<cr>]], {})
-    -- 
-    -- -- restore the last session
-    -- vim.api.nvim_set_keymap("n", "<leader>ql", [[<cmd>lua require("persistence").load({ last = true })<cr>]], {})
-    -- 
-    -- -- stop Persistence => session won't be saved on exit
-    -- vim.api.nvim_set_keymap("n", "<leader>qd", [[<cmd>lua require("persistence").stop()<cr>]], {})
 
 dashboard.section.buttons.val = {
 	dashboard.button("r", " " .. " Restore session for current dir", ":lua require('persistence').load()<CR>"),
@@ -932,23 +841,12 @@ dashboard.section.buttons.val = {
 	dashboard.button("U", " " .. " Plugins Update", ":Lazy update<CR>"),
 	dashboard.button("m", " " .. " Mason", ":Mason <CR>"),
 	dashboard.button("s", " " .. " ascii arts", ":lua Switch_ascii_art() <CR>:AlphaRedraw<CR>"),
-	dashboard.button("d", " " .. " DCP ascii arts", ":lua Switch_dcp_ascii_art() <CR>:AlphaRedraw<CR>"),
 	dashboard.button("a", " " .. " See Planets", ":Telescope planets<CR>"),
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()
 	return "Created by Mo\nBased on Lazygit\nand chrisatmachine.com\n"
 end
--- vim.api.nvim_create_autocmd("User", {
---   -- pattern = "LazyVimStarted",
---   callback = function()
---     local stats = require("lazy").stats()
---     local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
---     local pad_footer = string.rep(" ", 8)
---     dashboard.config.footer.val = pad_footer .. "⚡ Neovim loaded " .. stats.count .. " plugins in " .. ms .. "ms"
---     pcall(dashboard.refresh)
---   end,
--- })
 
 dashboard.section.footer.val = footer()
 
@@ -957,5 +855,4 @@ dashboard.section.header.opts.hl = "Include"
 dashboard.section.buttons.opts.hl = "Keyword"
 
 dashboard.opts.opts.noautocmd = true
--- alpha.setup(dashboard.opts)
 return dashboard.opts
