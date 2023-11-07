@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ ! $(tmux list-sessions 2>/dev/null) ]]; then
+if [[ ! $(tmux list-sessions) ]]; then
 	tmux
 fi
 
