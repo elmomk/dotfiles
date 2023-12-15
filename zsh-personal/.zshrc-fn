@@ -1,0 +1,148 @@
+#clamav
+scandir() {
+  # check first argument
+  # if empty, scan current directory
+  # if not empty, scan that directory
+  if [ -z "$1" ]
+  then
+    location=$(pwd)
+  else
+    location=$1
+  fi
+    echo "start scanning $location"
+    docker run -it --rm \
+    --mount type=bind,source=$location,target=/scandir \
+    clamav/clamav:unstable \
+    clamscan /scandir
+}
+
+tnow () {
+    tmux attach -t `tls | awk -F':' '{print $1}' | head -n1`
+}
+
+wttr () {
+    echo "checking weather"
+    if [[ -z $1 ]]; then
+        curl  wttr.in/Tervuren
+    else
+        curl  wttr.in/$1
+    fi
+}
+
+
+enter () {
+    if [[ $(distrobox list |grep $(date +%Y%m) 2> /dev/null) ]];
+    then
+        DISTROBOX=$(distrobox list|grep $(date +%Y%m) 2> /dev/null | awk '{print $3}')
+        echo "entering distrobox $DISTROBOX"
+        distrobox enter "$DISTROBOX"
+    else
+        echo "create a new monthly toolbox"
+        newdistro
+        enter
+    fi
+}
+
+
+# worktrees
+bra () {
+    BRANCH=$(git worktree list | awk '{print $1}' | fzf --cycle --preview 'cd {1}; git show --color=always')
+    echo "Branch: $BRANCH"
+    # TODO: fix when root of repo is selected
+    # if BRANCH is not empty, cd to DESTINATION
+    if [[ -n "$BRANCH" ]]; then
+        RELATIVE_PATH=$(realpath --relative-to=${BRANCH} ${PWD} | cut -f 3- -d '/')
+        echo "Relative path: $RELATIVE_PATH"
+        # if relative path equals .. then DESTINATION is BRANCH else DESTINATION is BRANCH/RELATIVE_PATH
+        if [[ "$RELATIVE_PATH" == ".." ]]; then
+            DESTINATION=${BRANCH}
+        else
+            DESTINATION=${BRANCH}/${RELATIVE_PATH}
+        fi
+        # DESTINATION=${BRANCH}/${RELATIVE_PATH}
+        echo "cd $DESTINATION"
+        cd ${DESTINATION}
+    else
+        echo "No branch selected"
+    fi
+    # cd ${DESTINATION}
+}
+
+worktree () {
+    BRANCH=$1
+    if [ -z "$BRANCH" ]; then
+        echo "Usage: worktree.sh <branch>"
+        echo "Example: worktree.sh master"
+        echo "this will create a new branch called master"
+        echo "and create a new worktree for it"
+    fi
+    BRANCH_PATH=$(echo "$BRANCH" | tr '/' _)
+    echo "Branch path: $BRANCH_PATH"
+
+    if [ -d "$BRANCH_PATH" ]; then
+        echo "Branch $BRANCH already exists"
+    fi
+
+    echo "git worktree add -b $BRANCH $BRANCH_PATH"
+    git worktree add -b "$BRANCH" "$BRANCH_PATH"
+
+    cd "$BRANCH_PATH" || echo "Could not cd to $BRANCH_PATH"
+}
+
+lnconfig () {
+    echo "ln -s $HOME/work/dcp/config $PWD/dcp-config"
+    echo "cp $HOME/.runcli/config $PWD/.runrsenv"
+    echo "current status: "
+    /usr/bin/ls -halt | grep -E "dcp-config|runrsenv"
+    "Are you sure? [y/N] "
+    read -r  response
+    if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
+    then
+        ln -s $HOME/work/dcp/config $PWD/dcp-config
+        cp $HOME/.runcli/config $PWD/.runrsenv
+        vi $PWD/.runrsenv
+    else
+        echo "Aborted"
+    fi
+}
+
+admcheck () {
+    az account show | grep adm || az login
+}
+
+
+nvims() {
+    items=("default" "latestmovim" "kickstart" "LazyVim" "NvChad" "AstroNvim" "sevim")
+    config=$(printf "%s\n" "${items[@]}" | fzf --prompt=" Neovim Config  " --height=~50% --layout=reverse --border --exit-0)
+    if [[ -z $config ]]; then
+        echo "Nothing selected"
+        return 0
+    elif [[ $config == "default" ]]; then
+        config=""
+    elif [[ $config == "latestmovim" ]]; then
+      config="latestmovim/mo-vim/.config/nvim"
+    fi
+    NVIM_APPNAME=$config nvim $@
+}
+
+
+# bindkey -s ^a "nvims\n"
+
+kcfg() {
+  ENV=$1
+  az aks get-credentials -g rg-aks-$ENV-prd -n aks-$ENV-prd --admin -f ~/work/kubeconfig/kubeconfig-$ENV
+}
+aks(){
+  echo "CLUSTERS"
+  az aks list | grep name | grep aks
+  echo "APPGW"
+  az network application-gateway list | grep name | grep aks
+  echo "STORAGE ACCOUNT"
+  az storage account list | grep name | grep aks
+  echo "ACR"
+  az acr list | grep name| grep aks
+}
+
+k8sversions() {
+  for kind in `kubectl api-resources | tail +2 | awk '{ print $1 }'`; do kubectl explain $kind; done | grep -e "KIND:" -e "VERSION:"
+}
