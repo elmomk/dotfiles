@@ -1,0 +1,69 @@
+# Add this line to .zshrc
+# [[ -f ~/.zshrc-work ]] && . ~/.zshrc-work
+#
+# unset some of arcolinux default aliases
+unset PAGER
+
+export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin
+
+export TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache
+
+export EDITOR='nvim'
+export VISUAL='nvim'
+export KUBE_EDITOR='nvim'
+
+export MCFLY_FUZZY=2
+export MCFLY_RESULTS=60
+source /usr/share/doc/find-the-command/ftc.zsh
+source /usr/share/doc/mcfly/mcfly.zsh
+#export MCFLY_INTERFACE_VIEW=BOTTOM
+
+# reporting tools - install when not installed
+if [[ ! $(env | grep tmux 2>&1) ]]; then
+    ufetch-arco | lolcat
+    # neofetch
+fi
+
+eval $(thefuck --alias)
+eval "$(zoxide init zsh)"
+eval "$(fnm env --use-on-cd)"
+eval "$(direnv hook zsh)"
+eval "$(starship init zsh)"
+eval "$(github-copilot-cli alias -- "$0")"
+
+alias ls='eza --icons'
+alias ll='eza -l --icons --color-scale size'
+alias cat='bat'
+alias diff='delta'
+
+#terraform
+alias tf='terraform'
+
+#k8s
+alias k='kubectl'
+alias kctx='kubie ctx'
+alias kns='kubie ns'
+alias h='helm'
+
+# lazygit
+alias lg='lazygit'
+
+
+alias zf='z `fd --type directory | fzf`'
+alias fim='nvim `fzf -m --preview "bat --color=always {}"`'
+alias rmf='rm `fzf -m --preview "bat --color=always {}"`'
+alias git-brach-fzf='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'
+
+alias tls='tmux list-sessions'
+alias tfz='tmux attach -t `tmux list-sessions | fzf | cut -d: -f1`'
+
+alias vi="nvim"
+alias v="nvim"
+alias doco="docker-compose"
+
+# fzf git
+alias fzf-git-branch='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'
+
+
+alias nvim-lazy="NVIM_APPNAME=LazyVim nvim"
+
