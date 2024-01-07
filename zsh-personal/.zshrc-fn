@@ -3,17 +3,24 @@ scandir() {
   # check first argument
   # if empty, scan current directory
   # if not empty, scan that directory
+  RECURSIVE=""
   if [ -z "$1" ]
   then
     location=$(pwd)
   else
     location=$1
   fi
+  # check second argument equals r, then scan recursively
+  if [ "$2" = "r" ]
+  then
+    echo "recursive"
+    RECURSIVE="-r"
+  fi
     echo "start scanning $location"
     docker run -it --rm \
     --mount type=bind,source=$location,target=/scandir \
     clamav/clamav:unstable \
-    clamscan /scandir
+    clamscan /scandir $RECURSIVE
 }
 
 tnow () {
