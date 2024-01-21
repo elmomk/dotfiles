@@ -153,7 +153,7 @@ local plugins = {
 	-- 		return require("plugins.config.masontool")
 	-- 	end,
 	-- },
-	{ "jose-elias-alvarez/null-ls.nvim" }, -- for formatters and linters
+	{ "nvimtools/none-ls.nvim" }, -- for formatters and linters (replacement for null-ls)
 	{
 		"RRethy/vim-illuminate",
 	},
