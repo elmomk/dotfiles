@@ -72,6 +72,7 @@ local plugins = {
 		end,
 	},
 
+	{ "aquasecurity/vim-tfsec" },
 	--	colorschemes
 	{ "folke/lsp-colors.nvim" },
 	-- { "folke/tokyonight.nvim",
