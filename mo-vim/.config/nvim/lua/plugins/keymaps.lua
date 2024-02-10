@@ -117,8 +117,7 @@ end, { silent = false, desc = "nav to file 5" })
 keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
 
 -- NvimTrNeoTreeShowToggleee
-keymap("n", "<leader>e", ":NeoTreeFocusToggle<CR>", { silent = true, desc = "toggle neotree" })
-keymap("n", "<leader>E", ":NeoTreeFloatToggle<CR>", { silent = true, desc = "toggle neotree" })
+keymap("n", "<leader>e", ":Neotree toggle<CR>", { silent = true, desc = "toggle neotree" })
 
 -- Telescope
 keymap("n", "<leader>fo", ":Telescope oldfiles<CR>", opts)
@@ -156,9 +155,9 @@ keymap("n", "<leader>lf", "<cmd>lua vim.lsp.buf.format{ async = true }<cr>", opt
 --keymap("n", "<leader>fT", function() Util.float_term() end, { desc = "Terminal (cwd)" })
 --keymap("t", "<esc><esc>", "<c-\\><c-n>", {desc = "Enter Normal Mode"})
 
-keymap("n", "<leader>ds", ":!dcp ls<CR>", { silent = true, desc = "List DCP stacks" })
-keymap("n", "<leader>dp", ":!dcp plan -e prd -s stack -t tenant ", { silent = false, desc = "plan DCP" })
-keymap("n", "<leader>da", ":!dcp apply -e prd -s stack -t tenant", { silent = false, desc = "apply DCP" })
+keymap("n", "<leader>ds", ":!wrapcli ls<CR>", { silent = true, desc = "List stacks" })
+keymap("n", "<leader>dp", ":!wrapcli plan -e prd -s stack -t tenant ", { silent = false, desc = "plan" })
+keymap("n", "<leader>da", ":!wrapcli apply -e prd -s stack -t tenant", { silent = false, desc = "apply" })
 -- trivy config ./ -s HIGH
 -- keymap("n", "<leader>tv", ":!trivy image --exit-code 1 --severity HIGH --no-progress --format table --ignore-unfixed --ignore-policy --ignorefile .trivyignore .<CR>", { silent = false, desc = "trivy" })
 
