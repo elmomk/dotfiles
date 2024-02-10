@@ -117,7 +117,7 @@ end, { silent = false, desc = "nav to file 5" })
 keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
 
 -- NvimTrNeoTreeShowToggleee
-keymap("n", "<leader>e", ":Neotree toggle<CR>", { silent = true, desc = "toggle neotree" })
+keymap("n", "<leader>e", ":Neotree float toggle<CR>", { silent = true, desc = "toggle neotree" })
 
 -- Telescope
 keymap("n", "<leader>fo", ":Telescope oldfiles<CR>", opts)
