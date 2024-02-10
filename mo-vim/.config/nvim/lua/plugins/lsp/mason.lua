@@ -29,6 +29,7 @@ local servers = {
   -- "ruby_ls", -- ruby
   -- "solargraph", -- ruby
   -- "taplo", -- toml
+  -- "snyk_ls",
 }
 
 local settings = {

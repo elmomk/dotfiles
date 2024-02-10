@@ -159,6 +159,8 @@ keymap("n", "<leader>lf", "<cmd>lua vim.lsp.buf.format{ async = true }<cr>", opt
 keymap("n", "<leader>ds", ":!dcp ls<CR>", { silent = true, desc = "List DCP stacks" })
 keymap("n", "<leader>dp", ":!dcp plan -e prd -s stack -t tenant ", { silent = false, desc = "plan DCP" })
 keymap("n", "<leader>da", ":!dcp apply -e prd -s stack -t tenant", { silent = false, desc = "apply DCP" })
+-- trivy config ./ -s HIGH
+-- keymap("n", "<leader>tv", ":!trivy image --exit-code 1 --severity HIGH --no-progress --format table --ignore-unfixed --ignore-policy --ignorefile .trivyignore .<CR>", { silent = false, desc = "trivy" })
 
 keymap("n", "<leader>gpd", ":lua require('goto-preview').goto_preview_definition()<cr>", { silent = true })
 keymap("n", "<leader>gpt", ":lua require('goto-preview').goto_preview_type_definition()<CR>", { silent = true })
