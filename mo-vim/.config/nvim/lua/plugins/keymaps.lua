@@ -118,6 +118,7 @@ keymap("n", "<leader>zz", ":ZenMode<CR>", opts)
 
 -- NvimTrNeoTreeShowToggleee
 keymap("n", "<leader>e", ":Neotree float toggle<CR>", { silent = true, desc = "toggle neotree" })
+keymap("n", "<leader>E", ":Neotree float reveal_file=%<CR>", { silent = true, desc = "toggle neotree" })
 
 -- Telescope
 keymap("n", "<leader>fo", ":Telescope oldfiles<CR>", opts)
@@ -166,3 +167,13 @@ keymap("n", "<leader>gpt", ":lua require('goto-preview').goto_preview_type_defin
 keymap("n", "<leader>gpi", ":lua require('goto-preview').goto_preview_implementation()<CR>", { silent = true })
 keymap("n", "<leader>gp", ":lua require('goto-preview').close_all_win()<cr>", { silent = true })
 keymap("n", "<leader>gpr", ":lua require('goto-preview').goto_preview_references()<cr>", { silent = true })
+
+-- copilot chat
+keymap("n", "<leader>cb", "<cmd>CopilotChatBuffer %<cr>", { silent = true, desc = "CopilotChat - Chat with current buffer" })
+keymap("n", "<leader>ce", "<cmd>CopilotChatExplain<cr>", { silent = true, desc = "CopilotChat - Explain code" })
+keymap("n", "<leader>ct", "<cmd>CopilotChatTests<cr>", { silent = true, desc = "CopilotChat - Generate tests" })
+keymap("n", "<leader>cT", "<cmd>CopilotChatVsplitToggle<cr>", { silent = true, desc = "CopilotChat - Toggle Vsplit" }) -- Toggle vertical split
+keymap("x", "<leader>cv", ":CopilotChatVisual<CR>", { silent = true, desc = "CopilotChat - Open in vertical split" })
+keymap("x", "<leader>cx", ":CopilotChatInPlace<CR>", { silent = true, desc = "CopilotChat - Run in-place code" })
+keymap("n", "<leader>cf", "<cmd>CopilotChatFixDiagnostic<cr>", { silent = true, desc = "CopilotChat - Fix diagnostic" }) -- Get a fix for the diagnostic message under the cursor.
+keymap("n", "<leader>cr", "<cmd>CopilotChatReset<cr>", { silent = true, desc = "CopilotChat - Reset chat history and clear buffer" }) -- Reset chat history and clear buffer.
