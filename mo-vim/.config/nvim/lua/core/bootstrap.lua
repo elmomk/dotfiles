@@ -11,3 +11,4 @@ if not vim.loop.fs_stat(lazypath) then
 	})
 end
 
+vim.g.python3_host_prog = '$HOME/venv/bin/python3'

@@ -4,7 +4,6 @@ local plugins = {
 	{ "folke/lazy.nvim" },
 	{ "folke/trouble.nvim" }, -- enables lsp trouble shooting
 	{ "ellisonleao/glow.nvim", config = true, cmd = "Glow" }, -- show markdown files
-	{ "towolf/vim-helm", lazy = false },
 	{
 		"windwp/nvim-autopairs",
 		opts = function()
@@ -148,47 +147,10 @@ local plugins = {
 		-- build = ":MasonUpdate",
 	},
 	{ "williamboman/mason-lspconfig.nvim" },
-	-- {
-	-- 	"WhoIsSethDaniel/mason-tool-installer.nvim",
-	-- 	opt = function()
-	-- 		return require("plugins.config.masontool")
-	-- 	end,
-	-- },
 	{ "nvimtools/none-ls.nvim" }, -- for formatters and linters (replacement for null-ls)
 	{
 		"RRethy/vim-illuminate",
 	},
-	-- {
-	-- 	"Bryley/neoai.nvim",
-	-- 	opts = function()
-	-- 		return {
-	-- 			cmd = {
-	-- 				"NeoAI",
-	-- 				"NeoAIOpen",
-	-- 				"NeoAIClose",
-	-- 				"NeoAIToggle",
-	-- 				"NeoAIContext",
-	-- 				"NeoAIContextOpen",
-	-- 				"NeoAIContextClose",
-	-- 				"NeoAIInject",
-	-- 				"NeoAIInjectCode",
-	-- 				"NeoAIInjectContext",
-	-- 				"NeoAIInjectContextCode",
-	-- 			},
-	-- 			keys = {
-	-- 				{ "<leader>as", desc = "summarize text" },
-	-- 				{ "<leader>ag", desc = "generate git message" },
-	-- 			},
-	-- 			config = function()
-	-- 				require("neoai").setup({})
-	-- 			end,
-	-- 		}
-	-- 	end,
-	-- },
-	-- {
-	-- 	"jcdickinson/http.nvim",
-	-- 	build = "cargo build --workspace --release",
-	-- },
 	{
 		"jcdickinson/codeium.nvim",
 		dependencies = {
@@ -199,6 +161,23 @@ local plugins = {
 		config = function()
 			require("codeium").setup({})
 		end,
+	},
+	{
+		"CopilotC-Nvim/CopilotChat.nvim",
+		-- python -m venv venv
+		-- pip install python-dotenv requests pynvim==0.5.0 prompt-toolkit tiktoken
+		opts = {
+			show_help = "yes", -- Show help text for CopilotChatInPlace, default: yes
+			debug = false, -- Enable or disable debug mode, the log file will be in ~/.local/state/nvim/CopilotChat.nvim.log
+			disable_extra_info = "no", -- Disable extra information (e.g: system prompt) in the response.
+			language = "English", -- Copilot answer language settings when using default prompts. Default language is English.
+			-- proxy = "socks5://127.0.0.1:3000", -- Proxies requests via https or socks.
+			-- temperature = 0.1,
+		},
+		build = function()
+			vim.notify("Please update the remote plugins by running ':UpdateRemotePlugins', then restart Neovim.")
+		end,
+		event = "VeryLazy",
 	},
 	{
 		"github/copilot.vim",
