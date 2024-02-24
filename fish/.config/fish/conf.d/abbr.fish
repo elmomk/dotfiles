@@ -20,17 +20,6 @@ if type nvim >/dev/null 2>&1
     abbr vi nvim
 end
 
-# Reload the shell (i.e. invoke as a login shell)
-abbr reload 'source ~/.config/fish/config.fish'
-
-# git
-# abbr gst 'git status'
-# abbr gp 'git push'
-# abbr gl 'git pull'
-# abbr gd 'git diff'
-# abbr glg 'git log --graph --pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset" --abbrev-commit --date=relative'
-
-# lazgit
 abbr lg lazygit
 
 # terraform

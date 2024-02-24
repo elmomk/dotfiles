@@ -20,11 +20,11 @@ if status is-interactive
     # Settings for GPG
     set -gx GPG_TTY (tty)
 
-    # Load Starship Prompt
-    starship init fish | source
-    # Load zoxide
-    zoxide init fish | source
-
+    # # # Load Starship Prompt
+    # starship init fish | source
+    # # # Load zoxide
+    # zoxide init fish | source
+    #
     # source ~/.apikeys
     # export AWS_VAULT_PROMPT=ykman
 

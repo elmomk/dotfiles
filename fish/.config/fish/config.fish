@@ -48,9 +48,13 @@ set -e fish_user_paths
 set -U fish_user_paths $HOME/.bin $HOME/.local/bin $HOME/Applications $fish_user_paths
 
 # Starship prompt
-#if command -sq starship
-#    starship init fish | source
-#end
+if command -sq starship
+   starship init fish | source
+end
+
+if command -sq zoxide
+    zoxide init fish | source
+end
 
 # sets tools
 set -x EDITOR nano
@@ -188,23 +192,36 @@ function cd
     builtin cd $argv; and ls
 end
 
-### ALIASES ###
-
-#list
-alias ls="ls --color=auto"
-alias la="ls -a"
-alias ll="ls -alFh"
-alias l="ls"
-alias l.="ls -A | egrep '^\.'"
-alias listdir="ls -d */ > list"
-
-#pacman
-alias sps='sudo pacman -S'
-alias spr='sudo pacman -R'
-alias sprs='sudo pacman -Rs'
-alias sprdd='sudo pacman -Rdd'
-alias spqo='sudo pacman -Qo'
-alias spsii='sudo pacman -Sii'
+# ### ALIASES ###
+#
+# #list
+# alias ls="ls --color=auto"
+# alias la="ls -a"
+# alias ll="ls -alFh"
+# alias l="ls"
+# alias l.="ls -A | egrep '^\.'"
+# alias listdir="ls -d */ > list"
+abbr l 'ls'
+abbr l. 'ls -A | egrep "^\."'
+abbr listdir 'ls -d */ > list'
+#
+# #pacman
+# alias sps='sudo pacman -S'
+# alias spr='sudo pacman -R'
+# alias sprs='sudo pacman -Rs'
+# alias sprdd='sudo pacman -Rdd'
+# alias spqo='sudo pacman -Qo'
+# alias spsii='sudo pacman -Sii'
+abbr sps 'sudo pacman -S'
+abbr spr 'sudo pacman -R'
+abbr sprs 'sudo pacman -Rs'
+abbr sprdd 'sudo pacman -Rdd'
+abbr spqo 'sudo pacman -Qo'
+abbr spsii 'sudo pacman -Sii'
+#
+# #systemd
+# alias sc='sudo systemctl'
+abbr sc 'sudo systemctl'
 
 # show the list of packages that need this package - depends mpv as example
 function function_depends
@@ -215,9 +232,12 @@ end
 alias depends='function_depends'
 
 if type -q exa
-    alias ls="exa"
-    alias xls="exa -a --icons --color=always --group-directories-first"
-    alias xll="exa -lag --icons --color=always --group-directories-first --octal-permissions"
+    # alias ls="exa"
+    # alias xls="exa -a --icons --color=always --group-directories-first"
+    # alias xll="exa -lag --icons --color=always --group-directories-first --octal-permissions"
+    abbr ls 'exa'
+    abbr xls 'exa -a --icons --color=always --group-directories-first'
+    abbr xll 'exa -lag --icons --color=always --group-directories-first --octal-permissions'
 end
 
 #fix obvious typo's
@@ -266,21 +286,28 @@ alias free="free -mt"
 alias wget="wget -c"
 
 #userlist
-alias userlist="cut -d: -f1 /etc/passwd | sort"
+# alias userlist="cut -d: -f1 /etc/passwd | sort"
+abbr userlist 'cut -d: -f1 /etc/passwd | sort'
 
 #merge new settings
 alias merge="xrdb -merge ~/.Xresources"
 
 # Aliases for software managment
 # pacman
-alias pacman="sudo pacman --color auto"
-alias update="sudo pacman -Syyu"
-alias upd="sudo pacman -Syyu"
+# alias pacman="sudo pacman --color auto"
+# alias update="sudo pacman -Syyu"
+# alias upd="sudo pacman -Syyu"
+abbr pacman 'sudo pacman --color auto'
+abbr update 'sudo pacman -Syyu'
+abbr upd 'sudo pacman -Syyu'
 
 # paru as aur helper - updates everything
-alias pksyua="paru -Syu --noconfirm"
-alias upall="paru -Syu --noconfirm"
-alias upa="paru -Syu --noconfirm"
+# alias pksyua="paru -Syu --noconfirm"
+# alias upall="paru -Syu --noconfirm"
+# alias upa="paru -Syu --noconfirm"
+abbr pksyua 'paru -Syu --noconfirm'
+abbr upall 'paru -Syu --noconfirm'
+abbr upa 'paru -Syu --noconfirm'
 
 #ps
 alias psa="ps auxf"
@@ -546,7 +573,7 @@ end
 alias undopush "git push -f origin HEAD^:master"
 
 # reporting tools - install when not installed
-neofetch
+# neofetch
 #screenfetch
 #alsi
 #paleofetch
@@ -564,32 +591,32 @@ neofetch
 
 # colors to set or unset
 
-set fish_color_autosuggestion "#969896"
-set fish_color_cancel -r
-set fish_color_command "#0782DE"
-set fish_color_comment "#f0c674"
-set fish_color_cwd "#008000"
-set fish_color_cwd_root red
-set fish_color_end "#b294bb"
-set fish_color_error "#fb4934"
-set fish_color_escape "#fe8019"
-set fish_color_history_current --bold
-set fish_color_host "#85AD82"
-set fish_color_host_remote yellow
-set fish_color_match --background=brblue
-set fish_color_normal normal
-set fish_color_operator "#fe8019"
-set fish_color_param "#81a2be"
-set fish_color_quote "#b8bb26"
-set fish_color_redirection "#d3869b"
-set fish_color_search_match bryellow background=brblack
-set fish_color_selection white --bold background=brblack
-set fish_color_status red
-set fish_color_user brgreen
-set fish_color_valid_path --underline
-set fish_pager_color_completion normal
-set fish_pager_color_description "#B3A06D" yellow
-set fish_pager_color_prefix normal --bold underline
-set fish_pager_color_prefix white --bold --underline
-set fish_pager_color_progress brwhite --background=cyan
-set fish_color_search_match --background="#60AEFF"
+# set fish_color_autosuggestion "#969896"
+# set fish_color_cancel -r
+# set fish_color_command "#0782DE"
+# set fish_color_comment "#f0c674"
+# set fish_color_cwd "#008000"
+# set fish_color_cwd_root red
+# set fish_color_end "#b294bb"
+# set fish_color_error "#fb4934"
+# set fish_color_escape "#fe8019"
+# set fish_color_history_current --bold
+# set fish_color_host "#85AD82"
+# set fish_color_host_remote yellow
+# set fish_color_match --background=brblue
+# set fish_color_normal normal
+# set fish_color_operator "#fe8019"
+# set fish_color_param "#81a2be"
+# set fish_color_quote "#b8bb26"
+# set fish_color_redirection "#d3869b"
+# set fish_color_search_match bryellow background=brblack
+# set fish_color_selection white --bold background=brblack
+# set fish_color_status red
+# set fish_color_user brgreen
+# set fish_color_valid_path --underline
+# set fish_pager_color_completion normal
+# set fish_pager_color_description "#B3A06D" yellow
+# set fish_pager_color_prefix normal --bold underline
+# set fish_pager_color_prefix white --bold --underline
+# set fish_pager_color_progress brwhite --background=cyan
+# set fish_color_search_match --background="#60AEFF"
