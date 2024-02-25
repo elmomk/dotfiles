@@ -1,3 +1,4 @@
+vim.g.python3_host_prog = '$HOME/venv/bin/python3'
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 
 local plugins = {
