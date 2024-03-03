@@ -26,6 +26,11 @@ if [ -f $HOME/.config/fish/private.fish ]
     source $HOME/.config/fish/private.fish
 end
 
+#
+if [ -f $HOME/.config/fish/fn.fish ]
+    source $HOME/.config/fish/fn.fish
+end
+
 # Git
 if [ -f $HOME/.config/fish/git.fish ]
     source $HOME/.config/fish/git.fish
