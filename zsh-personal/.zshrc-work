@@ -12,24 +12,24 @@ export EDITOR='nvim'
 export VISUAL='nvim'
 export KUBE_EDITOR='nvim'
 
-export MCFLY_FUZZY=2
-export MCFLY_RESULTS=60
-source /usr/share/doc/find-the-command/ftc.zsh
-source /usr/share/doc/mcfly/mcfly.zsh
+# export MCFLY_FUZZY=2
+# export MCFLY_RESULTS=60
+# source /usr/share/doc/find-the-command/ftc.zsh
+# source /usr/share/doc/mcfly/mcfly.zsh
 #export MCFLY_INTERFACE_VIEW=BOTTOM
 
 # reporting tools - install when not installed
-if [[ ! $(env | grep tmux 2>&1) ]]; then
-    ufetch-arco | lolcat
-    # neofetch
-fi
+# if [[ ! $(env | grep tmux 2>&1) ]]; then
+#     ufetch-arco | lolcat
+#     # neofetch
+# fi
 
-eval $(thefuck --alias)
+# eval $(thefuck --alias)
 eval "$(zoxide init zsh)"
 eval "$(fnm env --use-on-cd)"
 eval "$(direnv hook zsh)"
 eval "$(starship init zsh)"
-eval "$(github-copilot-cli alias -- "$0")"
+# eval "$(github-copilot-cli alias -- "$0")"
 
 alias ls='eza --icons'
 alias ll='eza -l --icons --color-scale size'
