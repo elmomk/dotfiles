@@ -24,7 +24,7 @@ null_ls.setup {
     -- formatting.autoflake,
     -- diagnostics.flake8,
     diagnostics.yamllint,
-    diagnostics.jsonlint,
+    -- diagnostics.jsonlint,
     -- diagnostics.mypy,
     -- diagnostics.pylint,
     -- lua
@@ -32,7 +32,7 @@ null_ls.setup {
     -- java
     -- formatting.google_java_format,
     -- rust
-    formatting.rustfmt,
+    -- formatting.rustfmt,
     -- golang
     formatting.gofmt,
     formatting.gofumpt,
@@ -43,13 +43,13 @@ null_ls.setup {
     formatting.terraform_fmt,
     -- shell
     formatting.shfmt,
-    formatting.beautysh,
-    diagnostics.shellcheck,
+    -- formatting.beautysh,
+    -- diagnostics.shellcheck,
     --  opa
     diagnostics.opacheck,
     -- formatting.codespell,
     -- null_ls.builtins.completion.spell.with { filetypes = { "markdown", "text" } },
-    code_actions.shellcheck,
+    -- code_actions.shellcheck,
     code_actions.gomodifytags,
   },
 }
