@@ -14,3 +14,5 @@ alias jellytree='ssh jelly "tree ~/Documents/content/content"'
 alias jellydocker='ssh jelly "docker-compose -f ~/Documents/docker-media-server/docker-compose.yml $@"'
 alias jstart='jellystart; sleep 90; jellyps; jellydocker start traefik'
 alias fixjelly='sudo rmdir /var/lib/libvirt/images && sudo ln -s /data/libvirt/images /var/lib/libvirt/'
+
+alias fixaudio='systemctl --user restart pipewire pipewire-pulse'
