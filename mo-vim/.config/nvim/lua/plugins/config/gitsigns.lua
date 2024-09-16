@@ -1,8 +1,11 @@
 return {
   signs = {
-    add = { hl = "GitSignsAdd", text = "加", numhl = "GitSignsAddNr", linehl = "GitSignsAddLn" },
-    change = { hl = "GitSignsChange", text = "改", numhl = "GitSignsChangeNr", linehl = "GitSignsChangeLn" },
-    delete = { hl = "GitSignsDelete", text = "刪", numhl = "GitSignsDeleteNr", linehl = "GitSignsDeleteLn" },
+    add = { text = '加' },
+    change = { text = '改' },
+    delete = { text = '刪' },
+    -- add = { hl = "GitSignsAdd", text = "加", numhl = "GitSignsAddNr", linehl = "GitSignsAddLn" },
+    -- change = { hl = "GitSignsChange", text = "改", numhl = "GitSignsChangeNr", linehl = "GitSignsChangeLn" },
+    -- delete = { hl = "GitSignsDelete", text = "刪", numhl = "GitSignsDeleteNr", linehl = "GitSignsDeleteLn" },
     -- GitSignsAdd    = { text = "加", numhl = "GitSignsAddNr", linehl = "GitSignsAddLn" },
     -- GitSignsChange = { text = "改", numhl = "GitSignsChangeNr", linehl = "GitSignsChangeLn" },
     -- GitSignsDelete = { text = "刪", numhl = "GitSignsDeleteNr", linehl = "GitSignsDeleteLn" },
