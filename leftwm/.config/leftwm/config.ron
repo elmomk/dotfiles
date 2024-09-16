@@ -9,6 +9,8 @@
 
 #![enable(implicit_some)]
 (
+    backend: XLib,
+    // log_level: "debug",
     modkey: "Mod4",
     mousekey: "Mod4",
     workspaces: [],
@@ -39,6 +41,21 @@
         "CenterMain",
         "CenterMainBalanced",
     ],
+    layout_definitions: [
+        (name: "EvenHorizontal", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: None, stack: (flip: None, rotate: North, split: Vertical), second_stack: None)),
+        (name: "EvenVertical", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: None, stack: (flip: None, rotate: North, split: Horizontal), second_stack: None)),
+        (name: "Monocle", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: None, stack: (flip: None, rotate: North, split: None), second_stack: None)),
+        (name: "Grid", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: None, stack: (flip: None, rotate: North, split: Grid), second_stack: None)),
+        (name: "MainAndVertStack", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: (count: 1, size: 0.5, flip: None, rotate: North, split: Vertical), stack: (flip: None, rotate: North, split: Horizontal), second_stack: None)),
+        (name: "MainAndHorizontalStack", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: (count: 1, size: 0.5, flip: None, rotate: North, split: Vertical), stack: (flip: None, rotate: North, split: Vertical), second_stack: None)),
+        (name: "RightMainAndVertStack", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: South, main: (count: 1, size: 0.5, flip: None, rotate: North, split: Vertical), stack: (flip: None, rotate: North, split: Horizontal), second_stack: None)),
+        (name: "Fibonacci", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: (count: 1, size: 0.5, flip: None, rotate: North, split: Vertical), stack: (flip: None, rotate: North, split: Fibonacci), second_stack: None)),
+        (name: "Dwindle", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: (count: 1, size: 0.5, flip: None, rotate: North, split: Vertical), stack: (flip: None, rotate: North, split: Dwindle), second_stack: None)),
+        (name: "MainAndDeck", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: (count: 1, size: 0.5, flip: None, rotate: North, split: None), stack: (flip: None, rotate: North, split: None), second_stack: None)),
+        (name: "CenterMain", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: (count: 1, size: 0.5, flip: None, rotate: North, split: Vertical), stack: (flip: None, rotate: North, split: None), second_stack: (flip: None, rotate: North, split: Horizontal))),
+        (name: "CenterMainBalanced", flip: None, rotate: North, reserve: None, columns: (flip: None, rotate: North, main: (count: 1, size: 0.5, flip: None, rotate: North, split: Vertical), stack: (flip: None, rotate: North, split: Dwindle), second_stack: (flip: None, rotate: North, split: Dwindle))),
+        (name: "CenterMainFluid", flip: None, rotate: North, reserve: Reserve, columns: (flip: None, rotate: North, main: (count: 1, size: 0.5, flip: None, rotate: North, split: Vertical), stack: (flip: None, rotate: North, split: None), second_stack: (flip: None, rotate: North, split: Horizontal))),
+    ],
     layout_mode: Tag,
     insert_behavior: Bottom,
     scratchpad: [
@@ -58,7 +75,7 @@
     (window_title: "Bitwarden", spawn_floating: true),
     (window_class: "xfce4-notifyd", spawn_floating: true),
     (window_class: "firefox", spawn_on_tag: 2),
-    (window_class: "spotify", spawn_on_tag: 10),
+    // (window_class: "spotify", spawn_on_tag: 10),
     (window_class: "brave-browser-beta", spawn_on_tag: 1),
     // (window_class: "Microsoft-edge", spawn_on_tag: 1),
     // (window_class: "NewsFlashGTK", spawn_on_tag: 10)
@@ -70,7 +87,9 @@
     focus_new_windows: true,
     single_window_border: true,
     sloppy_mouse_follows_focus: true,
+    create_follows_cursor: None,
     auto_derive_workspaces: true,
+    disable_cursor_reposition_on_resize: false,
     keybind: [
         // (command: Execute, value: "killall conky", modifier: ["modkey"], key: "c"),
         (command: TileToFloating, modifier: ["modkey", "Control", "Shift"], key: "f"),
