@@ -25,14 +25,14 @@ super + shift + s
 	pkill -USR1 -x sxhkd
 
 
-#screenshooter
+#flameshot
 Print
     flameshot gui
 
-#Scrot
-ctrl + Print
-    scrot 'ArcoLinux-%Y-%m-%d-%s_screenshot_$wx$h.jpg' -e 'mv $f $$(xdg-user-dir PICTURES)'
-#Flameshot
+super + Print
+     flameshot full -p ~/Pictures/$(date +%Y%m%d%H%M%S).png
+
+#screenshooter
 super + ctrl + Print
     xfce4-screenshooter
 
