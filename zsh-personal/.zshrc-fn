@@ -119,15 +119,15 @@ admcheck () {
 
 
 nvims() {
-    items=("default" "latestmovim" "kickstart" "LazyVim" "NvChad" "AstroNvim" "sevim")
+    items=("default" "latestmovim" "kickstart" "lazyvim" "NvChad" "AstroNvim" "sevim")
     config=$(printf "%s\n" "${items[@]}" | fzf --prompt=" Neovim Config  " --height=~50% --layout=reverse --border --exit-0)
     if [[ -z $config ]]; then
         echo "Nothing selected"
         return 0
     elif [[ $config == "default" ]]; then
         config=""
-    elif [[ $config == "latestmovim" ]]; then
-      config="latestmovim/mo-vim/.config/nvim"
+    #elif [[ $config == "latestmovim" ]]; then
+    #  config="latestmovim/mo-vim/.config/nvim"
     fi
     NVIM_APPNAME=$config nvim $@
 }
