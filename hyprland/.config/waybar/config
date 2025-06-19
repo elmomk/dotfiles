@@ -1,0 +1,51 @@
+{
+  "layer": "top",
+  "position": "top",
+  "modules-left": ["hyprland/workspaces", "wlr/taskbar"],
+  "modules-center": ["clock"],
+  "modules-right": ["tray","pulseaudio", "upower", "custom/wlogout"],
+  "clock": {
+    "format": "<span color='#b4befe'> </span>{:%H:%M}"
+  },
+  "pulseaudio": {
+    "format": "<span color='#b4befe'>{icon}</span> {volume}%",
+    "format-muted": "",
+    "tooltip": false,
+    "format-icons": {
+      "headphone": "",
+      "default": ["", "", "󰕾", "󰕾", "󰕾", "", "", ""]
+    },
+    "scroll-step": 1
+  },
+  "tray": {
+    "icon-size": 21,
+    "spacing": 20,
+    "show-passive-items": true
+  },
+  "upower": {
+    "native-path": "/org/freedesktop/UPower/devices/battery_BAT0",
+    "icon-size": 20,
+    "hide-if-empty": true,
+    "tooltip": false,
+    "tooltip-spacing": 20
+  },
+  "wlr/taskbar": {
+    "format": "{icon}",
+    "icon-size": 14,
+    "icon-theme": "Numix-Circle",
+    "tooltip-format": "{title}",
+    "on-click": "activate",
+    "on-click-middle": "close",
+    "app_ids-mapping": {
+      "firefoxdeveloperedition": "firefox-developer-edition"
+    },
+    "rewrite": {
+      "Firefox Web Browser": "Firefox",
+      "Foot Server": "Terminal"
+    }
+  },
+  "custom/wlogout": {
+    "format": "",
+    "on-click": "wlogout"
+  }
+}

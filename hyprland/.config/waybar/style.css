@@ -30,7 +30,7 @@ window#waybar {
   color: #b4befe;
 }
 
-#clock, #pulseaudio, #bluetooth, #network{
+#clock, #pulseaudio, #bluetooth, #network, #battery, #upower, #tray, #custom-wlogout {
   border-radius: 10px;
   background-color: #11111b;
   color: #cdd6f4;

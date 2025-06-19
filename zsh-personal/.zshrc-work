@@ -24,9 +24,11 @@ export KUBE_EDITOR='nvim'
 #     # neofetch
 # fi
 
-eval $(thefuck --alias)
+# eval $(thefuck --alias)
+# eval "$(luarocks path --bin)"
+# eval $(thefuck --alias)
 eval "$(zoxide init zsh)"
-eval "$(fnm env --use-on-cd)"
+# eval "$(fnm env --use-on-cd)"
 eval "$(direnv hook zsh)"
 eval "$(starship init zsh)"
 # eval "$(github-copilot-cli alias -- "$0")"
