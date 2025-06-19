@@ -35,7 +35,7 @@ background = "0x2d4f67"
 foreground = "0xc8c093"
 
 [font]
-size = 12.0
+size = 32.0
 
 [scrolling]
 history = 50000

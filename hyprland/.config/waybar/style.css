@@ -1,7 +1,7 @@
 * {
   border: none;
-  font-family: 'Fira Code', 'Symbols Nerd Font Mono';
-  font-size: 16px;
+  font-family: "Fira Code", "Symbols Nerd Font Mono";
+  font-size: 36px;
   font-feature-settings: '"zero", "ss01", "ss02", "ss03", "ss04", "ss05", "cv31"';
   min-height: 45px;
 }
@@ -22,7 +22,7 @@ window#waybar {
 }
 
 #workspaces button.visible {
-  color: #FFA500;
+  color: #ffa500;
 }
 
 #workspaces button {
@@ -30,7 +30,14 @@ window#waybar {
   color: #b4befe;
 }
 
-#clock, #pulseaudio, #bluetooth, #network, #battery, #upower, #tray, #custom-wlogout {
+#clock,
+#pulseaudio,
+#bluetooth,
+#network,
+#battery,
+#upower,
+#tray,
+#custom-wlogout {
   border-radius: 10px;
   background-color: #11111b;
   color: #cdd6f4;
@@ -40,14 +47,16 @@ window#waybar {
   margin-right: 15px;
 }
 
-#backlight, #bluetooth {
+#backlight,
+#bluetooth {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   padding-right: 5px;
-  margin-right: 0
+  margin-right: 0;
 }
 
-#pulseaudio, #network {
+#pulseaudio,
+#network {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   padding-left: 5px;
