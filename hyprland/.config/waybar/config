@@ -15,7 +15,8 @@
       "headphone": "",
       "default": ["", "", "󰕾", "󰕾", "󰕾", "", "", ""]
     },
-    "scroll-step": 1
+    "scroll-step": 1,
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
   },
   "tray": {
     "icon-size": 31,
