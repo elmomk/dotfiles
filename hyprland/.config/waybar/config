@@ -16,7 +16,8 @@
       "default": ["", "", "󰕾", "󰕾", "󰕾", "", "", ""]
     },
     "scroll-step": 1,
-    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "on-click-right": "pactl set-sink-volume @DEFAULT_SINK@ 100%",
   },
   "tray": {
     "icon-size": 31,
