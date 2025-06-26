@@ -59,7 +59,7 @@ alias git-brach-fzf='git branch --sort=-committerdate | fzf --header "checkout r
 alias tls='tmux list-sessions'
 alias tfz='tmux attach -t `tmux list-sessions | fzf | cut -d: -f1`'
 
-#alias vi="nvim"
+alias vi="nvim"
 #alias v="nvim"
 alias doco="docker-compose"
 

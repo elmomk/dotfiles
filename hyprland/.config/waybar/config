@@ -25,11 +25,20 @@
     "show-passive-items": true
   },
   "upower": {
-    "native-path": "/org/freedesktop/UPower/devices/battery_BAT0",
+    "format": "{percentage}",
+    "format-alt": "{time}",
+    "format-plugged": "{percentage}% ",
+    "format-low": "{percentage}% ",
+    "critical-threshold": 20,
+    "low-threshold": 50,
+    "format-icons": {
+      "default": ["", "", "", "", ""]
+    },
     "icon-size": 20,
     "hide-if-empty": true,
-    "tooltip": false,
-    "tooltip-spacing": 20
+    "tooltip": true,
+    "tooltip-spacing": 20,
+    "update-interval": 10
   },
   "wlr/taskbar": {
     "format": "{icon}",
