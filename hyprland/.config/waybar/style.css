@@ -30,7 +30,7 @@ window#waybar {
   color: #b4befe;
 }
 
-#clock, #pulseaudio, #bluetooth, #network, #battery, #upower, #tray, #custom-wlogout {
+#clock, #pulseaudio, #bluetooth, #network, #upower, #tray, #custom-wlogout, #backlight {
   border-radius: 10px;
   background-color: #11111b;
   color: #cdd6f4;
@@ -40,17 +40,49 @@ window#waybar {
   margin-right: 15px;
 }
 
+#upower.full {
+  border-radius: 10px;
+  background-color: #11111b;
+  color: #11db33;
+  margin-top: 15px;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-right: 15px;
+}
+
+#upower.low {
+  border-radius: 10px;
+  background-color: #11111b;
+  color: #ff4d4d;
+  margin-top: 15px;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-right: 15px;
+}
+
+#upower.charging {
+  border-radius: 10px;
+  background-color: #11111b;
+  color: #FFD700;
+  margin-top: 15px;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-right: 15px;
+}
+
+
 #backlight, #bluetooth {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   padding-right: 5px;
-  margin-right: 0
+  margin-right: 0;
 }
 
 #pulseaudio, #network {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   padding-left: 5px;
+  margin-right: 15px;
 }
 
 #clock {

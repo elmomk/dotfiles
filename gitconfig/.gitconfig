@@ -1,6 +1,7 @@
 [user]
-	email = salomob@gmail.com
 	name = Salomo Bartholomees
+	email = salomob@gmail.com
+
 [init]
 	defaultBranch = main
 
@@ -21,3 +22,64 @@
 
 [diff]
     colorMoved = default
+
+
+# --- Conditional Configuration for Work Projects ---
+# This block applies when the Git repository's .git directory is under '~/work-projects/'
+# (The trailing slash in gitdir:~/work-projects/ ensures it matches subdirectories too)
+# WARNING: remember to change .ssh/config to accommodate different SSH keys
+# # Personal GitHub Account
+; Host github-personal
+;     HostName github.com
+;     User git
+;     IdentityFile ~/.ssh/personal
+;     IdentitiesOnly yes
+;     AddKeysToAgent yes
+; # Work GitHub Account
+; Host github-work
+;     HostName github.com
+;     User git
+;     IdentityFile ~/.ssh/work
+;     IdentitiesOnly yes
+;     AddKeysToAgent yes
+
+[includeIf "gitdir:~/Documents/work/"]
+   path = ~/.gitconfig-work
+    ; [user]
+        ; email = work@work
+        # Work-specific GPG signing key
+        # signingkey = YOUR_WORK_GPG_KEY_ID
+
+    ; [core]
+        # Work-specific core settings (e.g., if work projects use different hooks)
+        # hooksPath = ~/work-projects/.githooks
+
+    # You could also override other sections like [color], [alias], etc., here
+    # Example: A work-specific alias
+    # [alias]
+    #     review = log --oneline --grep='Review:'
+
+# --- Conditional Configuration for a Specific Project with a Special SSH Key ---
+# This block applies only when the Git repository's .git directory is exactly at '~/my-special-project/.git'
+# Note: No trailing slash if you want to match only that specific directory, not its subdirectories.
+; [includeIf "gitdir:~/my-special-project/"]
+;     [core]
+;         # This overrides the SSH command for this specific project
+;         # It forces the use of a particular SSH key and prevents loading other SSH configs
+;         sshCommand = "ssh -i ~/.ssh/id_rsa_special_project -F /dev/null"
+;
+;     [user]
+;         # Optionally, a user identity specific to this single project
+;         name = Special Project User
+;         email = special.user@project.com
+
+# --- Other Global Settings (that you want to apply after any conditional overrides) ---
+# If a setting here conflicts with a conditional setting above, the conditional setting
+# (because it's declared after the default, and before any other global sections) will win
+# UNLESS another global section below this [includeIf] block re-declares the same setting.
+# For simplicity, it's often best to put true "global defaults" at the top, and
+# then let the `includeIf` blocks override them.
+
+# [alias]
+#     co = checkout
+#     st = status
