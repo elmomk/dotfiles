@@ -60,16 +60,16 @@ alias tls='tmux list-sessions'
 alias tfz='tmux attach -t `tmux list-sessions | fzf | cut -d: -f1`'
 
 alias vi="nvim"
-#alias v="nvim"
+alias v="nvim"
 alias doco="docker-compose"
 
 # fzf git
 alias fzf-git-branch='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'
 
 
-alias nvim-lazy="NVIM_APPNAME=lazyvim nvim"
-alias vi="NVIM_APPNAME=lazyvim nvim"
-alias v="NVIM_APPNAME=lazyvim nvim"
+# alias nvim-lazy="NVIM_APPNAME=lazyvim nvim"
+# alias vi="NVIM_APPNAME=lazyvim nvim"
+# alias v="NVIM_APPNAME=lazyvim nvim"
 
 #tldr
 alias tldr-fzf="tldr --list --language en | fzf --preview "tldr {1} --color" --preview-window=70%" 
