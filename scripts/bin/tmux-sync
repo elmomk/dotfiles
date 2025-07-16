@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# This script toggles the 'synchronize-panes' option in the current tmux window.
+# When enabled, any input typed in one pane will be mirrored across all other
+# panes in the same window.
+
+# Get the current state of synchronize-panes for the current window.
+# The `show-window-options -w` command outputs the option and its value (e.g., "synchronize-panes on").
+# We use `awk` to extract just the value ("on" or "off").
+current_state=$(tmux show-window-options synchronize-panes | awk '{print $2}')
+
+# Check the current state and toggle it.
+if [ "$current_state" = "on" ]; then
+  # If currently 'on', turn it 'off'.
+  tmux setw synchronize-panes off
+  tmux display-message "Pane synchronization: OFF"
+else
+  # If currently 'off' (or any other state), turn it 'on'.
+  tmux setw synchronize-panes on
+  tmux display-message "Pane synchronization: ON"
+fi
