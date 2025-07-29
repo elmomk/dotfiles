@@ -1,0 +1,6 @@
+Unit]
+Description=Clean old cliphist thumbnail cache files
+
+[Service]
+Type=oneshot
+ExecStart=/home/salomo/bin/clean_cliphist_thumbs.sh
