@@ -1,45 +1,72 @@
 #!/bin/bash
 
-# Define the directory where cliphist-wofi-img *would* put thumbnails,
-# or where you'll put them if you create them manually.
-# cliphist-wofi-img generally puts them in ~/.cache/cliphist/thumbs/
 THUMBS_DIR="$HOME/.cache/cliphist/thumbs"
+mkdir -p "$THUMBS_DIR" # Ensure directory exists
 
-# Ensure the thumbnails directory exists
-mkdir -p "$THUMBS_DIR"
+# Debug log setup - ALL DEBUG LINES ARE UNCOMMENTED FOR MAXIMUM DETAIL
+# DEBUG_LOG="$HOME/wofi_parser_debug_aggressive.log"
+# printf " %s - START OF RUN \n" "$(date)" >"$DEBUG_LOG"
 
-# Loop through each line of input from stdin (which will be `cliphist list` output)
 while IFS= read -r line; do
-  # Try to extract the ID from the beginning of the line
-  # This assumes the ID is the first numeric string at the start of the line.
-  id=$(echo "$line" | grep -oP '^\d+' | head -n 1)
+  cleaned_line=$(echo "$line" | sed 's/\xc2\xa0/ /g')
 
-  # Check if an ID was found and if it's an image line
-  if [[ -n "$id" && "$line" =~ "[[ binary data" ]]; then
-    # This is an image line.
-    # The description is everything after the ID, stripped of leading/trailing whitespace.
-    description=$(echo "$line" | sed -E "s/^[0-9]+[[:space:]]*//")
+  # Use cleaned_line for all subsequent processing
+  # printf "RAW INPUT: '%s'\nCLEANED INPUT: '%s'\n" "$line" "$cleaned_line" >>"$DEBUG_LOG" # Debug raw vs cleaned
 
-    # Construct the expected thumbnail path.
-    # cliphist-wofi-img saves thumbnails as ID.png
-    thumbnail_file="$THUMBS_DIR/$id.png"
+  # Extract the first "word" (ID) from the cleaned line
+  first_word=$(echo "$cleaned_line" | awk '{print $1}')
 
-    # Check if the thumbnail file actually exists.
-    # This is the tricky part: if cliphist-wofi-img isn't working,
-    # these thumbnails might not be getting generated.
-    # You might need to manually run cliphist decode to get the image
-    # and then use 'convert' from ImageMagick to create a thumbnail.
-    # This script assumes a thumbnail *already exists* at that path.
+  # Check if the cleaned line is empty or if the first word is not purely numeric.
+  if [[ -z "$cleaned_line" || ! "$first_word" =~ ^[0-9]+$ ]]; then
+    # printf "SKIPPING NON-ID LINE: '%s'\n" "$cleaned_line" >>"$DEBUG_LOG" # Debug skipped lines
+    echo "$line" # Output original line if not parsed
+    continue
+  fi
 
-    if [[ -f "$thumbnail_file" ]]; then
-      # If thumbnail exists, output the Wofi image format
-      echo "img:$thumbnail_file:text:$description"
-    else
-      # If no thumbnail found, just output the text description
-      echo "$description (No preview)"
-    fi
+  id="$first_word"
+
+  # The rest of the cleaned line is the description, stripped of the ID and leading whitespace.
+  description=$(echo "$cleaned_line" | sed -E "s/^[0-9]+[[:space:]]*//")
+
+  # REFINED IMAGE DETECTION:
+  # Check if the description specifically matches the pattern of a binary image entry.
+  # Now, with `sed` cleaning, the regex should match correctly formed strings.
+  if [[ "$description" =~ ^\[\[[[:space:]]*binary[[:space:]]*data[[:space:]]*[0-9]+[[:space:]]*KiB[[:space:]]*[a-zA-Z]+[[:space:]]*[0-9]+x[0-9]+[[:space:]]*\]\]$ ]]; then
+    # printf "REGEX MATCH: Description for ID %s matched image regex: '%s'\n" "$id" "$description" >>"$DEBUG_LOG"
+
+    # Extract the specific image type (e.g., 'png', 'jpeg')
+    image_type=$(echo "$description" | grep -oP 'KiB[[:space:]]+\K[a-zA-Z]+(?=[[:space:]]+[0-9]+x[0-9]+)')
+    # printf "EXTRACTED IMAGE TYPE: '%s' for ID %s\n" "$image_type" "$id" >>"$DEBUG_LOG"
+
+    case "$image_type" in
+    png | jpeg | jpg | gif | webp | bmp) # List all supported image types here
+      # printf "IMAGE TYPE SUPPORTED: '%s' for ID %s.\n" "$image_type" "$id" >>"$DEBUG_LOG"
+      thumbnail_file="$THUMBS_DIR/$id.png" # Standardize to PNG for thumbnail storage
+
+      # If thumbnail doesn't exist, try to generate it
+      if [[ ! -f "$thumbnail_file" ]]; then
+        # printf "GENERATING THUMBNAIL FOR ID: '%s'\n" "$id" >>"$DEBUG_LOG"
+        # Attempt to decode and convert, redirecting stderr to null for silent errors
+        if cliphist decode "$id" | convert - -thumbnail 100x100 "$thumbnail_file" 2>/dev/null; then
+          # printf "THUMBNAIL GENERATED SUCCESSFULLY for ID: '%s'\n" "$id" >>"$DEBUG_LOG"
+          echo "img:$thumbnail_file:text:$description"
+        else
+          # printf "FAILED TO GENERATE THUMBNAIL FOR ID: '%s'. Command failed.\n" "$id" >>"$DEBUG_LOG"
+          echo "$description (Thumbnail failed)" # Provide clearer message to user if this happens
+        fi
+      else
+        # printf "USING EXISTING THUMBNAIL FOR ID: '%s'\n" "$id" >>"$DEBUG_LOG"
+        echo "img:$thumbnail_file:text:$description"
+      fi
+      ;;
+    *)
+      # printf "IMAGE TYPE NOT RECOGNIZED: '%s' for ID %s. Passing as text.\n" "$image_type" "$id" >>"$DEBUG_LOG"
+      echo "$line"
+      ;;
+    esac
   else
-    # Not an image line, or no ID found, just output the line as text
+    # printf "REGEX NO MATCH: Description for ID %s did NOT match image regex: '%s'\n" "$id" "$description" >>"$DEBUG_LOG"
     echo "$line"
   fi
 done
+# printf "%s - END OF RUN \n\n" "$(date)" >>"$DEBUG_LOG"
