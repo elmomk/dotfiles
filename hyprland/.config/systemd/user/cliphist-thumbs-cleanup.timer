@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily cleanup of old cliphist thumbnail cache
+Requires=cliphist-thumbs-cleanup.service
+PartOf=cliphist-thumbs-cleanup.service
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=24h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
