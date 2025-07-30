@@ -6,7 +6,7 @@ PartOf=cliphist-thumbs-cleanup.service
 [Timer]
 OnBootSec=1min
 OnUnitActiveSec=24h
-Persistent=true
+Persistent=false
 
 [Install]
 WantedBy=timers.target
