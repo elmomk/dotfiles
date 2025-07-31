@@ -1,4 +1,4 @@
-Unit]
+[Unit]
 Description=Clean old cliphist thumbnail cache files
 
 [Service]
