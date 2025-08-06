@@ -17,6 +17,10 @@ scandir() {
     RECURSIVE="-r"
   fi
     echo "start scanning $location"
+    echo "docker run -it --rm \
+    --mount type=bind,source=$location,target=/scandir \
+    clamav/clamav:unstable \
+    clamscan /scandir $RECURSIVE"
     docker run -it --rm \
     --mount type=bind,source=$location,target=/scandir \
     clamav/clamav:unstable \
