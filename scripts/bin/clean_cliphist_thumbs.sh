@@ -1,10 +1,14 @@
 #!/bin/bash -xe
 
-LOG_FILE="/tmp/cliphist-thumbs-cleanup-$(date +%Y-%m-%d).log"
+TIME=360
 
-echo "Starting cliphist thumbnail cleanup at $(date)" >>"$LOG_FILE"
+echo "Delete: $(/usr/bin/find $HOME/.cache/cliphist/thumbs/ -type f -mmin +$TIME)"
+cliphist list
 
-/usr/bin/find $HOME/.cache/cliphist/thumbs/ -type f -mtime +1 -delete >>"$LOG_FILE" 2>&1
-cliphist wipe >>"$LOG_FILE" 2>&1
+/usr/bin/find $HOME/.cache/cliphist/thumbs/ -type f -mmin +$TIME -delete
 
-echo "Finished cliphist thumbnail cleanup at $(date)" >>"$LOG_FILE"
+cliphist wipe
+
+echo 'After cleanup:'
+ls -halt $HOME/.cache/cliphist/thumbs/
+cliphist list
