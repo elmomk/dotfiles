@@ -2,7 +2,7 @@
   "layer": "top",
   "position": "top",
   "modules-left": ["hyprland/workspaces", "wlr/taskbar"],
-  "modules-center": ["clock"],
+  "modules-center": ["cpu","memory","clock"],
   "modules-right": ["tray","pulseaudio", "upower", "custom/wlogout"],
   "clock": {
     "format": "{:%H:%M}  ",
@@ -25,6 +25,20 @@
                 "on-click-right": "mode",
                 }
   },
+  "cpu": {
+    "format": " {usage}%",
+    "format-alt": " {load_average}",
+    "tooltip-format": "CPU Usage: {usage}%",
+    "tooltip-format-alt": "Load Average: {load_average}",
+    "interval": 5
+},
+  "memory": {
+    "format": " {used:0.1f}G",
+    "format-alt": " {percentage}%",
+    "tooltip-format": "Used: {used:0.1f}G / Total: {total:0.1f}G",
+    "tooltip-format-alt": "Free: {free:0.1f}G",
+    "interval": 5
+    },
   "pulseaudio": {
     "format": "<span color='#b4befe'>{icon}</span> {volume}%",
     "format-muted": "",
