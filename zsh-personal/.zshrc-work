@@ -27,7 +27,7 @@ export KUBE_EDITOR='nvim'
 # eval $(thefuck --alias)
 # eval "$(luarocks path --bin)"
 # eval $(thefuck --alias)
-# eval "$(zoxide init zsh)"
+eval "$(zoxide init zsh)"
 # eval "$(fnm env --use-on-cd)"
 eval "$(direnv hook zsh)"
 eval "$(starship init zsh)"

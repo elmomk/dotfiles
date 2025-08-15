@@ -46,6 +46,20 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
+# FZF History Search
+export FZF_CTRL_R_OPTS="--preview 'echo {}' --preview-window down:3:wrap --bind 'ctrl-s:toggle-sort'"
+
+# Add to your .zshrc
+
 # Shell integrations
 eval "$(fzf --zsh)"
 eval "$(zoxide init --cmd cd zsh)"
+
+fzf-and-run-widget() {
+  print -n "\e[31mWarning: selected command will run directly.\e[0m"
+  fzf-history-widget
+  zle accept-line
+}
+
+zle -N fzf-and-run-widget
+bindkey '^G' fzf-and-run-widget
