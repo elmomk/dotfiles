@@ -62,4 +62,5 @@ fzf-and-run-widget() {
 }
 
 zle -N fzf-and-run-widget
-bindkey '^G' fzf-and-run-widget
+bindkey '^R' fzf-and-run-widget
+bindkey '^G' fzf-history-widget
