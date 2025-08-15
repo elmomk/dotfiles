@@ -1,6 +1,7 @@
 # Add this line to .zshrc
 # [[ -f ~/.zshrc-personal ]] && . ~/.zshrc-personal
 
+[[ -f ~/.zshrc-zinit ]] && . ~/.zshrc-zinit
 [[ -f ~/.zshrc-work ]] && . ~/.zshrc-work
 [[ -f ~/.zshrc-fn ]] && . ~/.zshrc-fn
 
