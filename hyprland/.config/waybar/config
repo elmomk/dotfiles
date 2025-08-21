@@ -9,7 +9,7 @@
     "format-alt": " {:%Y %B %d %A (%R)}",
     "tooltip-format": "<tt><small>{calendar}</small></tt>",
     "calendar": {
-                "mode"          : "year",
+                "mode"          : "months",
                 "mode-mon-col"  : 3,
                 "weeks-pos"     : "center",
                 "on-scroll"     : 1,
