@@ -38,10 +38,9 @@
     "interval": 5
 },
   "memory": {
-    "format-alt": " {used:0.1f}G",
-    "format": " {percentage}%",
-    "tooltip-format": "Used: {used:0.1f}G / Total: {total:0.1f}G",
-    "tooltip-format-alt": "Free: {free:0.1f}G",
+    "format-alt": " {used:0.1f}G ({swapUsed:0.1f}G)",
+    "format": " {percentage}% ({swapPercentage}%)",
+    "tooltip-format": "Used: {used:0.1f}G / Total: {total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G",
     "interval": 5
     },
   "pulseaudio": {
