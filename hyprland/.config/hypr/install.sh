@@ -5,4 +5,4 @@ sudo pacman -S hyprland hypridle hyprlock hyprshot swaync waybar hyprpolkitagent
 # https://timewarrior.net/docs/
 # sudo pacman -SS taskwarrior
 # https://github.com/kdheepak/taskwarrior-tui
-yay -S wlogout
+yay -S wlogout walker
