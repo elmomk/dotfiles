@@ -13,7 +13,8 @@ size = 12.0
 # padding.x = 14
 # padding.y = 14
 decorations = "None"
-opacity = 0.9
+# opacity = 0.9
+opacity = 1
 
 [scrolling]
 history = 50000
