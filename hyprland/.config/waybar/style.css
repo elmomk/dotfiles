@@ -1,19 +1,23 @@
+@import "../themes/current/waybar.css";
+
 * {
+  background-color: @background;
+  color: @foreground;
+
   border: none;
+  border-radius: 0;
+  min-height: 0;
   font-family: 'Fira Code', 'Symbols Nerd Font Mono';
   font-size: 16px;
-  font-feature-settings: '"zero", "ss01", "ss02", "ss03", "ss04", "ss05", "cv31"';
-  min-height: 45px;
 }
 
-window#waybar {
-  background: transparent;
-}
+
+/* window#waybar { */
+/*   background: transparent; */
+/* } */
 
 ##workspaces {
   border-radius: 5px;
-  background-color: #11111b;
-  color: #b4befe;
   margin-top: 10px;
   margin-right: 15px;
   padding-top: 1px;
@@ -21,20 +25,10 @@ window#waybar {
   padding-right: 10px;
 }
 
-#workspaces button.visible {
-  color: #FFA500;
-}
-
-#workspaces button {
-  background: #11111b;
-  color: #b4befe;
-}
-
 #backlight, #cpu, #memory, #clock, #pulseaudio, #bluetooth, #network, #upower, #tray, #custom-wlogout, #backlight {
   border-radius: 10px;
-  background-color: #11111b;
   color: #cdd6f4;
-  margin-top: 15px;
+  margin-top: 10px;
   padding-left: 10px;
   padding-right: 10px;
   margin-right: 15px;
