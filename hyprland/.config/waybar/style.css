@@ -1,9 +1,10 @@
 @import "../themes/current/waybar.css";
 
 * {
-  background-color: @background;
-  color: @foreground;
-
+  /* #WARNING: */
+  /* general way of setting colors, but it overrides my battery colors */
+  /* background-color: @background; */
+  /* color: @foreground; */
   border: none;
   border-radius: 0;
   min-height: 0;
@@ -12,11 +13,14 @@
 }
 
 
-/* window#waybar { */
-/*   background: transparent; */
-/* } */
+window#waybar {
+  background: transparent;
+  /* background-color: @background; */
+}
 
 ##workspaces {
+  background-color: @background;
+  color: @foreground;
   border-radius: 5px;
   margin-top: 10px;
   margin-right: 15px;
@@ -25,18 +29,33 @@
   padding-right: 10px;
 }
 
+#workspaces button.visible {
+  /* color: #FFA500; */
+  color: @foreground;
+}
+
+#workspaces button {
+  background-color: @background;
+  color: @foreground;
+  /* background: #11111b; */
+  /* color: #b4befe; */
+}
+
 #backlight, #cpu, #memory, #clock, #pulseaudio, #bluetooth, #network, #upower, #tray, #custom-wlogout, #backlight {
   border-radius: 10px;
-  color: #cdd6f4;
+  background-color: @background;
+  color: @foreground;
+  /* color: #cdd6f4; */
   margin-top: 10px;
   padding-left: 10px;
   padding-right: 10px;
-  margin-right: 15px;
+  margin-right: 10px;
 }
 
 #upower.full {
   border-radius: 10px;
-  background-color: #11111b;
+  background-color: @background;
+  /* background-color: #11111b; */
   color: #11db33;
   margin-top: 15px;
   padding-left: 10px;
@@ -46,39 +65,22 @@
 
 #upower.low {
   border-radius: 10px;
-  background-color: #11111b;
+  /* background-color: #11111b; */
+  background-color: @background;
   color: #ff4d4d;
-  margin-top: 15px;
+  margin-top: 10px;
   padding-left: 10px;
   padding-right: 10px;
-  margin-right: 15px;
+  margin-right: 10px;
 }
 
 #upower.charging {
   border-radius: 10px;
-  background-color: #11111b;
+  /* background-color: #11111b; */
+  background-color: @background;
   color: #FFD700;
-  margin-top: 15px;
+  margin-top: 10px;
   padding-left: 10px;
   padding-right: 10px;
-  margin-right: 15px;
-}
-
-
-#backlight, #bluetooth {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  padding-right: 5px;
-  margin-right: 0;
-}
-
-#pulseaudio, #network {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  padding-left: 5px;
-  margin-right: 15px;
-}
-
-#clock {
-  margin-right: 0;
+  margin-right: 10px;
 }
