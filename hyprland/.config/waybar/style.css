@@ -1,5 +1,7 @@
 @import "../themes/current/waybar.css";
 
+@define-color transparent_background rgba(0, 0, 0, 0.7);
+
 * {
   /* #WARNING: */
   /* general way of setting colors, but it overrides my battery colors */
@@ -15,11 +17,11 @@
 
 window#waybar {
   background: transparent;
-  /* background-color: @background; */
+  /* background-color: @transparent_background; */
 }
 
 ##workspaces {
-  background-color: @background;
+  background-color: @transparent_background;
   color: @foreground;
   border-radius: 5px;
   margin-top: 10px;
@@ -35,7 +37,7 @@ window#waybar {
 }
 
 #workspaces button {
-  background-color: @background;
+  background-color: @transparent_background;
   color: @foreground;
   /* background: #11111b; */
   /* color: #b4befe; */
@@ -43,7 +45,7 @@ window#waybar {
 
 #backlight, #cpu, #memory, #clock, #pulseaudio, #bluetooth, #network, #upower, #tray, #custom-wlogout, #backlight {
   border-radius: 10px;
-  background-color: @background;
+  background-color: @transparent_background;
   color: @foreground;
   /* color: #cdd6f4; */
   margin-top: 10px;
@@ -54,7 +56,7 @@ window#waybar {
 
 #upower.full {
   border-radius: 10px;
-  background-color: @background;
+  background-color: @transparent_background;
   /* background-color: #11111b; */
   color: #11db33;
   margin-top: 15px;
@@ -66,7 +68,7 @@ window#waybar {
 #upower.low {
   border-radius: 10px;
   /* background-color: #11111b; */
-  background-color: @background;
+  background-color: @transparent_background;
   color: #ff4d4d;
   margin-top: 10px;
   padding-left: 10px;
@@ -77,7 +79,7 @@ window#waybar {
 #upower.charging {
   border-radius: 10px;
   /* background-color: #11111b; */
-  background-color: @background;
+  background-color: @transparent_background;
   color: #FFD700;
   margin-top: 10px;
   padding-left: 10px;
