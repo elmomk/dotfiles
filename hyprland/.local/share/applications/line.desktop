@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=line
+# GenericName=Line messaging application
+Comment=Line messaging application
+Exec=/home/salomo/bin/brave_line.sh
+# Terminal=true
+Icon=/usr/share/pixmaps/line-brave.png
+Categories=Messaging
+MimeType=x-scheme-handler/unknown;x-scheme-handler/about;text/html;text/xml;application/xhtml_xml;image/webp;x-scheme-handler/http;x-scheme-handler/https;
