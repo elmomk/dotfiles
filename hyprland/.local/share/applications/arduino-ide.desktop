@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Arduino IDE
+Comment=The official Arduino software development environment
+Exec=/usr/local/bin/arduino-ide_2.3.6_Linux_64bit.AppImage
+Icon=/usr/share/pixmaps/arduino-ide.png
+Type=Application
+Categories=Development;IDE;Electronics;
