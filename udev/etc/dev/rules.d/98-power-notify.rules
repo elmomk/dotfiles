@@ -1,0 +1,1 @@
+SUBSYSTEM=="power_supply", KERNEL=="AC0", ATTR{online}=="1", RUN+="/usr/local/bin/ac-notify.sh"
