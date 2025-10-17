@@ -1,0 +1,1 @@
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idProduct}!="", RUN+="/usr/local/bin/take-picture.sh"
