@@ -14,7 +14,7 @@ DEVICE_NAME="WF-1000XM5"
 
 # Function to send a desktop notification
 send_notification() {
-  notify-send "Blueblue Manager" "$1"
+  notify-send "Blueblue Manager" "$1" --icon=bluetooth
 }
 
 # Function to connect to the specified Bluetooth device
