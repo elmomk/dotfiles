@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# check-nodepools.sh
+# Maps every running pod to its Karpenter NodePool or EKS Node Group
+
+# Header formatting
+printf "%-25s %-45s %-40s %-25s\n" "NAMESPACE" "POD NAME" "SOURCE (Pool/Group)"
+printf "%-25s %-45s %-40s %-25s\n" "---------" "--------" "-------------------"
+
+# 1. Create a map of Node -> Pool/Group
+# We use an associative array to store the type for each node
+declare -A NODE_MAP
+
+# Get all nodes and relevant labels
+# We look for 'karpenter.sh/nodepool' (Karpenter) or 'eks.amazonaws.com/nodegroup' (Managed NG)
+while IFS=$'\t' read -r node_name karpenter_pool eks_group; do
+  if [[ "$karpenter_pool" != "<none>" && "$karpenter_pool" != "" ]]; then
+    NODE_MAP["$node_name"]="Karpenter: $karpenter_pool"
+  elif [[ "$eks_group" != "<none>" && "$eks_group" != "" ]]; then
+    NODE_MAP["$node_name"]="EKS-Group: $eks_group"
+  else
+    NODE_MAP["$node_name"]="Unknown/Static"
+  fi
+done < <(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.labels.karpenter\.sh/nodepool}{"\t"}{.metadata.labels.eks\.amazonaws\.com/nodegroup}{"\n"}{end}')
+
+# 2. Get all pods and look up their node in the map
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.metadata.name}{"\t"}{.spec.nodeName}{"\n"}{end}' |
+  while IFS=$'\t' read -r namespace pod_name node_name; do
+
+    # Handle Pending pods (no node assigned yet)
+    if [[ -z "$node_name" ]]; then
+      source="PENDING"
+      node_name="(None)"
+    else
+      source="${NODE_MAP[$node_name]}"
+      # Fallback if node isn't in our map (e.g. node was deleted while script ran)
+      if [[ -z "$source" ]]; then
+        source="Node Not Found"
+      fi
+    fi
+
+    # printf "%-25s %-45s %-40s %-25s\n" "$namespace" "$pod_name" "$node_name" "$source"
+    printf "%-25s %-45s %-40s %-25s\n" "$namespace" "$pod_name" "$source"
+  done | sort -k4 # Sort by Node Pool/Group for better readability

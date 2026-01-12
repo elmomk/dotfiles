@@ -1,0 +1,6 @@
+#!/bin/bash -xe
+
+aws autoscaling describe-auto-scaling-groups \
+    --query "AutoScalingGroups[].{Name:AutoScalingGroupName, Min:MinSize, Max:MaxSize, Desired:DesiredCapacity}" \
+    --output table
+

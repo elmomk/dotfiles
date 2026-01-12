@@ -1,0 +1,40 @@
+#!/bin/bash
+
+switch() {
+    local infra_dir
+    infra_dir="$(git rev-parse --show-toplevel)/infra"
+    if [ ! -d "$infra_dir" ]; then
+        echo "Error: infra directory not found."
+        return 1
+    fi
+
+    local current_dir
+    current_dir="$(pwd)"
+
+    local envs
+    envs=$(find "$infra_dir" -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+
+    local target_env
+    target_env=$(echo "$envs" | fzf)
+
+    if [ -z "$target_env" ]; then
+        return 0
+    fi
+
+    local target_dir
+    if [[ "$current_dir" == "$infra_dir"* ]]; then
+        local relative_path
+        relative_path="${current_dir#$infra_dir/}"
+        # remove the first segment of the relative path, which is the old environment
+        relative_path="${relative_path#*/}"
+        target_dir="$infra_dir/$target_env/$relative_path"
+    else
+        target_dir="$infra_dir/$target_env"
+    fi
+
+    if [ -d "$target_dir" ]; then
+        cd "$target_dir" || return 1
+    else
+        cd "$infra_dir/$target_env" || return 1
+    fi
+}

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# 1. Fetch the list of repositories (format: location/name)
+echo "Fetching Artifact Registry repositories..."
+REPO_CHOICE=$(gcloud artifacts repositories list \
+    --format="value(name)" | \
+    gum filter --placeholder "Select a repository to describe...")
+
+# 2. Exit if nothing was selected (e.g., user pressed Esc)
+if [ -z "$REPO_CHOICE" ]; then
+    echo "No repository selected. Exiting."
+    exit 0
+fi
+
+# 3. The 'name' returned is the full resource path:
+# projects/[PROJECT]/locations/[LOCATION]/repositories/[REPO]
+# We can pass this full path directly to 'describe'
+gum spin --spinner dot --title "Fetching details for $REPO_CHOICE..." -- \
+    gcloud artifacts repositories describe "$REPO_CHOICE"

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Header
+printf "%-25s %-35s %-10s %-30s\n" "NAMESPACE" "DAEMONSET" "STATUS" "DETAILS"
+echo "-------------------------------------------------------------------------------------------------------------"
+
+# Loop through all DaemonSets in the cluster
+kubectl get ds -A -o json | jq -r '.items[] | "\(.metadata.namespace) \(.metadata.name)"' | while read ns name; do
+    
+    # 1. Check if it's effectively disabled (0 desired replicas)
+    desired=$(kubectl get ds $name -n $ns -o jsonpath='{.status.desiredNumberScheduled}')
+    if [[ "$desired" == "0" ]]; then
+        printf "%-25s %-35s \033[0;33m%-10s\033[0m %-30s\n" "$ns" "$name" "SKIP" "Desired count is 0"
+        continue
+    fi
+
+    # 2. Get Tolerations logic
+    # We look for any toleration entry where 'operator' is 'Exists' AND the 'key' field is missing (null).
+    # This combination means "Tolerate Everything".
+    has_wildcard=$(kubectl get ds $name -n $ns -o json | jq -r '[.spec.template.spec.tolerations[]? | select(.operator=="Exists") | has("key")] | if contains([false]) then "YES" else "NO" end')
+
+    if [[ "$has_wildcard" == "YES" ]]; then
+        printf "%-25s %-35s \033[0;32m%-10s\033[0m %-30s\n" "$ns" "$name" "SAFE" "Has wildcard (operator: Exists)"
+    else
+        # If it fails the wildcard check, we warn the user.
+        # This DS will likely BREAK if you taint the nodes without adding a specific toleration.
+        printf "%-25s %-35s \033[0;31m%-10s\033[0m %-30s\n" "$ns" "$name" "DANGER" "Missing wildcard toleration!"
+    fi
+done
