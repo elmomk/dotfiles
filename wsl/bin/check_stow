@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Default to current directory if no argument provided
+STOW_DIR="${1:-$(pwd)}"
+
+# Check if stow is installed
+if ! command -v stow &> /dev/null; then
+    echo "Error: 'stow' is not installed."
+    exit 1
+fi
+
+echo "Checking stow packages in: $STOW_DIR"
+echo "Target: Parent Directory (default)"
+echo "------------------------------------"
+
+cd "$STOW_DIR" || { echo "Directory not found"; exit 1; }
+
+# Loop through only subdirectories (packages)
+for pkg in */; do
+    # Remove trailing slash from dir name
+    pkg_name="${pkg%/}"
+
+    # Run stow in dry-run (-n) verbose (-v) mode
+    # We capture both stdout and stderr
+    output=$(stow -n -v "$pkg_name" 2>&1)
+
+    if [[ "$output" == *"LINK:"* ]]; then
+        # If stow wants to create links, it is NOT stowed
+        echo -e "\033[31m[ ] $pkg_name\033[0m"
+    elif [[ "$output" == *"CONFLICT"* ]]; then
+        # If there are conflicts
+        echo -e "\033[33m[!] $pkg_name (Conflict detected)\033[0m"
+    else
+        # If stow is silent, it is already stowed
+        echo -e "\033[32m[x] $pkg_name\033[0m"
+    fi
+done
