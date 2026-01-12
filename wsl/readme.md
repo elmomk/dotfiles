@@ -16,12 +16,38 @@ find ~ -maxdepth 2 -type l -lname "*dotfiles*"
 ```
 
 ```bash
+check_stow
+Target: Parent Directory (default)
+------------------------------------
+[ ] alacritty
+[ ] arduino
+[ ] dunst
+[ ] fish
+[x] gitconfig
+[ ] hyprland
+[ ] i3
+[x] lazyvim
+[ ] leftwm
+[ ] mo-vim
+[ ] regolith2_i3
+[ ] scripts
+[x] starship
+[ ] sxhkdrc
+[x] tmux
+[ ] udev
+[ ] wsl
+[x] zsh-personal
+[ ] zsh
+```
+
+```bash
 stow wsl
 stow gitconfig 
+#WARNING: don't forget to add ~/.gitconfig-work
 stow lazyvim
 stow starship
 stow tmux
 stow zsh-personal
 ```
 
-# TODO: consolidate into one wsl for ease of use
+# TODO: consolidate into one wsl for ease of use ?
