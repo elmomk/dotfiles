@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# example usage:
+# # 1. Define the body
+#read -r -d '' TICKET_BODY << EOM
+#We need to bootstrap RootSync.
+
+#h3. Acceptance Criteria:
+#* [ ] RootSync object created.
+#* [ ] Config Sync running.
+
+#CLI Verification:
+#{code:bash}
+#kubectl get rootsyncs -A
+#{code}
+#EOM
+
+# 2. Run the script
+#./jira-task.sh "Configure RootSync for GitOps" "$TICKET_BODY" "4h"
+
+###
+
+# --- CONFIGURATION ---
+# Set your target project key here (e.g., DEVOPS, OPS)
+PROJECT_KEY="PE"
+# Priority default (can be changed)
+PRIORITY="Medium"
+
+# --- INPUT HANDLING ---
+SUMMARY="$1"
+BODY="$2"
+ESTIMATE="$3"
+
+if [[ -z "$SUMMARY" || -z "$BODY" ]]; then
+  echo "Usage: $(basename "$0") \"Summary\" \"Body\" \"Estimate (optional, e.g. 4h)\""
+  echo "Example: $(basename "$0") \"Fix Nginx\" \"Update config...\" \"2h\""
+  exit 1
+fi
+
+# --- AUTOMATION ---
+
+echo ">> Fetching Active Sprint..."
+# Fetches the first active sprint ID found
+ACTIVE_SPRINT_ID=$(jira sprint list --state=active --plain --table=false 2>/dev/null | cut -f1 | grep -v ID | head -n 1)
+
+if [[ -z "$ACTIVE_SPRINT_ID" ]]; then
+  echo "!! Warning: No active sprint found. Ticket will be created in Backlog."
+  SPRINT_ARG=""
+else
+  # Uses the specific Custom Field ID for 'Sprint' you confirmed (10020)
+  echo ">> Found Active Sprint ID: $ACTIVE_SPRINT_ID"
+  SPRINT_ARG="--custom customfield_10020=$ACTIVE_SPRINT_ID"
+fi
+
+# Handle Estimate Argument
+if [[ -n "$ESTIMATE" ]]; then
+  ESTIMATE_ARG="--original-estimate $ESTIMATE"
+else
+  ESTIMATE_ARG=""
+fi
+
+# --- EXECUTION ---
+
+echo ">> Creating Ticket in Project '$PROJECT_KEY'..."
+
+jira issue create \
+  --project "$PROJECT_KEY" \
+  --type "Task" \
+  --priority "$PRIORITY" \
+  --summary "$SUMMARY" \
+  --body "$BODY" \
+  $SPRINT_ARG \
+  $ESTIMATE_ARG
+
+# Check if command succeeded
+if [[ $? -eq 0 ]]; then
+  echo ">> Success!"
+else
+  echo "!! Error creating ticket."
+fi
