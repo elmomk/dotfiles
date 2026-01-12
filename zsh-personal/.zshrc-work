@@ -6,11 +6,14 @@ unset PAGER
 
 export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin
 
-export TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache
+autoload -Uz compinit
+# compinit
 
-export EDITOR='nvim'
-export VISUAL='nvim'
-export KUBE_EDITOR='nvim'
+# export TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache
+
+export EDITOR='editor'
+export VISUAL='editor'
+export KUBE_EDITOR='editor'
 
 # export MCFLY_FUZZY=2
 # export MCFLY_RESULTS=60
@@ -24,7 +27,7 @@ export KUBE_EDITOR='nvim'
 #     # neofetch
 # fi
 
-# eval $(thefuck --alias)
+# eval $(thefuck --alias fu)
 # eval "$(luarocks path --bin)"
 # eval $(thefuck --alias)
 eval "$(zoxide init zsh)"
@@ -33,13 +36,18 @@ eval "$(direnv hook zsh)"
 eval "$(starship init zsh)"
 # eval "$(github-copilot-cli alias -- "$0")"
 
-alias ls='eza --icons'
-alias ll='eza -l --icons --color-scale size'
-alias cat='bat'
-alias diff='delta'
+# alias ls='eza --icons'
+# alias ll='eza -l --icons --color-scale size'
+# alias cat='bat'
+# alias diff='delta'
+
+#aws
+export AWS_PAGER=""
 
 #terraform
 alias tf='terraform'
+alias ta='terragrunt apply'
+alias tp='terragrunt plan'
 
 #k8s
 alias k='kubectl'
@@ -62,6 +70,7 @@ alias tfz='tmux attach -t `tmux list-sessions | fzf | cut -d: -f1`'
 alias vi="nvim"
 alias v="nvim"
 alias doco="docker-compose"
+alias nvim="editor"
 
 # fzf git
 alias fzf-git-branch='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'

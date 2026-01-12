@@ -1,6 +1,6 @@
 [user]
-	name = Salomo Bartholomees
-	email = salomob@gmail.com
+  name = Salomo Bartholomees
+  email = salomob@gmail.com
 
 [init]
 	defaultBranch = main
@@ -8,7 +8,8 @@
 # use delta as the default diff viewer
 [core]
     pager = delta
-
+	  autocrlf = false
+    eol = lf
 [interactive]
     diffFilter = delta --color-only
 
@@ -43,7 +44,7 @@
 ;     IdentitiesOnly yes
 ;     AddKeysToAgent yes
 
-[includeIf "gitdir:~/Documents/work/"]
+[includeIf "gitdir:~/work/"]
    path = ~/.gitconfig-work
     ; [user]
         ; email = work@work
@@ -83,3 +84,5 @@
 # [alias]
 #     co = checkout
 #     st = status
+[credential]
+	helper = store

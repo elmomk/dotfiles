@@ -7,19 +7,63 @@ add_newline = true
 # Use custom format
 # format = '''
 # [┌───────────────────>](bold green)
-# [│](bold green)$directory$all
+# [│](bold green)$all
 # [└─>](bold green) '''
+format = '''
+[┌───────────────────────────────────────────────────────────────────────────────────────────>](bold green)$all
+[│](bold green)${custom.git_root}${custom.gitpath}${custom.fallback_dir}
+[└─>](bold green) '''
+
+[custom.fallback_dir]
+description = "Shows the path when NOT in a git repo"
+# Bash command to print PWD and replace $HOME with ~
+command = 'echo "${PWD/#$HOME/~}"' 
+# LOGIC: Only run this if we are NOT (!) inside a git tree
+when = "! git rev-parse --is-inside-work-tree 2>/dev/null"
+shell = ["bash", "--noprofile", "--norc"]
+style = "bold cyan"
+format = "[$output]($style) "
 
 [directory]
-truncation_length = 2
+disabled = true
+# truncation_length = 2
 # truncation_symbol = '...'
 # Replace the "❯" symbol in the prompt with "➜"
 # [character] # The name of the module we are configuring is "character"
-# success_symbol = "[➜](bold green)" # The "success_symbol" segment is being set to "➜" with the color "bold green"
+## 1. Define what goes on the Right Side
+#    We use our new custom module named 'gitpath'
+# right_format = """$custom.gitpath"""
+
+[custom.git_root]
+description = "Display only the name of the git repository root"
+# specific command to get the name of the root folder
+command = "basename $(git rev-parse --show-toplevel 2>/dev/null)" 
+when = "git rev-parse --is-inside-work-tree 2>/dev/null"
+shell = ["bash", "--noprofile", "--norc"]
+style = "bold blue"
+format = "[$output: ]($style)"
+
+# 2. Create the Custom Module
+[custom.gitpath]
+description = "Shows the full path relative to the git root"
+command = """
+git rev-parse --show-prefix 2>/dev/null | sed 's|/$||'
+"""
+# Only show this if we are actually inside a git repository
+when = "git rev-parse --is-inside-work-tree 2>/dev/null"
+shell = ["bash", "--noprofile", "--norc"]
+style = "dimmed white"  # Grey color so it's not distracting
+format = "[$output ]($style)" #success_symbol = "[➜](bold green)" # The "success_symbol" segment is being set to "➜" with the color "bold green"
 
 # Disable the package module, hiding it from the prompt completely
 [package]
 disabled = true
+
+[gcloud]
+style = 'bold yellow'
+format = 'on [$symbol$account | ($project)]($style) '
+# format = 'on [$symbol$account(@$domain)(\($project\))]($style) '
+
 
 [aws]
 style = "bold green"
@@ -45,22 +89,27 @@ format ="[$symbol devtainer]($style) "
 symbol = "⬢"
 disabled = false
 
-# [git_branch]
-# symbol = '🌱 '
+[git_branch]
+symbol = '🌱 '
 # truncation_length = 4
 # truncation_symbol = ''
 # ignore_branches = ['master', 'main']
 
 [python]
-# symbol = 'py-'
+disabled = true
+symbol = 'py-'
 format = '[$symbol$version]($style) '
 python_binary = ['./venv/bin/python', 'python', 'python3', 'python2']
 
 [golang]
-# symbol = 'go-'
+symbol = 'go-'
 
 [rust]
-# symbol = 'rs-'
+symbol = 'rs-'
 
 [terraform]
-symbol = "󱁢 "
+symbol = "tf-"
+
+[nodejs]
+disabled = true
+symbol = "nodejs-"
