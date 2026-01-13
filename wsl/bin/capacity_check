@@ -1,0 +1,156 @@
+#!/bin/bash
+
+# Configuration
+NODE_GROUP_KEYWORD="Terragrunt"
+SAFE_THRESHOLD=85
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# ---------------------------------------------------------
+# HELPER FUNCTIONS
+# ---------------------------------------------------------
+cpu_to_m() {
+  local val=$1
+  if [[ -z "$val" ]]; then echo 0; return; fi
+  if [[ "$val" == *m ]]; then
+    echo "${val%m}"
+  else
+    # Handle integer cores (e.g., "1" -> 1000m)
+    echo "$((val * 1000))"
+  fi
+}
+
+mem_to_mi() {
+  local input=$1
+  if [[ -z "$input" ]]; then echo 0; return; fi
+  
+  local val=${input//[!0-9]/} # Remove units
+  
+  if [[ "$input" == *Gi ]]; then
+    echo "$((val * 1024))"
+  elif [[ "$input" == *Mi ]]; then
+    echo "$val"
+  elif [[ "$input" == *Ki ]]; then
+    echo "$((val / 1024))"
+  else
+    # Assume bytes or weird format, simplistic fallback to Mi
+    echo "$((val / 1024 / 1024))"
+  fi
+}
+
+# ---------------------------------------------------------
+# 1. IDENTIFY NODES
+# ---------------------------------------------------------
+echo -e "🔍 Detecting nodes matching '${NODE_GROUP_KEYWORD}'..."
+NODES=$(kubectl get nodes --show-labels | grep -i "$NODE_GROUP_KEYWORD" | awk '{print $1}')
+
+if [[ -z "$NODES" ]]; then
+  echo -e "${RED}❌ No nodes found with keyword: $NODE_GROUP_KEYWORD${NC}"
+  exit 1
+fi
+
+NODE_COUNT=$(echo "$NODES" | wc -l | tr -d ' ')
+echo -e "✅ Found ${GREEN}${NODE_COUNT}${NC} nodes."
+
+# ---------------------------------------------------------
+# 2. CALCULATE CAPACITY & CURRENT USAGE
+# ---------------------------------------------------------
+echo "📊 Calculating Capacity & Summing Pod Requests..."
+
+TOTAL_CPU_CAP=0
+TOTAL_MEM_CAP=0
+TOTAL_CPU_REQ=0
+TOTAL_MEM_REQ=0
+
+for node in $NODES; do
+  # --- Node Capacity ---
+  RAW_CPU=$(kubectl get node "$node" -o jsonpath='{.status.allocatable.cpu}')
+  RAW_MEM=$(kubectl get node "$node" -o jsonpath='{.status.allocatable.memory}')
+  
+  NODE_CPU_CAP=$(cpu_to_m "$RAW_CPU")
+  NODE_MEM_CAP=$(mem_to_mi "$RAW_MEM")
+  
+  TOTAL_CPU_CAP=$((TOTAL_CPU_CAP + NODE_CPU_CAP))
+  TOTAL_MEM_CAP=$((TOTAL_MEM_CAP + NODE_MEM_CAP))
+
+  # --- Node Usage (The Fix) ---
+  # We fetch pods specifically assigned to this node
+  NODE_POD_DATA=$(kubectl get pods -A --field-selector spec.nodeName="$node" \
+    -o jsonpath='{range .items[*]}{.spec.containers[*].resources.requests.cpu}{" "}{.spec.containers[*].resources.requests.memory}{"\n"}{end}')
+  
+  # Process each pod on this node
+  while read -r pod_cpus pod_mems; do
+    # Handle multi-container pods by splitting spaces
+    for c_cpu in $pod_cpus; do
+        val=$(cpu_to_m "$c_cpu")
+        TOTAL_CPU_REQ=$((TOTAL_CPU_REQ + val))
+    done
+    
+    for c_mem in $pod_mems; do
+        val=$(mem_to_mi "$c_mem")
+        TOTAL_MEM_REQ=$((TOTAL_MEM_REQ + val))
+    done
+  done <<< "$NODE_POD_DATA"
+done
+
+# ---------------------------------------------------------
+# 3. GKE AGENT SIMULATION
+# ---------------------------------------------------------
+# Try to fetch actuals, default to 250m/256Mi if not found
+GKE_CPU_RAW=$(kubectl get deployment gke-connect-agent -n gke-connect -o jsonpath='{.spec.template.spec.containers[0].resources.requests.cpu}' 2>/dev/null)
+GKE_MEM_RAW=$(kubectl get deployment gke-connect-agent -n gke-connect -o jsonpath='{.spec.template.spec.containers[0].resources.requests.memory}' 2>/dev/null)
+
+# Apply Defaults
+GKE_CPU_RAW=${GKE_CPU_RAW:-250m}
+GKE_MEM_RAW=${GKE_MEM_RAW:-256Mi}
+
+GKE_CPU=$(cpu_to_m "$GKE_CPU_RAW")
+GKE_MEM=$(mem_to_mi "$GKE_MEM_RAW")
+
+# New Totals
+NEW_CPU_REQ=$((TOTAL_CPU_REQ + GKE_CPU))
+NEW_MEM_REQ=$((TOTAL_MEM_REQ + GKE_MEM))
+
+# ---------------------------------------------------------
+# 4. OUTPUT & FORMATTING
+# ---------------------------------------------------------
+# Calculate Percentages
+CUR_CPU_PCT=$(( (TOTAL_CPU_REQ * 100) / TOTAL_CPU_CAP ))
+CUR_MEM_PCT=$(( (TOTAL_MEM_REQ * 100) / TOTAL_MEM_CAP ))
+NEW_CPU_PCT=$(( (NEW_CPU_REQ * 100) / TOTAL_CPU_CAP ))
+NEW_MEM_PCT=$(( (NEW_MEM_REQ * 100) / TOTAL_MEM_CAP ))
+
+echo "---------------------------------------------------"
+echo -e "🏷️  Node Group:    ${GREEN}${NODE_GROUP_KEYWORD}${NC} (${NODE_COUNT} Nodes)"
+echo "---------------------------------------------------"
+
+echo -e "🔹 CURRENT LOAD (Existing Pods):"
+echo -e "   CPU: ${YELLOW}${TOTAL_CPU_REQ}${NC} / ${TOTAL_CPU_CAP} mCPU (${CUR_CPU_PCT}%)"
+echo -e "   RAM: ${YELLOW}${TOTAL_MEM_REQ}${NC} / ${TOTAL_MEM_CAP} MiB  (${CUR_MEM_PCT}%)"
+echo ""
+
+echo -e "🔹 GKE CONNECT COST (Simulated/Actual):"
+echo -e "   CPU: +${GKE_CPU} mCPU"
+echo -e "   RAM: +${GKE_MEM} MiB"
+echo ""
+
+echo -e "🔹 PREDICTED LOAD (If you patch GKE Connect):"
+
+# Color logic for final result
+if [ "$NEW_CPU_PCT" -gt "$SAFE_THRESHOLD" ]; then CPU_C=$RED; else CPU_C=$GREEN; fi
+if [ "$NEW_MEM_PCT" -gt "$SAFE_THRESHOLD" ]; then MEM_C=$RED; else MEM_C=$GREEN; fi
+
+echo -e "   CPU: ${CPU_C}${NEW_CPU_REQ} / ${TOTAL_CPU_CAP} (${NEW_CPU_PCT}%)${NC}"
+echo -e "   RAM: ${MEM_C}${NEW_MEM_REQ} / ${TOTAL_MEM_CAP} (${NEW_MEM_PCT}%)${NC}"
+
+echo ""
+if [ "$NEW_CPU_PCT" -lt "$SAFE_THRESHOLD" ] && [ "$NEW_MEM_PCT" -lt "$SAFE_THRESHOLD" ]; then
+    echo -e "✅ ${GREEN}SAFE:${NC} You have plenty of room."
+else
+    echo -e "⚠️  ${RED}WARNING:${NC} Capacity is tight (> ${SAFE_THRESHOLD}%)."
+fi
+echo "---------------------------------------------------"
