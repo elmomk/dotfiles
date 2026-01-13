@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Define the Taint Key you are using on your Base/Added nodes
+TAINT_KEY="infra"
+
+# List of workloads to check: "Namespace Kind Name"
+# You can add more rows here if needed
+TARGETS=(
+  "gmp-system daemonset collector"           # Prometheus
+  "gke-connect deployment gke-connect-agent" # GKE Connect
+  "gke-system daemonset fluentbit-gke"       # Fluent Bit (Logging)
+  "kube-system daemonset kube-proxy"         # System Proxy
+  "kube-system daemonset aws-node"           # AWS CNI (if on EKS)
+  "opentelemetry-system ds platform-collector-collector"
+)
+
+printf "%-40s %-15s %-30s\n" "RESOURCE" "STATUS" "DETAILS"
+printf "%s\n" "--------------------------------------------------------------------------------------"
+
+for target in "${TARGETS[@]}"; do
+  # Split the string into variables
+  read -r ns kind name <<<"$target"
+
+  # Check if resource exists first to avoid ugly errors
+  if ! kubectl get $kind $name -n $ns &>/dev/null; then
+    printf "%-40s \033[0;33m%-15s\033[0m %-30s\n" "$ns/$name ($kind)" "NOT FOUND" "Skipping..."
+    continue
+  fi
+
+  # Extract tolerations as a JSON string
+  TOLERATIONS=$(kubectl get $kind $name -n $ns -o jsonpath='{.spec.template.spec.tolerations}')
+
+  # Logic Checks
+  # 1. Check for global wildcard: looks like {"operator":"Exists"} with NO key
+  IS_WILDCARD=$(echo "$TOLERATIONS" | grep -E '\{"effect":"No(Schedule|Execute)","operator":"Exists"\}|\{"operator":"Exists"\}')
+
+  # 2. Check for specific taint key
+  HAS_SPECIFIC=$(echo "$TOLERATIONS" | grep "\"key\":\"$TAINT_KEY\"")
+
+  # Output Result
+  if [[ -n "$IS_WILDCARD" ]]; then
+    printf "%-40s \033[0;32m%-15s\033[0m %-30s\n" "$ns/$name" "SAFE ✅" "Has Wildcard (Tolerates ALL)"
+  elif [[ -n "$HAS_SPECIFIC" ]]; then
+    printf "%-40s \033[0;32m%-15s\033[0m %-30s\n" "$ns/$name" "SAFE ✅" "Explicitly tolerates '$TAINT_KEY'"
+  else
+    printf "%-40s \033[0;31m%-15s\033[0m %-30s\n" "$ns/$name" "BLOCKED ❌" "Will NOT run on '$TAINT_KEY' nodes"
+  fi
+done
