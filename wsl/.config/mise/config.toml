@@ -1,0 +1,13 @@
+[tools]
+awscli = { version = "2.32.8", symlink_bins = "true" }
+chezmoi = "2.67.1"
+delta = "0.18.2"
+gum = "0.17.0"
+jq = "1.8.1"
+kcl = "latest"
+krew = "0.4.5"
+node = "25.2.1"
+opencode = "latest"
+rg = "15.1.0"
+terramate = "0.15.1"
+trivy = "0.67.2"
