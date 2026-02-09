@@ -1,0 +1,12 @@
+[Unit]
+Description=Run WSL Monitor every hour
+
+[Timer]
+# Run 15 minutes after WSL starts
+OnBootSec=15min
+# Run every 1 hour after the last run
+OnUnitActiveSec=1h
+Unit=wsl-monitor.service
+
+[Install]
+WantedBy=timers.target
