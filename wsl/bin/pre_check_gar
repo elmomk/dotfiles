@@ -1,0 +1,51 @@
+#!/bin/bash
+set -e
+
+# Configuration
+PROJECT_ID=$(gcloud config get-value project)
+REGION="asia-east1"
+
+echo "Running pre-flight checks for Project: $PROJECT_ID in $REGION..."
+echo "-------------------------------------------------------------"
+
+# 1. Check Required APIs
+echo "[1/3] Checking APIs..."
+REQUIRED_APIS=("artifactregistry.googleapis.com" "secretmanager.googleapis.com")
+fail=0
+for api in "${REQUIRED_APIS[@]}"; do
+  if gcloud services list --project="$PROJECT_ID" --enabled --filter="config.name:$api" | grep -q "$api"; then
+    echo "  [OK] $api is enabled."
+  else
+    echo "  [!!] $api is MISSING."
+    fail=1
+  fi
+done
+
+if [ $fail -eq 1 ]; then
+  echo "  -> FIX: Run 'gcloud services enable ${REQUIRED_APIS[*]}'"
+  exit 1
+fi
+
+# 2. Check Artifact Registry Service Agent
+# This agent acts on your behalf to pull images. It MUST exist.
+echo "[2/3] Checking GAR Service Agent..."
+# We try to describe it. If it doesn't exist, this often returns empty or error.
+SA_EMAIL="service-$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+echo "  Target SA: $SA_EMAIL"
+
+# There isn't a direct "check if exists" API for default agents, but we can check if it has IAM roles or just proceed. 
+# A common trick is to ensure the P4SA (Per-Product Per-Project Service Account) is provisioned:
+gcloud beta services identity create --service=artifactregistry.googleapis.com --project=$PROJECT_ID > /dev/null 2>&1
+echo "  [OK] Service Agent identity confirmed."
+
+# 3. Check Docker Hub Credentials (Local check)
+echo "[3/3] Checking local Docker Hub credentials..."
+if [ -z "$TF_VAR_docker_username" ] || [ -z "$TF_VAR_docker_pat" ]; then
+  echo "  [WARNING] Environment variables TF_VAR_docker_username or TF_VAR_docker_pat are missing."
+  echo "  Terraform will ask for them interactively, which is fine, but for CI/CD set them now."
+else
+  echo "  [OK] Credentials found in environment."
+fi
+
+echo "-------------------------------------------------------------"
+echo "SUCCESS: Pre-requisites met. You are ready to terraform."

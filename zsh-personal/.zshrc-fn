@@ -1,3 +1,10 @@
+worktree-clean() {
+git worktree list --porcelain | grep '^worktree ' | cut -d ' ' -f 2 | xargs -I {} sh -c 'MAIN=$(git rev-parse --show-toplevel); if [ "{}" != "$MAIN" ]; then cd {}; if [ -z "$(git status --porcelain)" ]; then echo "🧹 Removing: {}"; git worktree remove "{}"; else echo "❌ DIRTY: {}"; fi; fi'
+}
+
+worktree-check() {
+  git worktree list --porcelain | grep '^worktree ' | cut -d ' ' -f 2 | xargs -I {} sh -c 'cd {}; if [ -n "$(git status --porcelain)" ]; then echo "❌ DIRTY: {}"; else echo "✅ CLEAN: {}"; fi'
+}
 decrypt() {
     cd $(git rev-parse --show-toplevel) || return 1
     git secret reveal -vfF
