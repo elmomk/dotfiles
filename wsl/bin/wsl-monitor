@@ -1,21 +1,20 @@
 #!/bin/bash
 
 # ==========================================
-# WSL BACKGROUND MONITOR
-# Checks: C: Drive Space, WSL Disk Space, Uncommitted Dotfiles
+# WSL MONITOR (Verbose Daemon Version)
+# Checks: C: Drive, WSL Disk, Dotfiles
 # ==========================================
 
 # Configuration
-THRESHOLD_PERCENT=90
+THRESHOLD_PERCENT=60
 DOTFILES_DIR="$HOME/dotfiles"
-COOLDOWN_FILE="/tmp/wsl_monitor_cooldown"
-COOLDOWN_SEC=3600  # 1 Hour
 
-# Function: Send Windows Notification
+# Helper: Send Windows Notification
 notify_windows() {
-    local title="$1"
-    local message="$2"
-    powershell.exe -Command "& {
+  local title="$1"
+  local message="$2"
+  echo "  -> TRIGGERING NOTIFICATION: $title - $message"
+  /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "& {
         [reflection.assembly]::loadwithpartialname('System.Windows.Forms') | Out-Null;
         \$obj = New-Object System.Windows.Forms.NotifyIcon;
         \$obj.Icon = [System.Drawing.SystemIcons]::Warning;
@@ -27,39 +26,45 @@ notify_windows() {
     }"
 }
 
-# 1. Check Cooldown (Exit if ran recently)
-NOW=$(date +%s)
-if [ -f "$COOLDOWN_FILE" ]; then
-    LAST_RUN=$(cat "$COOLDOWN_FILE")
-    DIFF=$((NOW - LAST_RUN))
-    if [ "$DIFF" -lt "$COOLDOWN_SEC" ]; then
-        exit 0
-    fi
-fi
+echo "--- Monitor Run Started: $(date) ---"
 
-# Update timestamp
-echo "$NOW" > "$COOLDOWN_FILE"
-
-# 2. Check Windows C: Drive
+# 1. Check Windows C: Drive
 C_USAGE=$(df -h /mnt/c | awk 'NR==2 {print $5}' | sed 's/%//')
+echo "C: Drive Usage: ${C_USAGE}% (Threshold: ${THRESHOLD_PERCENT}%)"
+
 if [ "$C_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
-    notify_windows "Storage Critical" "Windows C: Drive is ${C_USAGE}% full. VS Code may fail."
-    echo -e "\033[0;31m[!] WARNING: C: Drive is ${C_USAGE}% full.\033[0m"
+  notify_windows "Storage Critical" "Windows C: Drive is ${C_USAGE}% full."
+fi
+#
+# 1. Check Windows D: Drive
+D_USAGE=$(df -h /mnt/d | awk 'NR==2 {print $5}' | sed 's/%//')
+echo "D: Drive Usage: ${D_USAGE}% (Threshold: ${THRESHOLD_PERCENT}%)"
+
+if [ "$D_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
+  notify_windows "Storage Critical" "Windows D: Drive is ${C_USAGE}% full."
 fi
 
-# 3. Check WSL Virtual Disk
+# 2. Check WSL Virtual Disk
 WSL_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+echo "WSL Disk Usage: ${WSL_USAGE}% (Threshold: ${THRESHOLD_PERCENT}%)"
+
 if [ "$WSL_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
-    notify_windows "Storage Critical" "WSL Internal Disk is ${WSL_USAGE}% full."
-    echo -e "\033[0;31m[!] WARNING: WSL Disk is ${WSL_USAGE}% full.\033[0m"
+  notify_windows "Storage Critical" "WSL Internal Disk is ${WSL_USAGE}% full."
 fi
 
-# 4. Check Dotfiles
+# 3. Check Dotfiles
 if [ -d "$DOTFILES_DIR" ]; then
-    GIT_STATUS=$(git -C "$DOTFILES_DIR" status --porcelain)
-    if [ ! -z "$GIT_STATUS" ]; then
-        COUNT=$(echo "$GIT_STATUS" | grep -c '^')
-        notify_windows "Dotfiles Dirty" "You have $COUNT uncommitted changes in dotfiles."
-        echo -e "\033[0;33m[!] Reminder: $COUNT uncommitted change(s) in dotfiles.\033[0m"
-    fi
+  # Git status check
+  CHANGES=$(git -C "$DOTFILES_DIR" status --porcelain)
+  if [ -n "$CHANGES" ]; then
+    COUNT=$(echo "$CHANGES" | grep -c '^')
+    echo "Dotfiles Status: DIRTY ($COUNT uncommitted files)"
+    notify_windows "Dotfiles Dirty" "You have $COUNT uncommitted changes."
+  else
+    echo "Dotfiles Status: CLEAN"
+  fi
+else
+  echo "Dotfiles Directory not found at $DOTFILES_DIR"
 fi
+
+echo "--- Monitor Run Finished ---"
