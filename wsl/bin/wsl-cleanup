@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# ==========================================
+# WSL MASTER CLEANUP UTILITY
+# Targets: Podman, Mise, Rust, Go, System Logs, Trash
+# ==========================================
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Paths
+WORK_DIR="$HOME/work"
+CONTAINERS_DIR="$HOME/.local/share/containers"
+MISE_DIR="$HOME/.local/share/mise"
+NVIM_BAK="$HOME/.local/share/nvim.bak"
+
+echo -e "${BLUE}Starting Cleanup...${NC}"
+
+# --- 1. Podman / Containers (The 12GB Giant) ---
+if [ -d "$CONTAINERS_DIR" ]; then
+  echo -e "\n${YELLOW}[*] Checking Container Storage...${NC}"
+  if command -v podman &>/dev/null; then
+    echo -e "Pruning Podman (stopped containers, unused images, volumes)..."
+    podman system prune -a -f --volumes
+  else
+    # If podman isn't installed but the folder exists, it's dead weight
+    read -p "Orphaned container data found ($CONTAINERS_DIR). Delete? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      rm -rf "$CONTAINERS_DIR"
+      echo -e "${GREEN}Deleted orphaned data.${NC}"
+    fi
+  fi
+fi
+
+# --- 2. Mise Version Manager (The 5GB Cache) ---
+if command -v mise &>/dev/null; then
+  echo -e "\n${YELLOW}[*] Cleaning Mise Cache...${NC}"
+  mise cache clean
+  mise prune -y
+  echo -e "${GREEN}Mise pruned.${NC}"
+fi
+
+# --- 3. Old Backups ---
+if [ -d "$NVIM_BAK" ]; then
+  echo -e "\n${YELLOW}[*] Found old Neovim backup ($NVIM_BAK)${NC}"
+  read -p "Delete it? [y/N] " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    rm -rf "$NVIM_BAK"
+    echo -e "${GREEN}Deleted.${NC}"
+  fi
+fi
+
+# --- 4. Rust & Go Build Artifacts ---
+echo -e "\n${YELLOW}[*] Cleaning Developer Artifacts...${NC}"
+
+# Rust 'target' folders in ~/work
+if [ -d "$WORK_DIR" ]; then
+  read -p "Deep clean 'target' folders in $WORK_DIR? [y/N] " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Deleting 'target' directories (this may take a moment)..."
+    find "$WORK_DIR" -name "target" -type d -prune -exec rm -rf {} + 2>/dev/null
+    echo -e "${GREEN}Rust targets cleaned.${NC}"
+  fi
+fi
+
+# Go Cache
+if command -v go &>/dev/null; then
+  echo "Cleaning Go mod cache..."
+  go clean -modcache
+fi
+
+# --- 5. System Maintenance (Safe) ---
+echo -e "\n${YELLOW}[*] System Maintenance...${NC}"
+# Empty Trash
+rm -rf "$HOME/.local/share/Trash/*"
+
+# Apt Cache
+if command -v apt-get &>/dev/null; then
+  sudo apt-get autoremove -y && sudo apt-get clean
+fi
+
+# Journal Logs (keep only 1 day)
+sudo journalctl --vacuum-time=1d
+
+echo -e "\n${BLUE}==========================================${NC}"
+echo -e "${GREEN}Cleanup Finished.${NC}"
+df -h / /mnt/c
+df -h / /mnt/d

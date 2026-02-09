@@ -1,0 +1,44 @@
+#!/bin/bash
+set -e
+
+TERRAGRUNT="tg-wrapper"
+
+UNIT_NAME=$1
+
+if [ -z "$UNIT_NAME" ]; then
+  echo "Error: You must provide a unit name."
+  echo "Usage: ./plan_unit.sh <unit_name>"
+  exit 1
+fi
+
+echo ">> Searching for units matching: '$UNIT_NAME'..."
+
+# Generate stack silently
+terragrunt stack generate >/dev/null 2>&1
+
+# 1. Convert input path separators (/) into wildcards (.*)
+#    This allows 'dev/hello' to match 'dev/.terragrunt-stack/hello'
+SEARCH_REGEX=$(echo "$UNIT_NAME" | sed 's|/|.*|g')
+
+# 2. Find paths matching the regex
+MATCHES=$(find .terragrunt-stack -type f -name "terragrunt.hcl" |
+  grep -v ".terragrunt-cache" |
+  grep -E "$SEARCH_REGEX") # Use -E for extended regex support
+
+if [ -z "$MATCHES" ]; then
+  echo "❌ No units found matching '$UNIT_NAME'"
+  exit 1
+fi
+
+echo "$MATCHES" | while read config_file; do
+  unit_dir=$(dirname "$config_file")
+
+  echo ""
+  echo "================================================================"
+  echo "📍 Planning Unit: $unit_dir"
+  echo "================================================================"
+
+  (
+    cd "$unit_dir" && $TERRAGRUNT plan
+  )
+done
