@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+# Generate stack first to ensure lists are accurate
+echo ">> Generating stack..."
+terragrunt stack generate > /dev/null 2>&1
+
+echo ""
+echo ">> Available Units:"
+
+# Find directories containing terragrunt.hcl, excluding cache
+find .terragrunt-stack -type f -name "terragrunt.hcl" \
+    | grep -v ".terragrunt-cache" \
+    | sort \
+    | while read config_file; do
+        # Print the directory name relative to the .terragrunt-stack folder for readability
+        dirname "$config_file"
+    done

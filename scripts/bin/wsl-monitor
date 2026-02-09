@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# ==========================================
+# WSL BACKGROUND MONITOR
+# Checks: C: Drive Space, WSL Disk Space, Uncommitted Dotfiles
+# ==========================================
+
+# Configuration
+THRESHOLD_PERCENT=90
+DOTFILES_DIR="$HOME/dotfiles"
+COOLDOWN_FILE="/tmp/wsl_monitor_cooldown"
+COOLDOWN_SEC=3600  # 1 Hour
+
+# Function: Send Windows Notification
+notify_windows() {
+    local title="$1"
+    local message="$2"
+    powershell.exe -Command "& {
+        [reflection.assembly]::loadwithpartialname('System.Windows.Forms') | Out-Null;
+        \$obj = New-Object System.Windows.Forms.NotifyIcon;
+        \$obj.Icon = [System.Drawing.SystemIcons]::Warning;
+        \$obj.BalloonTipIcon = 'Warning';
+        \$obj.BalloonTipText = '$message';
+        \$obj.BalloonTipTitle = '$title';
+        \$obj.Visible = \$true;
+        \$obj.ShowBalloonTip(5000);
+    }"
+}
+
+# 1. Check Cooldown (Exit if ran recently)
+NOW=$(date +%s)
+if [ -f "$COOLDOWN_FILE" ]; then
+    LAST_RUN=$(cat "$COOLDOWN_FILE")
+    DIFF=$((NOW - LAST_RUN))
+    if [ "$DIFF" -lt "$COOLDOWN_SEC" ]; then
+        exit 0
+    fi
+fi
+
+# Update timestamp
+echo "$NOW" > "$COOLDOWN_FILE"
+
+# 2. Check Windows C: Drive
+C_USAGE=$(df -h /mnt/c | awk 'NR==2 {print $5}' | sed 's/%//')
+if [ "$C_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
+    notify_windows "Storage Critical" "Windows C: Drive is ${C_USAGE}% full. VS Code may fail."
+    echo -e "\033[0;31m[!] WARNING: C: Drive is ${C_USAGE}% full.\033[0m"
+fi
+
+# 3. Check WSL Virtual Disk
+WSL_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+if [ "$WSL_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
+    notify_windows "Storage Critical" "WSL Internal Disk is ${WSL_USAGE}% full."
+    echo -e "\033[0;31m[!] WARNING: WSL Disk is ${WSL_USAGE}% full.\033[0m"
+fi
+
+# 4. Check Dotfiles
+if [ -d "$DOTFILES_DIR" ]; then
+    GIT_STATUS=$(git -C "$DOTFILES_DIR" status --porcelain)
+    if [ ! -z "$GIT_STATUS" ]; then
+        COUNT=$(echo "$GIT_STATUS" | grep -c '^')
+        notify_windows "Dotfiles Dirty" "You have $COUNT uncommitted changes in dotfiles."
+        echo -e "\033[0;33m[!] Reminder: $COUNT uncommitted change(s) in dotfiles.\033[0m"
+    fi
+fi
