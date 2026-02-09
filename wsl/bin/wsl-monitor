@@ -7,6 +7,7 @@
 
 # Configuration
 THRESHOLD_PERCENT=60
+WSL_LIMIT_GB=50 # Alert if WSL uses more than 50GiB
 DOTFILES_DIR="$HOME/dotfiles"
 
 # Helper: Send Windows Notification
@@ -36,7 +37,7 @@ if [ "$C_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
   notify_windows "Storage Critical" "Windows C: Drive is ${C_USAGE}% full."
 fi
 #
-# 1. Check Windows D: Drive
+# 2. Check Windows D: Drive
 D_USAGE=$(df -h /mnt/d | awk 'NR==2 {print $5}' | sed 's/%//')
 echo "D: Drive Usage: ${D_USAGE}% (Threshold: ${THRESHOLD_PERCENT}%)"
 
@@ -44,12 +45,13 @@ if [ "$D_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
   notify_windows "Storage Critical" "Windows D: Drive is ${C_USAGE}% full."
 fi
 
-# 2. Check WSL Virtual Disk
-WSL_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
-echo "WSL Disk Usage: ${WSL_USAGE}% (Threshold: ${THRESHOLD_PERCENT}%)"
+# 3. Check WSL Virtual Disk (Used GiB)
+# -BG forces block size to 1G, 'print $3' gets Used column, sed strips 'G'
+WSL_USED_GB=$(df -BG / | awk 'NR==2 {print $3}' | sed 's/G//')
+echo "WSL Disk Usage: ${WSL_USED_GB}GiB (Limit: ${WSL_LIMIT_GB}GiB)"
 
-if [ "$WSL_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
-  notify_windows "Storage Critical" "WSL Internal Disk is ${WSL_USAGE}% full."
+if [ "$WSL_USED_GB" -ge "$WSL_LIMIT_GB" ]; then
+  notify_windows "WSL Storage Alert" "WSL is using ${WSL_USED_GB}GiB (Limit: ${WSL_LIMIT_GB}GiB)."
 fi
 
 # 3. Check Dotfiles
