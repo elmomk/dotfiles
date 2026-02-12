@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# ==========================================
+# WSL INSPECT
+# Finds what is eating your disk space
+# ==========================================
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}==========================================${NC}"
+echo -e "${BLUE}       WSL DISK INSPECTOR                 ${NC}"
+echo -e "${BLUE}==========================================${NC}"
+
+# 1. Overall System Health
+echo -e "\n${YELLOW}[1] System Disk Usage (Root & Windows C:)${NC}"
+df -hT / /mnt/c
+
+# 2. Identify the Heavy Hitters in Home
+echo -e "\n${YELLOW}[2] Top 10 Largest Directories in Home (~/)${NC}"
+# Use standard du. 2>/dev/null suppresses "permission denied" on system locks
+du -h --max-depth=1 "$HOME" 2>/dev/null | sort -hr | head -n 10
+
+# 3. Deep Dive into .local (Where AppData/Containers hide)
+echo -e "\n${YELLOW}[3] Inspecting .local (Hidden AppData & Containers)${NC}"
+# We go depth 2 to see inside 'share' (e.g., share/containers)
+du -h --max-depth=2 "$HOME/.local" 2>/dev/null | sort -hr | head -n 10
+
+# 4. Check Work Directory (Build Artifacts)
+if [ -d "$HOME/work" ]; then
+    echo -e "\n${YELLOW}[4] Inspecting ~/work (Build Artifacts)${NC}"
+    du -h --max-depth=2 "$HOME/work" 2>/dev/null | sort -hr | head -n 10
+fi
+
+# 5. Smart Recommendations
+echo -e "\n${BLUE}==========================================${NC}"
+echo -e "${BLUE}       ANALYSIS & RECOMMENDATIONS         ${NC}"
+echo -e "${BLUE}==========================================${NC}"
+
+# Check Container Storage (Podman/Buildah)
+CONTAINER_DIR="$HOME/.local/share/containers"
+if [ -d "$CONTAINER_DIR" ]; then
+    # Calculate size in GB
+    SIZE_KB=$(du -s "$CONTAINER_DIR" 2>/dev/null | awk '{print $1}')
+    SIZE_GB=$((SIZE_KB / 1024 / 1024))
+    
+    if [ "$SIZE_GB" -gt 10 ]; then
+        echo -e "${RED}[!] Container Storage is HUGE (${SIZE_GB}GB).${NC}"
+        echo -e "    Location: $CONTAINER_DIR"
+        echo -e "    Cause:    Old images and build layers (AWS Copilot/Docker)."
+        echo -e "    Fix:      Run ${GREEN}podman system prune -a --volumes${NC}"
+    else
+        echo -e "${GREEN}[OK] Container storage is reasonable (${SIZE_GB}GB).${NC}"
+    fi
+fi
+
+# Check Mise (Version Manager)
+MISE_DIR="$HOME/.local/share/mise"
+if [ -d "$MISE_DIR" ]; then
+    SIZE_KB=$(du -s "$MISE_DIR" 2>/dev/null | awk '{print $1}')
+    SIZE_GB=$((SIZE_KB / 1024 / 1024))
+    
+    if [ "$SIZE_GB" -gt 5 ]; then
+        echo -e "${YELLOW}[!] Mise is large (${SIZE_GB}GB).${NC}"
+        echo -e "    Fix:      Run ${GREEN}mise prune${NC} to remove old Node/Python versions."
+    fi
+fi
+
+echo -e "\n${GREEN}Inspection Complete.${NC}"

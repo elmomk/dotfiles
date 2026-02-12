@@ -6,7 +6,7 @@
 # ==========================================
 
 # Configuration
-THRESHOLD_PERCENT=60
+THRESHOLD_PERCENT=82
 WSL_LIMIT_GB=50 # Alert if WSL uses more than 50GiB
 DOTFILES_DIR="$HOME/dotfiles"
 
