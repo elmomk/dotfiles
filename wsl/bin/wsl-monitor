@@ -7,7 +7,7 @@
 
 # Configuration
 THRESHOLD_PERCENT=82
-WSL_LIMIT_GB=50 # Alert if WSL uses more than 50GiB
+WSL_LIMIT_GB=80 # Alert if WSL uses more than 50GiB
 DOTFILES_DIR="$HOME/dotfiles"
 
 # Helper: Send Windows Notification
