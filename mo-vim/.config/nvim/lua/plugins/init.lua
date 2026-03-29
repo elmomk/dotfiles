@@ -5,4 +5,4 @@ require("plugins.config.neotree")
 require("plugins.config.lualine")
 require("plugins.config.illuminate")
 require("plugins.lsp")
-require("plugins.config.cmp")
+-- claude-code.nvim loaded via lazy.nvim

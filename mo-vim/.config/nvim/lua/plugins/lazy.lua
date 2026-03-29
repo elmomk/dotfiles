@@ -3,6 +3,33 @@ local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 
 local plugins = {
 	{ "folke/lazy.nvim" },
+	{
+		dir = "/home/mo/data/Documents/git/nvim_claude_code_plugin",
+		name = "cc-watcher.nvim",
+		event = { "BufReadPost", "BufNewFile" },
+		cmd = { "ClaudeSidebar", "ClaudeDiff", "ClaudeSnacks", "ClaudeFzf", "ClaudeTrouble", "ClaudeDiffview", "ClaudeMcp" },
+		keys = {
+			{ "<leader>cs", desc = "Claude - toggle sidebar" },
+			{ "<leader>cd", desc = "Claude - toggle inline diff" },
+			{ "<leader>ct", "<cmd>ClaudeSnacks<cr>", desc = "Claude - changed files" },
+			{ "<leader>ch", "<cmd>ClaudeSnacks hunks<cr>", desc = "Claude - hunks" },
+			{ "<leader>cx", "<cmd>ClaudeTrouble<cr>", desc = "Claude - trouble" },
+			{ "<leader>cv", "<cmd>ClaudeDiffview<cr>", desc = "Claude - diffview" },
+		},
+		opts = {
+			integrations = {
+				snacks = true,
+				fzf_lua = true,
+				trouble = true,
+				diffview = true,
+			},
+			mcp = {
+				enabled = false,
+			},
+		},
+	},
+	{ "folke/snacks.nvim", lazy = true },
+	{ "ibhagwan/fzf-lua", lazy = true },
 	{ "folke/trouble.nvim" }, -- enables lsp trouble shooting
 	{ "ellisonleao/glow.nvim", config = true, cmd = "Glow" }, -- show markdown files
 	{
@@ -156,26 +183,39 @@ local plugins = {
 	},
 	-- The completion plugin
 	{
-		"hrsh7th/nvim-cmp",
+		"saghen/blink.cmp",
+		version = "1.*",
 		dependencies = {
-			{ "hrsh7th/cmp-buffer" }, -- buffer completions
-			{ "hrsh7th/cmp-path" }, -- path completions
-			{ "saadparwaiz1/cmp_luasnip" }, -- snippet completions
-			{ "hrsh7th/cmp-nvim-lsp" },
-			{ "hrsh7th/cmp-nvim-lua" },
+			{ "L3MON4D3/LuaSnip", version = "v2.*" },
+			{ "rafamadriz/friendly-snippets" },
 		},
-		-- pin version to avoid breaking changes
-		--  6c84bc75c64f778e9f1dcb798ed41c7fcb93b639
-		commit = "6c84bc75c64f778e9f1dcb798ed41c7fcb93b639",
+		opts = {
+			keymap = {
+				preset = "default",
+				["<C-k>"] = { "select_prev", "fallback" },
+				["<C-j>"] = { "select_next", "fallback" },
+				["<C-b>"] = { "scroll_documentation_up", "fallback" },
+				["<C-f>"] = { "scroll_documentation_down", "fallback" },
+				["<C-Space>"] = { "show", "fallback" },
+				["<C-e>"] = { "cancel", "fallback" },
+				["<CR>"] = { "accept", "fallback" },
+				["<Tab>"] = { "snippet_forward", "select_next", "fallback" },
+				["<S-Tab>"] = { "snippet_backward", "select_prev", "fallback" },
+			},
+			appearance = {
+				nerd_font_variant = "mono",
+			},
+			completion = {
+				documentation = { auto_show = true },
+				ghost_text = { enabled = true },
+				menu = { border = "rounded" },
+			},
+			snippets = { preset = "luasnip" },
+			sources = {
+				default = { "lsp", "path", "snippets", "buffer" },
+			},
+		},
 	},
-
-	{
-		"L3MON4D3/LuaSnip",
-		opts = function()
-			return require("plugins.config.snippets")
-		end,
-	}, --snippet engine
-	{ "rafamadriz/friendly-snippets" }, -- a bunch of snippets to use
 	{ "neovim/nvim-lspconfig" }, -- enable LSP
 	{
 		"williamboman/mason.nvim",
@@ -187,14 +227,15 @@ local plugins = {
 		"RRethy/vim-illuminate",
 	},
 	{
-		"jcdickinson/codeium.nvim",
+		"Exafunction/codeium.nvim",
 		dependencies = {
-			-- "jcdickinson/http.nvim",
 			"nvim-lua/plenary.nvim",
-			"hrsh7th/nvim-cmp",
 		},
 		config = function()
-			require("codeium").setup({})
+			require("codeium").setup({
+				enable_cmp_source = false,
+				virtual_text = { enabled = true },
+			})
 		end,
 	},
 	-- {
@@ -333,113 +374,113 @@ local plugins = {
       { "<leader>st", "<cmd>TodoTelescope<cr>",                            desc = "Todo" },
     },
 	},
---	{
---		"folke/noice.nvim",
---		event = "VeryLazy",
---		opts = {
---			lsp = {
---				override = {
---					["vim.lsp.util.convert_input_to_markdown_lines"] = true,
---					["vim.lsp.util.stylize_markdown"] = true,
---					["cmp.entry.get_documentation"] = true,
---				},
---			},
---			presets = {
---				bottom_search = true,
---				command_palette = true,
---				long_message_to_split = true,
---				inc_rename = true,
---				lsp_doc_border = true,
---				cmdline_output_to_split = true,
---			},
---		},
---		keys = {
---			{
---				"<S-Enter>",
---				function()
---					require("noice").redirect(vim.fn.getcmdline())
---				end,
---				mode = "c",
---				desc = "Redirect",
---			},
---			{
---				"<leader>snl",
---				function()
---					require("noice").cmd("last")
---				end,
---				desc = "Noice Last Message",
---			},
---			{
---				"<leader>snh",
---				function()
---					require("noice").cmd("history")
---				end,
---				desc = "Noice History",
---			},
---			{
---				"<leader>sna",
---				function()
---					require("noice").cmd("all")
---				end,
---				desc = "Noice All",
---			},
---			{
---				"<c-f>",
---				function()
---					if not require("noice.lsp").scroll(4) then
---						return "<c-f>"
---					end
---				end,
---				silent = true,
---				expr = true,
---				desc = "Scroll forward",
---				mode = {
---					"i",
---					"n",
---					"s",
---				},
---			},
---			{
---				"<c-b>",
---				function()
---					if not require("noice.lsp").scroll(-4) then
---						return "<c-b>"
---					end
---				end,
---				silent = true,
---				expr = true,
---				desc = "Scroll forward",
---				mode = {
---					"i",
---					"n",
---					"s",
---				},
---			},
---		},
---		dependencies = {
---			{
---				"rcarriga/nvim-notify",
---				keys = {
---					{
---						"<leader>n",
---						function()
---							require("notify").dismiss({ silent = true, pending = true })
---						end,
---						desc = "Delete all Notifications",
---					},
---				},
---				opts = {
---					timeout = 3000,
---					max_height = function()
---						return math.floor(vim.o.lines * 0.75)
---					end,
---					max_width = function()
---						return math.floor(vim.o.columns * 0.75)
---					end,
---				},
---			},
---		},
---	},
+{
+	"folke/noice.nvim",
+	event = "VeryLazy",
+	opts = {
+		lsp = {
+			override = {
+				["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+				["vim.lsp.util.stylize_markdown"] = true,
+				-- ["cmp.entry.get_documentation"] = true, -- not needed with blink.cmp
+			},
+		},
+		presets = {
+			bottom_search = true,
+			command_palette = true,
+			long_message_to_split = true,
+			inc_rename = true,
+			lsp_doc_border = true,
+			cmdline_output_to_split = true,
+		},
+	},
+	keys = {
+		{
+			"<S-Enter>",
+			function()
+				require("noice").redirect(vim.fn.getcmdline())
+			end,
+			mode = "c",
+			desc = "Redirect",
+		},
+		{
+			"<leader>snl",
+			function()
+				require("noice").cmd("last")
+			end,
+			desc = "Noice Last Message",
+		},
+		{
+			"<leader>snh",
+			function()
+				require("noice").cmd("history")
+			end,
+			desc = "Noice History",
+		},
+		{
+			"<leader>sna",
+			function()
+				require("noice").cmd("all")
+			end,
+			desc = "Noice All",
+		},
+		{
+			"<c-f>",
+			function()
+				if not require("noice.lsp").scroll(4) then
+					return "<c-f>"
+				end
+			end,
+			silent = true,
+			expr = true,
+			desc = "Scroll forward",
+			mode = {
+				"i",
+				"n",
+				"s",
+			},
+		},
+		{
+			"<c-b>",
+			function()
+				if not require("noice.lsp").scroll(-4) then
+					return "<c-b>"
+				end
+			end,
+			silent = true,
+			expr = true,
+			desc = "Scroll forward",
+			mode = {
+				"i",
+				"n",
+				"s",
+			},
+		},
+	},
+	dependencies = {
+		{
+			"rcarriga/nvim-notify",
+			keys = {
+				{
+					"<leader>n",
+					function()
+						require("notify").dismiss({ silent = true, pending = true })
+					end,
+					desc = "Delete all Notifications",
+				},
+			},
+			opts = {
+				timeout = 3000,
+				max_height = function()
+					return math.floor(vim.o.lines * 0.75)
+				end,
+				max_width = function()
+					return math.floor(vim.o.columns * 0.75)
+				end,
+			},
+		},
+	},
+},
 --
 	-- session management
 	{
