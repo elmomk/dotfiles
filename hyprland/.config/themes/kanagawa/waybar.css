@@ -1,3 +1,12 @@
 @define-color foreground #dcd7ba;
 @define-color background #1f1f28;
-/* @define-color background rgba(0, 0, 0, 0.7); */
+@define-color surface #2a2a37;
+@define-color muted #727169;
+@define-color red #c34043;
+@define-color green #76946a;
+@define-color yellow #c0a36e;
+@define-color blue #7e9cd8;
+@define-color purple #957fb8;
+@define-color cyan #7fb4ca;
+@define-color orange #ffa066;
+@define-color pink #d27e99;
