@@ -4,4 +4,4 @@
 #  initialTitle: _crx_ophjlpahpchlmihnnnihgmmeilfjmjjc
 #  delete _crc_ and
 
-brave --app=chrome-extension://ophjlpahpchlmihnnnihgmmeilfjmjjc/index.html
+brave-beta --app=chrome-extension://ophjlpahpchlmihnnnihgmmeilfjmjjc/index.html

@@ -4,7 +4,7 @@ local servers = {
 	-- "html",
 	-- "tsserver",
 	-- "pyright",
-  "helm_ls",
+	"helm_ls",
 	"bashls",
 	"jsonls",
 	"yamlls",
@@ -12,24 +12,23 @@ local servers = {
 	"tflint",
 	"marksman",
 	"gopls",
-  -- "staticcheck",
+	-- "staticcheck",
 	"rust_analyzer",
-  -- "awk_ls",
-  "ansiblels",
-  "dockerls",
-  "golangci_lint_ls",
-  "gopls",
-  -- "remark_ls",
-  "zk", -- markdown
-  -- "jedi_language_server", -- python
-  -- "pyre", -- python
-  -- "sourcery", -- python
-  -- "pylsp", -- python
-  "ruff_lsp", -- python
-  -- "ruby_ls", -- ruby
-  -- "solargraph", -- ruby
-  -- "taplo", -- toml
-  -- "snyk_ls",
+	-- "awk_ls",
+	"ansiblels",
+	"dockerls",
+	"golangci_lint_ls",
+	-- "remark_ls",
+	"zk", -- markdown
+	-- "jedi_language_server", -- python
+	-- "pyre", -- python
+	-- "sourcery", -- python
+	-- "pylsp", -- python
+	"ruff", -- python
+	-- "ruby_ls", -- ruby
+	-- "solargraph", -- ruby
+	-- "taplo", -- toml
+	-- "snyk_ls",
 }
 
 local settings = {
@@ -51,17 +50,13 @@ require("mason-lspconfig").setup({
 	automatic_installation = true,
 })
 
-local lspconfig_status_ok, lspconfig = pcall(require, "lspconfig")
-if not lspconfig_status_ok then
-	return
-end
-
-local opts = {}
+-- Configure each server using vim.lsp.config (Neovim 0.11+)
+local handlers = require("plugins.lsp.handlers")
 
 for _, server in pairs(servers) do
-	opts = {
-		on_attach = require("plugins.lsp.handlers").on_attach,
-		capabilities = require("plugins.lsp.handlers").capabilities,
+	local opts = {
+		on_attach = handlers.on_attach,
+		capabilities = handlers.capabilities,
 	}
 
 	server = vim.split(server, "@")[1]
@@ -71,5 +66,7 @@ for _, server in pairs(servers) do
 		opts = vim.tbl_deep_extend("force", conf_opts, opts)
 	end
 
-	lspconfig[server].setup(opts)
+	vim.lsp.config(server, opts)
 end
+
+vim.lsp.enable(servers)

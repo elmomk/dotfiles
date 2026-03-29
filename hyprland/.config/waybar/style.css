@@ -5,32 +5,27 @@
   border-radius: 0;
   min-height: 0;
   font-family: 'Fira Code', 'Symbols Nerd Font Mono';
-  font-size: 34px;
+  font-size: 42px;
 }
 
 window#waybar {
-  background: transparent;
-  margin: 10px 20px 0 20px;
+  background: alpha(@background, 0.7);
 }
 
 #workspaces {
-  background-color: alpha(@background, 0.8);
-  border-radius: 16px;
-  margin-top: 6px;
-  padding: 4px 10px;
+  padding: 0 8px;
 }
 
 #workspaces button {
   color: @muted;
-  padding: 5px 16px;
-  margin: 4px;
-  border-radius: 14px;
+  padding: 4px 12px;
+  border-radius: 0;
   transition: all 0.2s ease;
 }
 
 #workspaces button.active {
-  color: @background;
-  background-color: @blue;
+  color: @foreground;
+  border-bottom: 3px solid @blue;
 }
 
 #workspaces button.visible {
@@ -39,58 +34,37 @@ window#waybar {
 
 #workspaces button:hover {
   color: @foreground;
-  background-color: alpha(@surface, 0.6);
+  background-color: alpha(@surface, 0.4);
 }
 
-#taskbar {
-  background-color: alpha(@background, 0.8);
-  border-radius: 16px;
-  margin-top: 6px;
-  margin-left: 10px;
-  padding: 4px 14px;
+#window {
+  color: @muted;
+  padding: 0 16px;
+  font-size: 20px;
 }
 
-#cpu {
-  color: @red;
+#tray {
+  padding: 0 12px;
 }
 
-#memory {
-  color: @purple;
+#mpris {
+  color: @muted;
+  padding: 0 16px;
+  font-style: italic;
 }
 
-#backlight {
-  color: @yellow;
-}
-
-#clock {
-  color: @cyan;
-  font-weight: bold;
+#mpris.playing {
+  color: @foreground;
 }
 
 #pulseaudio {
   color: @blue;
+  padding: 0 14px;
 }
 
 #upower {
   color: @green;
-}
-
-#tray {
-  color: @foreground;
-}
-
-#custom-wlogout {
-  color: @pink;
-}
-
-#cpu, #memory, #backlight, #clock,
-#pulseaudio, #upower, #tray,
-#custom-wlogout {
-  background-color: alpha(@background, 0.8);
-  border-radius: 16px;
-  margin-top: 6px;
-  margin-right: 8px;
-  padding: 5px 24px;
+  padding: 0 14px;
 }
 
 #upower.charging {
@@ -101,8 +75,10 @@ window#waybar {
   color: @red;
 }
 
-#upower.full {
-  color: @green;
+#clock {
+  color: @foreground;
+  padding: 0 20px;
+  font-weight: bold;
 }
 
 tooltip {
