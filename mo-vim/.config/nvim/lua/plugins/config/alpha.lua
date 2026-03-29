@@ -842,6 +842,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("m", " " .. " Mason", ":Mason <CR>"),
 	dashboard.button("s", " " .. " ascii arts", ":lua Switch_ascii_art() <CR>:AlphaRedraw<CR>"),
 	dashboard.button("a", " " .. " See Planets", ":Telescope planets<CR>"),
+	dashboard.button("C", " " .. " Claude Changes", ":ClaudeSidebar<CR>"),
 	dashboard.button("q", " " .. " Quit", ":qa<CR>"),
 }
 local function footer()

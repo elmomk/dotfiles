@@ -1,9 +1,10 @@
 {
   "layer": "top",
   "position": "top",
+  "height": 80,
   "modules-left": ["hyprland/workspaces"],
-  "modules-center": ["cpu","memory","backlight","clock"],
-  "modules-right": ["tray","pulseaudio","upower","custom/wlogout"],
+  "modules-center": ["tray", "mpris"],
+  "modules-right": ["custom/weather", "pulseaudio", "upower", "clock"],
   "hyprland/workspaces": {
     "format": "{id} {windows}",
     "format-window-separator": " ",
@@ -26,95 +27,83 @@
       "class<pavucontrol>": "󰕾"
     }
   },
-  "clock": {
-    "format": "{:%H:%M}  ",
-    "format-alt": " {:%Y %B %d %A (%R)}",
-    "tooltip-format": "<tt><small>{calendar}</small></tt>",
-    "calendar": {
-                "mode"          : "months",
-                "mode-mon-col"  : 3,
-                "weeks-pos"     : "center",
-                "on-scroll"     : 1,
-                "format": {
-                          "months":     "<span color='#ffead3'><b>{}</b></span>",
-                          "days":       "<span color='#ecc6d9'><b>{}</b></span>",
-                          "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
-                          "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
-                          "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
-                          }
-                },
-    "actions":  {
-                "on-click-right": "mode",
-                }
+  "hyprland/window": {
+    "format": "{}",
+    "max-length": 50,
+    "separate-outputs": true
   },
-  "backlight": {
-    "format": "{icon} {percent}%",
-    "format-icons": ["", ""],
-    "device": "intel_backlight"
-},
-  "cpu": {
-    "format": " {usage}%",
-    "format-alt": " {load_average}",
-    "tooltip-format": "CPU Usage: {usage}%",
-    "tooltip-format-alt": "Load Average: {load_average}",
-    "interval": 5
-},
-  "memory": {
-    "format-alt": " {used:0.1f}G ({swapUsed:0.1f}G)",
-    "format": " {percentage}% ({swapPercentage}%)",
-    "tooltip-format": "Used: {used:0.1f}G / Total: {total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G",
-    "interval": 5
+  "mpris": {
+    "format": "{player_icon} {title} - {artist}",
+    "format-paused": "{player_icon} {status_icon} {title} - {artist}",
+    "format-stopped": "No media",
+    "player-icons": {
+      "default": "▶",
+      "spotify": "󰓇",
+      "firefox": "󰈹",
+      "brave": "󰖟"
     },
+    "status-icons": {
+      "paused": "⏸"
+    },
+    "max-length": 40
+  },
+  "tray": {
+    "icon-size": 36,
+    "spacing": 14,
+    "show-passive-items": true
+  },
   "pulseaudio": {
-    "format": "<span color='#b4befe'>{icon}</span> {volume}%",
-    "format-muted": "",
-    "tooltip": false,
+    "format": "{icon} {volume}%",
+    "format-muted": "󰝟",
     "format-icons": {
-      "headphone": "",
-      "default": ["", "", "󰕾", "󰕾", "󰕾", "", "", ""]
+      "headphone": "",
+      "default": ["", "", "󰕾"]
     },
     "scroll-step": 1,
     "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
-    "on-click-right": "pactl set-sink-volume @DEFAULT_SINK@ 50%"
-  },
-  "tray": {
-    "icon-size": 61,
-    "spacing": 20,
-    "show-passive-items": true
+    "on-click-right": "pavucontrol"
   },
   "upower": {
     "format": "{percentage}",
     "format-alt": "{time}",
-    "format-plugged": "{percentage}% ",
-    "format-low": "{percentage}% ",
+    "format-plugged": "{percentage}% ",
+    "format-low": "{percentage}% ",
     "critical-threshold": 20,
     "low-threshold": 50,
     "format-icons": {
-      "default": ["", "", "", "", ""]
+      "default": ["", "", "", "", ""]
     },
-    "icon-size": 60,
+    "icon-size": 36,
     "hide-if-empty": true,
     "tooltip": true,
-    "tooltip-spacing": 20,
     "update-interval": 10
   },
-  "wlr/taskbar": {
-    "format": "{icon}",
-    "icon-size": 64,
-    "icon-theme": "Numix-Circle",
-    "tooltip-format": "{title}",
-    "on-click": "activate",
-    "on-click-middle": "close",
-    "app_ids-mapping": {
-      "firefoxdeveloperedition": "firefox-developer-edition"
-    },
-    "rewrite": {
-      "Firefox Web Browser": "Firefox",
-      "Foot Server": "Terminal"
-    }
+  "custom/weather": {
+    "exec": "curl -sf 'wttr.in/?format=%c+%t' 2>/dev/null || echo '? N/A'",
+    "interval": 600,
+    "format": "{}",
+    "on-click": "eww open --toggle weather-popup"
   },
-  "custom/wlogout": {
-    "format": "",
-    "on-click": "wlogout"
+  "clock": {
+    "format": "{:%I:%M %p • %a, %d/%m}",
+    "format-alt": "{:%Y %B %d %A (%R)}",
+    "on-click-middle": "eww open --toggle clock-popup",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "months",
+      "mode-mon-col": 3,
+      "weeks-pos": "center",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#ffa066'><b>{}</b></span>",
+        "days": "<span color='#dcd7ba'><b>{}</b></span>",
+        "weeks": "<span color='#76946a'><b>W{}</b></span>",
+        "weekdays": "<span color='#c0a36e'><b>{}</b></span>",
+        "today": "<span color='#c34043'><b><u>{}</u></b></span>"
+      }
+    },
+    "actions": {
+      "on-click-right": "mode"
+    }
   }
 }

@@ -2,8 +2,8 @@
 Name=Arduino IDE
 GenericName=The official Arduino software development environment (appImage)
 Comment=The official Arduino software development environment (appImage)
-Exec=/usr/local/bin/arduino-ide_2.3.6_Linux_64bit.AppImage
-Icon=/home/salomo/.local/share/pixmaps/arduino-ide.png
+Exec=/usr/local/bin/arduino-ide #_2.3.6_Linux_64bit.AppImage
+Icon=/home/mo/.local/share/pixmaps/arduino-ide.png
 # Icon=/usr/share/pixmaps/arduino-ide.png
 Type=Application
 Categories=Development;IDE;Electronics;
