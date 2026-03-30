@@ -92,6 +92,17 @@ Scope {
         }
     }
 
+    CustomShortcut {
+        name: "claude"
+        description: "Toggle Claude chat panel"
+        onPressed: {
+            if (root.hasFullscreen)
+                return;
+            const visibilities = Visibilities.getForActive();
+            visibilities.claude = !visibilities.claude;
+        }
+    }
+
     IpcHandler {
         target: "drawers"
 

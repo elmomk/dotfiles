@@ -64,6 +64,8 @@ JsonObject {
         property bool tray: true
         property bool statusIcons: true
         property bool clock: true
+        property bool fcitx: true
+        property bool claude: true
     }
 
     component Workspaces: JsonObject {
@@ -95,11 +97,13 @@ JsonObject {
     component Status: JsonObject {
         property bool showAudio: false
         property bool showMicrophone: false
+        property bool showFcitx: true
         property bool showKbLayout: false
         property bool showNetwork: true
         property bool showWifi: true
         property bool showBluetooth: true
         property bool showBattery: true
+        property bool showClaude: true
         property bool showLockStatus: true
     }
 
@@ -115,5 +119,6 @@ JsonObject {
         property int batteryWidth: 250 * scale
         property int networkWidth: 320 * scale
         property int kbLayoutWidth: 320 * scale
+        property int claudeWidth: 300 * scale
     }
 }

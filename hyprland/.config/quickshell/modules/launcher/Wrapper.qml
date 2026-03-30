@@ -64,6 +64,7 @@ Item {
             target: root
             property: "implicitHeight"
             to: 0
+            duration: Appearance.anim.durations.expressiveFastSpatial
             easing.bezierCurve: Appearance.anim.curves.emphasized
         }
     }
@@ -92,7 +93,7 @@ Item {
     Timer {
         id: timer
 
-        interval: Appearance.anim.durations.extraLarge
+        interval: Appearance.anim.durations.normal
         onRunningChanged: {
             if (running && !root.shouldBeActive) {
                 content.visible = false;

@@ -10,5 +10,6 @@ Singleton {
     readonly property AppearanceConfig.Padding padding: Config.appearance.padding
     readonly property AppearanceConfig.FontStuff font: Config.appearance.font
     readonly property AppearanceConfig.Anim anim: Config.appearance.anim
+    readonly property AppearanceConfig.Interaction interaction: Config.appearance.interaction
     readonly property AppearanceConfig.Transparency transparency: Config.appearance.transparency
 }
