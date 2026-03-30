@@ -12,6 +12,16 @@ Item {
 
     readonly property int currMonth: currentDate.getMonth()
     readonly property int currYear: currentDate.getFullYear()
+    readonly property var today: new Date()
+
+    function daysInMonth(year: int, month: int): int {
+        return new Date(year, month + 1, 0).getDate();
+    }
+
+    function firstDayOfWeek(year: int, month: int): int {
+        // 0 = Sunday
+        return new Date(year, month, 1).getDay();
+    }
 
     implicitWidth: column.implicitWidth
     implicitHeight: column.implicitHeight
@@ -22,6 +32,7 @@ Item {
         anchors.fill: parent
         spacing: Appearance.spacing.small
 
+        // Header: < Month Year >
         RowLayout {
             Layout.fillWidth: true
             spacing: Appearance.spacing.small
@@ -66,7 +77,7 @@ Item {
                     id: monthYearText
 
                     anchors.centerIn: parent
-                    text: grid.title
+                    text: root.currentDate.toLocaleDateString(Qt.locale(), "MMMM yyyy")
                     color: Colours.palette.m3primary
                     font.pointSize: Appearance.font.size.normal
                     font.weight: 500
@@ -96,74 +107,93 @@ Item {
             }
         }
 
-        DayOfWeekRow {
+        // Day of week headers
+        Grid {
+            id: dowHeader
+
             Layout.fillWidth: true
-            locale: grid.locale
+            columns: 7
+            spacing: 2
 
-            delegate: StyledText {
-                required property var model
+            Repeater {
+                model: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
-                horizontalAlignment: Text.AlignHCenter
-                text: model.shortName
-                font.weight: 500
-                color: (model.day === 0 || model.day === 6) ? Colours.palette.m3secondary : Colours.palette.m3onSurfaceVariant
+                StyledText {
+                    required property string modelData
+                    required property int index
+
+                    width: cellSize
+                    horizontalAlignment: Text.AlignHCenter
+                    text: modelData
+                    font.pointSize: Appearance.font.size.small
+                    font.weight: 500
+                    color: (index === 0 || index === 6) ? Colours.palette.m3secondary : Colours.palette.m3onSurface
+                }
             }
         }
 
-        Item {
+        // Day grid
+        Grid {
+            id: dayGrid
+
+            readonly property int numDays: root.daysInMonth(root.currYear, root.currMonth)
+            readonly property int startDay: root.firstDayOfWeek(root.currYear, root.currMonth)
+            readonly property int prevMonthDays: root.daysInMonth(root.currYear, root.currMonth - 1)
+
             Layout.fillWidth: true
-            implicitHeight: grid.implicitHeight
+            columns: 7
+            spacing: 2
 
-            MonthGrid {
-                id: grid
+            Repeater {
+                model: 42
 
-                month: root.currMonth
-                year: root.currYear
+                Item {
+                    id: dayCell
 
-                anchors.fill: parent
+                    required property int index
 
-                spacing: 3
-                locale: Qt.locale()
+                    readonly property int dayNum: {
+                        if (index < dayGrid.startDay)
+                            return dayGrid.prevMonthDays - dayGrid.startDay + index + 1;
+                        const d = index - dayGrid.startDay + 1;
+                        if (d > dayGrid.numDays)
+                            return d - dayGrid.numDays;
+                        return d;
+                    }
+                    readonly property bool isCurrentMonth: index >= dayGrid.startDay && index < dayGrid.startDay + dayGrid.numDays
+                    readonly property bool isToday: isCurrentMonth && dayNum === root.today.getDate() && root.currMonth === root.today.getMonth() && root.currYear === root.today.getFullYear()
 
-                delegate: Item {
-                    id: dayItem
-
-                    required property var model
-
-                    implicitWidth: implicitHeight
-                    implicitHeight: dayText.implicitHeight + Appearance.padding.small * 2
+                    width: cellSize
+                    height: cellSize
 
                     StyledRect {
                         anchors.centerIn: parent
-                        implicitWidth: parent.implicitWidth
-                        implicitHeight: parent.implicitHeight
+                        implicitWidth: cellSize
+                        implicitHeight: cellSize
                         radius: Appearance.rounding.full
-                        color: dayItem.model.today ? Colours.palette.m3primary : "transparent"
+                        color: dayCell.isToday ? Colours.palette.m3primary : "transparent"
                     }
 
                     StyledText {
-                        id: dayText
-
                         anchors.centerIn: parent
-
                         horizontalAlignment: Text.AlignHCenter
-                        text: grid.locale.toString(dayItem.model.day)
+                        text: dayCell.dayNum.toString()
                         color: {
-                            if (dayItem.model.today)
+                            if (dayCell.isToday)
                                 return Colours.palette.m3onPrimary;
-
-                            const dayOfWeek = dayItem.model.date.getUTCDay();
-                            if (dayOfWeek === 0 || dayOfWeek === 6)
+                            const dow = dayCell.index % 7;
+                            if (dow === 0 || dow === 6)
                                 return Colours.palette.m3secondary;
-
-                            return Colours.palette.m3onSurfaceVariant;
+                            return Colours.palette.m3onSurface;
                         }
-                        opacity: dayItem.model.today || dayItem.model.month === grid.month ? 1 : 0.4
+                        opacity: dayCell.isCurrentMonth ? 1 : 0.4
                         font.pointSize: Appearance.font.size.normal
-                        font.weight: dayItem.model.today ? 700 : 500
+                        font.weight: dayCell.isToday ? 700 : 400
                     }
                 }
             }
         }
     }
+
+    readonly property real cellSize: Appearance.font.size.normal * 4
 }

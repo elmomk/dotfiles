@@ -52,7 +52,7 @@ StyledListView {
         const text = search.text;
         const prefix = Config.launcher.actionPrefix;
         if (text.startsWith(prefix)) {
-            for (const action of ["calc", "scheme", "variant", "clip"])
+            for (const action of ["calc", "scheme", "variant", "clip", "claude"])
                 if (text.startsWith(`${prefix}${action} `))
                     return action;
 
@@ -116,6 +116,14 @@ StyledListView {
             PropertyChanges {
                 model.values: Clipboard.query(search.text)
                 root.delegate: clipItem
+            }
+        },
+        State {
+            name: "claude"
+
+            PropertyChanges {
+                model.values: [0]
+                root.delegate: claudeItem
             }
         }
     ]
@@ -269,6 +277,14 @@ StyledListView {
         id: clipItem
 
         ClipItem {
+            list: root
+        }
+    }
+
+    Component {
+        id: claudeItem
+
+        ClaudeItem {
             list: root
         }
     }

@@ -8,6 +8,7 @@ import qs.modules.bar.popouts as BarPopouts
 import qs.modules.utilities as Utilities
 import qs.modules.utilities.toasts as Toasts
 import qs.modules.sidebar as Sidebar
+import qs.modules.claude as Claude
 import Quickshell
 import QtQuick
 
@@ -27,6 +28,7 @@ Item {
     readonly property alias utilities: utilities
     readonly property alias toasts: toasts
     readonly property alias sidebar: sidebar
+    readonly property alias claude: claude
 
     anchors.fill: parent
     anchors.margins: Config.border.thickness
@@ -132,5 +134,15 @@ Item {
         anchors.top: notifications.bottom
         anchors.bottom: utilities.top
         anchors.right: parent.right
+    }
+
+    Claude.Wrapper {
+        id: claude
+
+        visibilities: root.visibilities
+
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
     }
 }

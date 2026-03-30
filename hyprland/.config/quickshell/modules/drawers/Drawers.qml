@@ -49,12 +49,13 @@ Variants {
                 visibilities.launcher = false;
                 visibilities.session = false;
                 visibilities.dashboard = false;
+                visibilities.claude = false;
             }
 
             screen: scope.modelData
             name: "drawers"
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.keyboardFocus: visibilities.launcher || visibilities.session ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+            WlrLayershell.keyboardFocus: visibilities.launcher || visibilities.session || visibilities.claude ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
             mask: Region {
                 x: Config.border.thickness + win.dragMaskPadding
@@ -90,12 +91,13 @@ Variants {
             HyprlandFocusGrab {
                 id: focusGrab
 
-                active: (visibilities.launcher && Config.launcher.enabled) || (visibilities.session && Config.session.enabled) || (visibilities.sidebar && Config.sidebar.enabled) || (!Config.dashboard.showOnHover && visibilities.dashboard && Config.dashboard.enabled) || (panels.popouts.currentName.startsWith("traymenu") && panels.popouts.current?.depth > 1)
+                active: (visibilities.launcher && Config.launcher.enabled) || (visibilities.session && Config.session.enabled) || (visibilities.sidebar && Config.sidebar.enabled) || (visibilities.claude && Config.claude.enabled) || (!Config.dashboard.showOnHover && visibilities.dashboard && Config.dashboard.enabled) || (panels.popouts.currentName.startsWith("traymenu") && panels.popouts.current?.depth > 1)
                 windows: [win]
                 onCleared: {
                     visibilities.launcher = false;
                     visibilities.session = false;
                     visibilities.sidebar = false;
+                    visibilities.claude = false;
                     visibilities.dashboard = false;
                     panels.popouts.hasCurrent = false;
                     bar.closeTray();
@@ -142,6 +144,7 @@ Variants {
                 property bool dashboard
                 property bool utilities
                 property bool sidebar
+                property bool claude
 
                 Component.onCompleted: Visibilities.load(scope.modelData, this)
             }

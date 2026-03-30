@@ -8,6 +8,7 @@ import qs.modules.dashboard as Dashboard
 import qs.modules.bar.popouts as BarPopouts
 import qs.modules.utilities as Utilities
 import qs.modules.sidebar as Sidebar
+import qs.modules.claude as Claude
 import QtQuick
 import QtQuick.Shapes
 
@@ -82,5 +83,12 @@ Shape {
 
         startX: root.width
         startY: root.panels.notifications.height
+    }
+
+    Claude.Background {
+        wrapper: root.panels.claude
+
+        startX: 0
+        startY: 0
     }
 }

@@ -8,18 +8,17 @@ Item {
     id: root
 
     required property var visibilities
-    required property var panels
-    readonly property Props props: Props {}
+    readonly property real nonAnimWidth: Config.claude.sizes.width
 
     visible: width > 0
     implicitWidth: 0
 
     states: State {
         name: "visible"
-        when: root.visibilities.sidebar && Config.sidebar.enabled
+        when: root.visibilities.claude && Config.claude.enabled
 
         PropertyChanges {
-            root.implicitWidth: Config.sidebar.sizes.width
+            root.implicitWidth: Config.claude.sizes.width
         }
     }
 
@@ -43,7 +42,7 @@ Item {
                 target: root
                 property: "implicitWidth"
                 duration: Appearance.anim.durations.expressiveFastSpatial
-                easing.bezierCurve: root.panels.osd.width > 0 || root.panels.session.width > 0 ? Appearance.anim.curves.expressiveDefaultSpatial : Appearance.anim.curves.emphasized
+                easing.bezierCurve: Appearance.anim.curves.emphasized
             }
         }
     ]
@@ -53,17 +52,20 @@ Item {
 
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        anchors.left: parent.left
+        anchors.right: parent.right
         anchors.margins: Appearance.padding.large
-        anchors.bottomMargin: 0
 
         active: true
-        Component.onCompleted: active = Qt.binding(() => (root.visibilities.sidebar && Config.sidebar.enabled) || root.visible)
+        Component.onCompleted: active = Qt.binding(() => (root.visibilities.claude && Config.claude.enabled) || root.visible)
 
         sourceComponent: Content {
-            implicitWidth: Config.sidebar.sizes.width - Appearance.padding.large * 2
-            props: root.props
+            implicitWidth: Config.claude.sizes.width - Appearance.padding.large * 2
+            claude: claudeProcess
             visibilities: root.visibilities
         }
+    }
+
+    ClaudeProcess {
+        id: claudeProcess
     }
 }

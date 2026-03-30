@@ -127,10 +127,23 @@ StyledRect {
             }
         }
 
-        // Keyboard layout icon
+        // Fcitx input method icon
+        WrappedLoader {
+            name: "fcitx"
+            active: Config.bar.status.showFcitx && Fcitx.running
+
+            sourceComponent: StyledText {
+                animate: true
+                text: Fcitx.currentLabel
+                color: root.colour
+                font.family: Appearance.font.family.mono
+            }
+        }
+
+        // Keyboard layout icon (hidden when fcitx is active)
         WrappedLoader {
             name: "kblayout"
-            active: Config.bar.status.showKbLayout
+            active: Config.bar.status.showKbLayout && !Fcitx.running
 
             sourceComponent: StyledText {
                 animate: true
@@ -230,6 +243,37 @@ StyledRect {
             }
         }
 
+        // Claude Code icon
+        WrappedLoader {
+            name: "claude"
+            active: Config.bar.status.showClaude && ClaudeSessions.hasActive
+
+            sourceComponent: MaterialIcon {
+                animate: true
+                text: "smart_toy"
+                color: root.colour
+
+                SequentialAnimation on opacity {
+                    running: ClaudeSessions.processRunning
+                    alwaysRunToEnd: true
+                    loops: Animation.Infinite
+
+                    Anim {
+                        from: 1
+                        to: 0.3
+                        duration: Appearance.anim.durations.large
+                        easing.bezierCurve: Appearance.anim.curves.standardAccel
+                    }
+                    Anim {
+                        from: 0.3
+                        to: 1
+                        duration: Appearance.anim.durations.large
+                        easing.bezierCurve: Appearance.anim.curves.standardDecel
+                    }
+                }
+            }
+        }
+
         // Battery icon
         WrappedLoader {
             name: "battery"
@@ -266,5 +310,19 @@ StyledRect {
 
         Layout.alignment: Qt.AlignVCenter
         visible: active
+
+        property bool hovered: hoverHandler.hovered
+        scale: hovered ? 1.15 : 1.0
+
+        HoverHandler {
+            id: hoverHandler
+        }
+
+        Behavior on scale {
+            Anim {
+                duration: Appearance.anim.durations.small
+                easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+            }
+        }
     }
 }
