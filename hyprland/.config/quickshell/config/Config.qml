@@ -24,6 +24,7 @@ Singleton {
     property alias lock: adapter.lock
     property alias utilities: adapter.utilities
     property alias sidebar: adapter.sidebar
+    property alias claude: adapter.claude
     property alias services: adapter.services
     property alias paths: adapter.paths
 
@@ -94,6 +95,7 @@ Singleton {
             lock: serializeLock(),
             utilities: serializeUtilities(),
             sidebar: serializeSidebar(),
+            claude: serializeClaude(),
             services: serializeServices(),
             paths: serializePaths()
         };
@@ -442,6 +444,16 @@ Singleton {
         };
     }
 
+    function serializeClaude(): var {
+        return {
+            enabled: claude.enabled,
+            sizes: {
+                scale: claude.sizes.scale,
+                width: claude.sizes.width
+            }
+        };
+    }
+
     function serializeServices(): var {
         return {
             weatherLocation: services.weatherLocation,
@@ -519,6 +531,7 @@ Singleton {
             property LockConfig lock: LockConfig {}
             property UtilitiesConfig utilities: UtilitiesConfig {}
             property SidebarConfig sidebar: SidebarConfig {}
+            property ClaudeConfig claude: ClaudeConfig {}
             property ServiceConfig services: ServiceConfig {}
             property UserPaths paths: UserPaths {}
         }

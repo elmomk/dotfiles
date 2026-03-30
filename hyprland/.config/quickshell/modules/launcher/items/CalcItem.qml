@@ -22,7 +22,18 @@ Item {
     anchors.left: parent?.left
     anchors.right: parent?.right
 
+    scale: calcStateLayer.containsMouse ? Appearance.interaction.hoverScale : 1.0
+
+    Behavior on scale {
+        Anim {
+            duration: Appearance.anim.durations.small
+            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+        }
+    }
+
     StateLayer {
+        id: calcStateLayer
+
         radius: Appearance.rounding.normal
 
         function onClicked(): void {

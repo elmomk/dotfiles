@@ -92,6 +92,8 @@ Item {
                     } else if (text.startsWith(Config.launcher.actionPrefix)) {
                         if (text.startsWith(`${Config.launcher.actionPrefix}calc `))
                             currentItem.onClicked();
+                        else if (text.startsWith(`${Config.launcher.actionPrefix}claude `))
+                            currentItem.onClicked();
                         else
                             currentItem.modelData.onClicked(list.currentList);
                     } else {

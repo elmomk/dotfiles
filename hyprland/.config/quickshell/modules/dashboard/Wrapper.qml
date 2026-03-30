@@ -71,6 +71,7 @@ Item {
             Anim {
                 target: root
                 property: "implicitHeight"
+                duration: Appearance.anim.durations.expressiveFastSpatial
                 easing.bezierCurve: Appearance.anim.curves.emphasized
             }
         }
@@ -80,7 +81,7 @@ Item {
         id: timer
 
         running: true
-        interval: Appearance.anim.durations.extraLarge
+        interval: Appearance.anim.durations.normal
         onTriggered: {
             content.active = Qt.binding(() => (root.visibilities.dashboard && Config.dashboard.enabled) || root.visible);
             content.visible = true;

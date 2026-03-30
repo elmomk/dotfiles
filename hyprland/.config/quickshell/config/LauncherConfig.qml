@@ -73,6 +73,14 @@ JsonObject {
             dangerous: false
         },
         {
+            name: "Ask Claude",
+            icon: "smart_toy",
+            description: "Ask Claude Code a quick question",
+            command: ["autocomplete", "claude"],
+            enabled: true,
+            dangerous: false
+        },
+        {
             name: "Transparency",
             icon: "opacity",
             description: "Change shell transparency",

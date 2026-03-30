@@ -7,6 +7,7 @@ import Quickshell.Services.SystemTray
 import QtQuick
 
 import "./kblayout"
+import "./fcitx"
 
 Item {
     id: root
@@ -103,6 +104,11 @@ Item {
         }
 
         Popout {
+            name: "claude"
+            sourceComponent: ClaudeStatus {}
+        }
+
+        Popout {
             name: "battery"
             sourceComponent: Battery {}
         }
@@ -124,6 +130,13 @@ Item {
         Popout {
             name: "kblayout"
             sourceComponent: KbLayout {
+                wrapper: root.wrapper
+            }
+        }
+
+        Popout {
+            name: "fcitx"
+            sourceComponent: FcitxPopout {
                 wrapper: root.wrapper
             }
         }
@@ -184,8 +197,23 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.right: parent.right
 
+        transformOrigin: Item.Top
+
         opacity: 0
-        scale: 0.8
+        scale: 1
+        property real scaleY: 0.5
+        property real yOffset: -Appearance.padding.large
+        transform: [
+            Scale {
+                origin.x: popout.width / 2
+                origin.y: 0
+                yScale: popout.scaleY
+                xScale: 1
+            },
+            Translate {
+                y: popout.yOffset
+            }
+        ]
         active: false
 
         states: State {
@@ -195,7 +223,8 @@ Item {
             PropertyChanges {
                 popout.active: true
                 popout.opacity: 1
-                popout.scale: 1
+                popout.scaleY: 1
+                popout.yOffset: 0
             }
         }
 
@@ -205,9 +234,22 @@ Item {
                 to: ""
 
                 SequentialAnimation {
-                    Anim {
-                        properties: "opacity,scale"
-                        duration: Appearance.anim.durations.small
+                    ParallelAnimation {
+                        Anim {
+                            property: "opacity"
+                            duration: Appearance.anim.durations.small
+                            easing.bezierCurve: Appearance.anim.curves.emphasizedAccel
+                        }
+                        Anim {
+                            property: "scaleY"
+                            duration: Appearance.anim.durations.small
+                            easing.bezierCurve: Appearance.anim.curves.emphasizedAccel
+                        }
+                        Anim {
+                            property: "yOffset"
+                            duration: Appearance.anim.durations.small
+                            easing.bezierCurve: Appearance.anim.curves.emphasizedAccel
+                        }
                     }
                     PropertyAction {
                         target: popout
@@ -224,8 +266,22 @@ Item {
                         target: popout
                         property: "active"
                     }
-                    Anim {
-                        properties: "opacity,scale"
+                    ParallelAnimation {
+                        Anim {
+                            property: "opacity"
+                            duration: Appearance.anim.durations.expressiveDefaultSpatial
+                            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                        }
+                        Anim {
+                            property: "scaleY"
+                            duration: Appearance.anim.durations.expressiveDefaultSpatial
+                            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                        }
+                        Anim {
+                            property: "yOffset"
+                            duration: Appearance.anim.durations.expressiveDefaultSpatial
+                            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                        }
                     }
                 }
             }

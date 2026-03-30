@@ -172,6 +172,15 @@ Item {
 
         active: false
         opacity: 0
+        property real scaleY: 0.7
+
+        transformOrigin: Item.Top
+        transform: Scale {
+            origin.x: comp.width / 2
+            origin.y: 0
+            yScale: comp.scaleY
+            xScale: 1
+        }
 
         states: State {
             name: "active"
@@ -180,6 +189,7 @@ Item {
             PropertyChanges {
                 comp.opacity: 1
                 comp.active: true
+                comp.scaleY: 1
             }
         }
 
@@ -192,8 +202,17 @@ Item {
                     PropertyAction {
                         property: "active"
                     }
-                    Anim {
-                        property: "opacity"
+                    ParallelAnimation {
+                        Anim {
+                            property: "opacity"
+                            duration: Appearance.anim.durations.expressiveDefaultSpatial
+                            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                        }
+                        Anim {
+                            property: "scaleY"
+                            duration: Appearance.anim.durations.expressiveDefaultSpatial
+                            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                        }
                     }
                 }
             },
@@ -202,8 +221,17 @@ Item {
                 to: ""
 
                 SequentialAnimation {
-                    Anim {
-                        property: "opacity"
+                    ParallelAnimation {
+                        Anim {
+                            property: "opacity"
+                            duration: Appearance.anim.durations.expressiveFastSpatial
+                            easing.bezierCurve: Appearance.anim.curves.emphasizedAccel
+                        }
+                        Anim {
+                            property: "scaleY"
+                            duration: Appearance.anim.durations.expressiveFastSpatial
+                            easing.bezierCurve: Appearance.anim.curves.emphasizedAccel
+                        }
                     }
                     PropertyAction {
                         property: "active"
