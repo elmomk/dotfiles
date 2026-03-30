@@ -1,0 +1,19 @@
+#!/bin/bash
+# Set CLAUDE_CODE_SSE_PORT for the current directory's Neovim MCP bridge.
+# Usage: eval "$(claude-ide)" && claude
+
+CWD="$(pwd)"
+
+for f in ~/.claude/ide/*.lock; do
+    [ -f "$f" ] || continue
+    while IFS= read -r ws; do
+        if [[ "$CWD" == "$ws"* ]]; then
+            PID=$(jq -r '.pid' "$f" 2>/dev/null)
+            if kill -0 "$PID" 2>/dev/null; then
+                PORT=$(basename "$f" .lock)
+                echo "export CLAUDE_CODE_SSE_PORT=$PORT"
+                exit 0
+            fi
+        fi
+    done < <(jq -r '.workspaceFolders[]' "$f" 2>/dev/null)
+done

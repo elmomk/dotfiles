@@ -168,13 +168,5 @@ keymap("n", "<leader>gpi", ":lua require('goto-preview').goto_preview_implementa
 keymap("n", "<leader>gp", ":lua require('goto-preview').close_all_win()<cr>", { silent = true })
 keymap("n", "<leader>gpr", ":lua require('goto-preview').goto_preview_references()<cr>", { silent = true })
 
--- copilot chat
-keymap("n", "<leader>cb", "<cmd>CopilotChatBuffer <cr>", { silent = true, desc = "CopilotChat - Chat with current buffer" })
-keymap("n", "<leader>ce", "<cmd>CopilotChatExplain<cr>", { silent = true, desc = "CopilotChat - Explain code" })
-keymap("n", "<leader>cE", "<cmd>CopilotChatVsplitToggle<cr>", { silent = true, desc = "CopilotChat - Toggle Vsplit" }) -- Toggle vertical split
-keymap("n", "<leader>ct", "<cmd>CopilotChatTests<cr>", { silent = true, desc = "CopilotChat - Generate tests" })
--- keymap("x", "<leader>cv", ":CopilotChatVisual<CR>", { silent = true, desc = "CopilotChat - Open in vertical split" })
-keymap("x", "<leader>ci", ":CopilotChatInPlace<CR>", { silent = true, desc = "CopilotChat - Run in-place code" })
-keymap("n", "<leader>cf", "<cmd>CopilotChatFixDiagnostic<cr>", { silent = true, desc = "CopilotChat - Fix diagnostic" }) -- Get a fix for the diagnostic message under the cursor.
-keymap("n", "<leader>cr", "<cmd>CopilotChatReset<cr>", { silent = true, desc = "CopilotChat - Reset chat history and clear buffer" }) -- Reset chat history and clear buffer.
--- keymap("n", "<leader>cq", "<cmd>CopilotChatQuick<cr>", { silent = true, desc = "CopilotChat - Quick chat" }) -- Quick chat
+-- Claude Code (keymaps managed by claude-code.nvim, except resume)
+keymap("n", "<leader>cr", "<cmd>lua _CLAUDE_RESUME()<cr>", { silent = true, desc = "Claude - resume session" })
