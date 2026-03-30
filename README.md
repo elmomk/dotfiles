@@ -6,7 +6,7 @@ This repository contains my configuration files for Linux (Arch + Hyprland).
 
 | Package | Description |
 |---------|-------------|
-| `hyprland` | Hyprland WM config, QuickShell desktop shell (bar, launcher, dashboard, notifications, OSD, sidebar, session, Claude panel), hypridle, hyprlock |
+| `hyprland` | Hyprland WM config, QuickShell desktop shell (bar, launcher, dashboard, notifications, OSD, sidebar, session, Claude panel), display auto-detection, hypridle, hyprlock |
 | `alacritty` | Terminal emulator |
 | `fish` | Fish shell config |
 | `tmux` | Terminal multiplexer |
@@ -26,6 +26,10 @@ A unified Material 3 desktop shell replacing waybar, swaync, walker, and wlogout
 - **Session**: Power menu (shutdown, reboot, hibernate, lock)
 - **Claude Panel**: Integrated Claude Code chat
 - **Control Center**: Full settings UI for appearance, audio, networking, bluetooth
+
+## Display Auto-Detection
+
+Monitors are auto-detected at startup and on hotplug. A profile system (`hyprland/.config/hypr/scripts/display-profiles.json`) maps monitor resolutions to Hyprland config and QuickShell appearance scales — no manual reconfiguration needed when switching between displays. See [scripts/README.md](hyprland/.config/hypr/scripts/README.md) for details.
 
 ## Requirements
 
