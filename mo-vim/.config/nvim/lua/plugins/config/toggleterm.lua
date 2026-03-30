@@ -38,3 +38,9 @@ function _LAZYGIT_TOGGLE()
 	lazygit:toggle()
 end
 
+local claude_resume = Terminal:new({ cmd = "claude --resume", hidden = true, direction = "float" })
+
+function _CLAUDE_RESUME()
+	claude_resume:toggle()
+end
+
