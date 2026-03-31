@@ -119,12 +119,13 @@ JsonObject {
     }
 
     component Sizes: JsonObject {
+        property real scale: 1
         property int innerWidth: 40
-        property int windowPreviewSize: 400
-        property int trayMenuWidth: 300
-        property int batteryWidth: 250
-        property int networkWidth: 320
-        property int kbLayoutWidth: 320
-        property int claudeWidth: 300
+        property int windowPreviewSize: 400 * scale
+        property int trayMenuWidth: 300 * scale
+        property int batteryWidth: 250 * scale
+        property int networkWidth: 320 * scale
+        property int kbLayoutWidth: 320 * scale
+        property int claudeWidth: 300 * scale
     }
 }
