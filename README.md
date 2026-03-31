@@ -2,11 +2,31 @@
 
 This repository contains my configuration files for Linux (Arch + Hyprland).
 
+## Screenshots
+
+### Desktop with Horizontal Bar
+![Bar](assets/screenshots/bar.png)
+
+### Dashboard (Weather, Calendar, Media, Performance)
+![Dashboard](assets/screenshots/dashboard.png)
+
+### App Launcher
+![Launcher](assets/screenshots/launcher.png)
+
+### Claude Code Scratchpad
+![Claude Code](assets/screenshots/claude.png)
+
+### Notification Sidebar
+![Sidebar](assets/screenshots/sidebar.png)
+
+### Session Menu
+![Session](assets/screenshots/session.png)
+
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| `hyprland` | Hyprland WM config, QuickShell desktop shell (bar, launcher, dashboard, notifications, OSD, sidebar, session, Claude panel), display auto-detection, hypridle, hyprlock |
+| `hyprland` | Hyprland WM config, QuickShell desktop shell, display auto-detection, hypridle, hyprlock |
 | `alacritty` | Terminal emulator |
 | `fish` | Fish shell config |
 | `tmux` | Terminal multiplexer |
@@ -16,20 +36,34 @@ This repository contains my configuration files for Linux (Arch + Hyprland).
 
 ## QuickShell Desktop Shell
 
-A unified Material 3 desktop shell replacing waybar, swaync, walker, and wlogout. Features:
+A unified Material 3 desktop shell built on [Caelestia](https://github.com/caelestia-shell/shell), customized with a horizontal top bar layout and 4K scaling. Replaces waybar, swaync, walker, and wlogout.
 
-- **Bar**: Workspaces, active window, system tray, clock, status icons (audio, network, bluetooth, battery, fcitx, Claude)
-- **Launcher**: App search, calculator, clipboard history, color schemes, wallpapers, Claude quick-ask
-- **Dashboard**: Calendar, media controls, weather, system resources
-- **Sidebar**: Notification center
-- **OSD**: Volume/brightness overlay
-- **Session**: Power menu (shutdown, reboot, hibernate, lock)
-- **Claude Panel**: Integrated Claude Code chat
+### Features
+
+- **Horizontal Bar**: Workspaces (1-10), active window title, centered clock, status icons (audio, network, bluetooth, battery), power button
+- **Launcher**: App search with fuzzy matching, calculator, clipboard history, color schemes, wallpaper picker
+- **Dashboard**: Weather (7-day forecast), calendar, media controls, system performance (CPU/GPU/RAM/storage/network)
+- **Sidebar**: Notification center, screen recording, quick toggles
+- **OSD**: Volume/brightness overlay with hover reveal
+- **Session**: Power menu (logout, shutdown, reboot, hibernate, lock, suspend)
+- **Claude Code**: Hyprland scratchpad with foot terminal running Claude Code, slides from the left
 - **Control Center**: Full settings UI for appearance, audio, networking, bluetooth
+
+### Keybinds
+
+| Key | Action |
+|-----|--------|
+| `Super + Space` | App Launcher |
+| `Super + D` | Dashboard |
+| `Super + C` | Claude Code (scratchpad) |
+| `Super + N` | Notification Sidebar |
+| `Super + M` | Session Menu |
+| `Super + Shift + A` | Utilities |
+| `Super + Shift + ,` | Control Center |
 
 ## Display Auto-Detection
 
-Monitors are auto-detected at startup and on hotplug. A profile system (`hyprland/.config/hypr/scripts/display-profiles.json`) maps monitor resolutions to Hyprland config and QuickShell appearance scales — no manual reconfiguration needed when switching between displays. See [scripts/README.md](hyprland/.config/hypr/scripts/README.md) for details.
+Monitors are auto-detected at startup and on hotplug. A profile system maps monitor resolutions to Hyprland config and QuickShell appearance scales — no manual reconfiguration needed when switching between displays.
 
 ## Requirements
 
@@ -47,8 +81,6 @@ Go into `$HOME/.dotfiles` and use `stow` to deploy the config files you want to.
 cd $HOME/.dotfiles
 stow <package name>
 ```
-
-This will create required symbolic links so that your configuration files are taken into account the next time you start your tools.
 
 To delete the symbolic links.
 
