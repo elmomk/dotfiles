@@ -13,7 +13,7 @@ ColumnLayout {
     id: root
 
     required property var lock
-    readonly property real centerScale: Math.min(1, (lock.screen?.height ?? 1440) / 1440)
+    readonly property real centerScale: (lock.screen?.height ?? 1440) / 1440
     readonly property int centerWidth: Config.lock.sizes.centerWidth * centerScale
 
     Layout.preferredWidth: centerWidth

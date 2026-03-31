@@ -7,9 +7,10 @@ import qs.config
 Item {
     id: root
 
+    readonly property real s: Config.dashboard.sizes.scale
     readonly property var today: Weather.forecast && Weather.forecast.length > 0 ? Weather.forecast[0] : null
 
-    implicitWidth: layout.implicitWidth > 800 ? layout.implicitWidth : 840
+    implicitWidth: layout.implicitWidth > 800 * s ? layout.implicitWidth : 840 * s
     implicitHeight: layout.implicitHeight
     Component.onCompleted: Weather.reload()
 
@@ -212,7 +213,7 @@ Item {
         property color colour
 
         Layout.fillWidth: true
-        Layout.preferredHeight: 60
+        Layout.preferredHeight: 60 * root.s
         radius: Appearance.rounding.small
         color: Colours.tPalette.m3surfaceContainer
 
