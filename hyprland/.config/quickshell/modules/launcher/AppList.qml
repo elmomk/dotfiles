@@ -1,20 +1,20 @@
 pragma ComponentBehavior: Bound
 
-import "items"
-import "services"
+import QtQuick
+import Quickshell
 import qs.components
-import qs.components.controls
 import qs.components.containers
+import qs.components.controls
 import qs.services
 import qs.config
-import Quickshell
-import QtQuick
+import qs.modules.launcher.items
+import qs.modules.launcher.services
 
 StyledListView {
     id: root
 
     required property StyledTextField search
-    required property PersistentProperties visibilities
+    required property DrawerVisibilities visibilities
 
     model: ScriptModel {
         id: model
@@ -53,7 +53,7 @@ StyledListView {
         const prefix = Config.launcher.actionPrefix;
         if (text.startsWith(prefix)) {
             for (const action of ["calc", "scheme", "variant", "clip", "claude"])
-                if (text.startsWith(`${prefix}${action} `))
+                if (text.startsWith(`${prefix}${action} `) || text === `${prefix}${action}`)
                     return action;
 
             return "actions";

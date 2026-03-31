@@ -1,14 +1,14 @@
 pragma ComponentBehavior: Bound
 
-import qs.components
-import qs.services
-import qs.utils
-import qs.config
+import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Services.UPower
-import QtQuick
-import QtQuick.Layouts
+import qs.components
+import qs.services
+import qs.config
+import qs.utils
 
 StyledRect {
     id: root
@@ -20,8 +20,8 @@ StyledRect {
     radius: Appearance.rounding.full
 
     clip: true
-    implicitWidth: iconRow.implicitWidth + Appearance.padding.normal * 2 - (Config.bar.status.showLockStatus && !Hypr.capsLock && !Hypr.numLock ? iconRow.spacing : 0)
     implicitHeight: Config.bar.sizes.innerWidth
+    implicitWidth: iconRow.implicitWidth + Appearance.padding.normal * 2 - (Config.bar.status.showLockStatus && !Hypr.capsLock && !Hypr.numLock ? iconRow.spacing : 0)
 
     RowLayout {
         id: iconRow
@@ -42,8 +42,8 @@ StyledRect {
                 spacing: 0
 
                 Item {
-                    implicitWidth: capslockIcon.implicitWidth
-                    implicitHeight: Hypr.capsLock ? capslockIcon.implicitHeight : 0
+                    implicitHeight: capslockIcon.implicitHeight
+                    implicitWidth: Hypr.capsLock ? capslockIcon.implicitWidth : 0
 
                     MaterialIcon {
                         id: capslockIcon
@@ -65,16 +65,16 @@ StyledRect {
                         }
                     }
 
-                    Behavior on implicitHeight {
+                    Behavior on implicitWidth {
                         Anim {}
                     }
                 }
 
                 Item {
-                    Layout.topMargin: Hypr.capsLock && Hypr.numLock ? iconColumn.spacing : 0
+                    Layout.leftMargin: Hypr.capsLock && Hypr.numLock ? iconRow.spacing : 0
 
-                    implicitWidth: numlockIcon.implicitWidth
-                    implicitHeight: Hypr.numLock ? numlockIcon.implicitHeight : 0
+                    implicitHeight: numlockIcon.implicitHeight
+                    implicitWidth: Hypr.numLock ? numlockIcon.implicitWidth : 0
 
                     MaterialIcon {
                         id: numlockIcon
@@ -96,7 +96,7 @@ StyledRect {
                         }
                     }
 
-                    Behavior on implicitHeight {
+                    Behavior on implicitWidth {
                         Anim {}
                     }
                 }
@@ -117,7 +117,7 @@ StyledRect {
 
         // Microphone icon
         WrappedLoader {
-            name: "microphone"
+            name: "audio"
             active: Config.bar.status.showMicrophone
 
             sourceComponent: MaterialIcon {
@@ -127,23 +127,10 @@ StyledRect {
             }
         }
 
-        // Fcitx input method icon
-        WrappedLoader {
-            name: "fcitx"
-            active: Config.bar.status.showFcitx && Fcitx.running
-
-            sourceComponent: StyledText {
-                animate: true
-                text: Fcitx.currentLabel
-                color: root.colour
-                font.family: Appearance.font.family.mono
-            }
-        }
-
-        // Keyboard layout icon (hidden when fcitx is active)
+        // Keyboard layout icon
         WrappedLoader {
             name: "kblayout"
-            active: Config.bar.status.showKbLayout && !Fcitx.running
+            active: Config.bar.status.showKbLayout && !Fcitx.available
 
             sourceComponent: StyledText {
                 animate: true
@@ -179,7 +166,7 @@ StyledRect {
 
         // Bluetooth section
         WrappedLoader {
-            Layout.preferredHeight: implicitHeight
+            Layout.preferredWidth: implicitWidth
 
             name: "bluetooth"
             active: Config.bar.status.showBluetooth
@@ -191,9 +178,9 @@ StyledRect {
                 MaterialIcon {
                     animate: true
                     text: {
-                        if (!Bluetooth.defaultAdapter?.enabled)
+                        if (!Bluetooth.defaultAdapter?.enabled) // qmllint disable unresolved-type
                             return "bluetooth_disabled";
-                        if (Bluetooth.devices.values.some(d => d.connected))
+                        if (Bluetooth.devices.values.some(d => d.connected)) // qmllint disable unresolved-type
                             return "bluetooth_connected";
                         return "bluetooth";
                     }
@@ -203,7 +190,7 @@ StyledRect {
                 // Connected bluetooth devices
                 Repeater {
                     model: ScriptModel {
-                        values: Bluetooth.devices.values.filter(d => d.state !== BluetoothDeviceState.Disconnected)
+                        values: Bluetooth.devices.values.filter(d => d.state !== BluetoothDeviceState.Disconnected) // qmllint disable unresolved-type
                     }
 
                     MaterialIcon {
@@ -217,7 +204,7 @@ StyledRect {
                         fill: 1
 
                         SequentialAnimation on opacity {
-                            running: device.modelData?.state !== BluetoothDeviceState.Connected
+                            running: device.modelData?.state !== BluetoothDeviceState.Connected // qmllint disable unresolved-type
                             alwaysRunToEnd: true
                             loops: Animation.Infinite
 
@@ -238,39 +225,35 @@ StyledRect {
                 }
             }
 
-            Behavior on Layout.preferredHeight {
+            Behavior on Layout.preferredWidth {
                 Anim {}
             }
         }
 
-        // Claude Code icon
+        // Fcitx input method icon
+        WrappedLoader {
+            name: "fcitx"
+            active: Fcitx.available
+
+            sourceComponent: StyledText {
+                animate: true
+                text: Fcitx.currentAbbr || "EN"
+                color: root.colour
+                font.family: Appearance.font.family.mono
+                font.weight: 600
+            }
+        }
+
+        // Claude status icon
         WrappedLoader {
             name: "claude"
-            active: Config.bar.status.showClaude && ClaudeSessions.hasActive
+            active: ClaudeSessions.sessionCount > 0
 
             sourceComponent: MaterialIcon {
                 animate: true
                 text: "smart_toy"
-                color: root.colour
-
-                SequentialAnimation on opacity {
-                    running: ClaudeSessions.processRunning
-                    alwaysRunToEnd: true
-                    loops: Animation.Infinite
-
-                    Anim {
-                        from: 1
-                        to: 0.3
-                        duration: Appearance.anim.durations.large
-                        easing.bezierCurve: Appearance.anim.curves.standardAccel
-                    }
-                    Anim {
-                        from: 0.3
-                        to: 1
-                        duration: Appearance.anim.durations.large
-                        easing.bezierCurve: Appearance.anim.curves.standardDecel
-                    }
-                }
+                color: ClaudeSessions.processRunning ? Colours.palette.m3primary : root.colour
+                fill: ClaudeSessions.processRunning ? 1 : 0
             }
         }
 
@@ -308,21 +291,8 @@ StyledRect {
     component WrappedLoader: Loader {
         required property string name
 
+        asynchronous: true
         Layout.alignment: Qt.AlignVCenter
         visible: active
-
-        property bool hovered: hoverHandler.hovered
-        scale: hovered ? 1.15 : 1.0
-
-        HoverHandler {
-            id: hoverHandler
-        }
-
-        Behavior on scale {
-            Anim {
-                duration: Appearance.anim.durations.small
-                easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
-            }
-        }
     }
 }

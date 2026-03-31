@@ -1,10 +1,11 @@
 pragma ComponentBehavior: Bound
 
+import QtQuick
+import Quickshell
+import Quickshell.Services.SystemTray
 import qs.components
 import qs.services
 import qs.config
-import Quickshell.Services.SystemTray
-import QtQuick
 
 StyledRect {
     id: root
@@ -25,10 +26,10 @@ StyledRect {
     }
 
     clip: true
-    visible: width > 0
+    visible: height > 0
 
-    implicitWidth: nonAnimWidth
     implicitHeight: Config.bar.sizes.innerWidth
+    implicitWidth: nonAnimWidth
 
     color: Qt.alpha(Colours.tPalette.m3surfaceContainer, (Config.bar.tray.background && items.count > 0) ? Colours.tPalette.m3surfaceContainer.a : 0)
     radius: Appearance.rounding.full
@@ -66,7 +67,9 @@ StyledRect {
         Repeater {
             id: items
 
-            model: SystemTray.items
+            model: ScriptModel {
+                values: SystemTray.items.values.filter(i => !Config.bar.tray.hiddenIcons.includes(i.id))
+            }
 
             TrayItem {}
         }
@@ -79,22 +82,24 @@ StyledRect {
     Loader {
         id: expandIcon
 
+        asynchronous: true
+
         anchors.verticalCenter: parent.verticalCenter
         anchors.right: parent.right
 
-        active: Config.bar.tray.compact
+        active: Config.bar.tray.compact && items.count > 0
 
         sourceComponent: Item {
-            implicitWidth: expandIconInner.implicitWidth
-            implicitHeight: expandIconInner.implicitHeight - Appearance.padding.small * 2
+            implicitWidth: expandIconInner.implicitWidth - Appearance.padding.small * 2
+            implicitHeight: expandIconInner.implicitHeight
 
             MaterialIcon {
                 id: expandIconInner
 
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: Config.bar.tray.background ? Appearance.padding.small : -Appearance.padding.small
-                text: "expand_less"
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.right
+                anchors.rightMargin: Config.bar.tray.background ? Appearance.padding.small : -Appearance.padding.small
+                text: "chevron_right"
                 font.pointSize: Appearance.font.size.large
                 rotation: root.expanded ? 180 : 0
 
@@ -102,7 +107,7 @@ StyledRect {
                     Anim {}
                 }
 
-                Behavior on anchors.bottomMargin {
+                Behavior on anchors.rightMargin {
                     Anim {}
                 }
             }

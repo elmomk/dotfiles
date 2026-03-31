@@ -1,10 +1,12 @@
-import qs.components
-import qs.services
-import qs.utils
-import qs.config
-import Quickshell
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
+import qs.components
+import qs.services
+import qs.config
+import qs.utils
 
 RowLayout {
     id: root
@@ -22,21 +24,16 @@ RowLayout {
     readonly property bool isOccupied: occupied[ws] ?? false
     readonly property bool hasWindows: isOccupied && Config.bar.workspaces.showWindows
 
-    readonly property bool isActive: activeWsId === ws
-    readonly property bool shouldShow: isActive || isOccupied
-
     Layout.alignment: Qt.AlignVCenter
-    Layout.preferredWidth: shouldShow ? size : 0
-    visible: shouldShow
+    Layout.preferredWidth: size
 
     spacing: 0
 
     StyledText {
         id: indicator
 
-        Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
-        Layout.preferredWidth: Config.bar.sizes.innerWidth - Appearance.padding.normal * 2
-        Layout.preferredHeight: Config.bar.sizes.innerWidth - Appearance.padding.small * 2
+        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+        Layout.preferredWidth: Config.bar.sizes.innerWidth - Appearance.padding.small * 2
 
         animate: true
         text: {
@@ -54,16 +51,17 @@ RowLayout {
             return root.activeWsId === root.ws ? activeLabel : root.isOccupied ? occupiedLabel : label;
         }
         color: Config.bar.workspaces.occupiedBg || root.isOccupied || root.activeWsId === root.ws ? Colours.palette.m3onSurface : Colours.layer(Colours.palette.m3outlineVariant, 2)
-        horizontalAlignment: Qt.AlignHCenter
         verticalAlignment: Qt.AlignVCenter
     }
 
     Loader {
         id: windows
 
+        asynchronous: true
+
         Layout.alignment: Qt.AlignVCenter
         Layout.fillWidth: true
-        Layout.leftMargin: -Appearance.padding.small
+        Layout.leftMargin: -Config.bar.sizes.innerWidth / 10
 
         visible: active
         active: root.hasWindows
@@ -93,7 +91,12 @@ RowLayout {
 
             Repeater {
                 model: ScriptModel {
-                    values: Hypr.toplevels.values.filter(c => c.workspace?.id === root.ws)
+                    values: {
+                        const ws = root.ws;
+                        const windows = Hypr.toplevels.values.filter(c => c.workspace?.id === ws);
+                        const maxIcons = Config.bar.workspaces.maxWindowIcons;
+                        return maxIcons > 0 ? windows.slice(0, maxIcons) : windows;
+                    }
                 }
 
                 MaterialIcon {

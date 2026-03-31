@@ -1,23 +1,26 @@
-import qs.config
-import qs.modules.osd as Osd
-import qs.modules.notifications as Notifications
-import qs.modules.session as Session
-import qs.modules.launcher as Launcher
-import qs.modules.dashboard as Dashboard
-import qs.modules.bar.popouts as BarPopouts
-import qs.modules.utilities as Utilities
-import qs.modules.utilities.toasts as Toasts
-import qs.modules.sidebar as Sidebar
-import qs.modules.claude as Claude
-import Quickshell
 import QtQuick
+import Quickshell
+import qs.components
+import qs.config
+import qs.modules.bar as Bar
+import qs.modules.dashboard as Dashboard
+import qs.modules.launcher as Launcher
+import qs.modules.notifications as Notifications
+import qs.modules.osd as Osd
+import qs.modules.session as Session
+import qs.modules.sidebar as Sidebar
+import qs.modules.utilities as Utilities
+import qs.modules.claude as Claude
+import qs.modules.bar.popouts as BarPopouts
+import qs.modules.utilities.toasts as Toasts
 
 Item {
     id: root
 
     required property ShellScreen screen
-    required property PersistentProperties visibilities
-    required property Item bar
+    required property DrawerVisibilities visibilities
+    required property Bar.BarWrapper bar
+    required property real borderThickness
 
     readonly property alias osd: osd
     readonly property alias notifications: notifications
@@ -31,8 +34,16 @@ Item {
     readonly property alias claude: claude
 
     anchors.fill: parent
-    anchors.margins: Config.border.thickness
+    anchors.margins: root.borderThickness
     anchors.topMargin: bar.implicitHeight
+
+    Behavior on anchors.margins {
+        Anim {}
+    }
+
+    Behavior on anchors.topMargin {
+        Anim {}
+    }
 
     Osd.Wrapper {
         id: osd
@@ -50,7 +61,9 @@ Item {
         id: notifications
 
         visibilities: root.visibilities
-        panels: root
+        sidebarPanel: sidebar
+        osdPanel: osd
+        sessionPanel: session
 
         anchors.top: parent.top
         anchors.right: parent.right
@@ -97,7 +110,7 @@ Item {
             if (isDetached)
                 return (root.width - nonAnimWidth) / 2;
 
-            const off = currentCenter - Config.border.thickness - nonAnimWidth / 2;
+            const off = currentCenter - root.borderThickness - nonAnimWidth / 2;
             const diff = root.width - Math.floor(off + nonAnimWidth);
             if (diff < 0)
                 return off + diff;

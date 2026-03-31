@@ -1,27 +1,28 @@
 pragma ComponentBehavior: Bound
 
+import QtQuick
+import Quickshell
+import Quickshell.Hyprland
+import Quickshell.Wayland
 import qs.components
 import qs.services
 import qs.config
-import qs.modules.windowinfo
 import qs.modules.controlcenter
-import Quickshell
-import Quickshell.Wayland
-import Quickshell.Hyprland
-import QtQuick
+import qs.modules.windowinfo
 
 Item {
     id: root
 
     required property ShellScreen screen
 
-    readonly property real nonAnimWidth: y > 0 || hasCurrent ? children.find(c => c.shouldBeActive)?.implicitWidth ?? content.implicitWidth : 0
+    readonly property real nonAnimWidth: x > 0 || hasCurrent ? children.find(c => c.shouldBeActive)?.implicitWidth ?? content.implicitWidth : 0
     readonly property real nonAnimHeight: children.find(c => c.shouldBeActive)?.implicitHeight ?? content.implicitHeight
-    readonly property Item current: content.item?.current ?? null
+    readonly property Item current: (content.item as Content)?.current ?? null
 
-    property string currentName
+    property alias currentName: popoutState.currentName
     property real currentCenter
-    property bool hasCurrent
+    property alias hasCurrent: popoutState.hasCurrent
+    readonly property PopoutState popState: popoutState
 
     property string detachedMode
     property string queuedMode
@@ -59,7 +60,7 @@ Item {
     Keys.onEscapePressed: {
         // Forward escape to password popout if active, otherwise close
         if (currentName === "wirelesspassword" && content.item) {
-            const passwordPopout = content.item.children.find(c => c.name === "wirelesspassword");
+            const passwordPopout = (content.item as Content)?.children.find(c => c.name === "wirelesspassword");
             if (passwordPopout && passwordPopout.item) {
                 passwordPopout.item.closeDialog();
                 return;
@@ -73,6 +74,12 @@ Item {
         if (currentName === "wirelesspassword") {
             event.accepted = false;
         }
+    }
+
+    PopoutState {
+        id: popoutState
+
+        onDetachRequested: mode => root.detach(mode)
     }
 
     HyprlandFocusGrab {
@@ -105,7 +112,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
 
         sourceComponent: Content {
-            wrapper: root
+            popouts: popoutState
         }
     }
 
@@ -124,12 +131,12 @@ Item {
         anchors.centerIn: parent
 
         sourceComponent: ControlCenter {
-            screen: root.screen
-            active: root.queuedMode
-
             function close(): void {
                 root.close();
             }
+
+            screen: root.screen
+            active: root.queuedMode
         }
     }
 
@@ -172,15 +179,6 @@ Item {
 
         active: false
         opacity: 0
-        property real scaleY: 0.7
-
-        transformOrigin: Item.Top
-        transform: Scale {
-            origin.x: comp.width / 2
-            origin.y: 0
-            yScale: comp.scaleY
-            xScale: 1
-        }
 
         states: State {
             name: "active"
@@ -189,7 +187,6 @@ Item {
             PropertyChanges {
                 comp.opacity: 1
                 comp.active: true
-                comp.scaleY: 1
             }
         }
 
@@ -202,17 +199,8 @@ Item {
                     PropertyAction {
                         property: "active"
                     }
-                    ParallelAnimation {
-                        Anim {
-                            property: "opacity"
-                            duration: Appearance.anim.durations.expressiveDefaultSpatial
-                            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
-                        }
-                        Anim {
-                            property: "scaleY"
-                            duration: Appearance.anim.durations.expressiveDefaultSpatial
-                            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
-                        }
+                    Anim {
+                        property: "opacity"
                     }
                 }
             },
@@ -221,17 +209,8 @@ Item {
                 to: ""
 
                 SequentialAnimation {
-                    ParallelAnimation {
-                        Anim {
-                            property: "opacity"
-                            duration: Appearance.anim.durations.expressiveFastSpatial
-                            easing.bezierCurve: Appearance.anim.curves.emphasizedAccel
-                        }
-                        Anim {
-                            property: "scaleY"
-                            duration: Appearance.anim.durations.expressiveFastSpatial
-                            easing.bezierCurve: Appearance.anim.curves.emphasizedAccel
-                        }
+                    Anim {
+                        property: "opacity"
                     }
                     PropertyAction {
                         property: "active"

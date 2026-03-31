@@ -1,19 +1,20 @@
 pragma ComponentBehavior: Bound
 
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Effects
+import Quickshell
+import Quickshell.Hyprland
+import Quickshell.Wayland
 import qs.components
 import qs.components.containers
 import qs.services
 import qs.config
 import qs.utils
 import qs.modules.bar
-import Quickshell
-import Quickshell.Wayland
-import Quickshell.Hyprland
-import QtQuick
-import QtQuick.Effects
 
 Variants {
-    model: Quickshell.screens
+    model: Screens.screens
 
     Scope {
         id: scope
@@ -24,18 +25,34 @@ Variants {
         Exclusions {
             screen: scope.modelData
             bar: bar
+            borderThickness: Config.border.thickness
         }
 
         StyledWindow {
             id: win
 
-            readonly property bool hasFullscreen: Hypr.monitorFor(screen)?.activeWorkspace?.toplevels.values.some(t => t.lastIpcObject.fullscreen === 2) ?? false
+            readonly property var monitor: Hypr.monitorFor(screen)
+            readonly property bool hasSpecialWorkspace: (monitor?.lastIpcObject?.specialWorkspace?.name.length ?? 0) > 0
+            readonly property bool hasFullscreen: {
+                if (hasSpecialWorkspace) {
+                    const specialName = monitor?.lastIpcObject?.specialWorkspace?.name;
+                    if (!specialName)
+                        return false;
+                    const specialWs = Hypr.workspaces.values.find(ws => ws.name === specialName);
+                    return specialWs?.toplevels.values.some(t => t.lastIpcObject.fullscreen > 1) ?? false;
+                }
+                return monitor?.activeWorkspace?.toplevels.values.some(t => t.lastIpcObject.fullscreen > 1) ?? false;
+            }
+            property real borderThickness: hasFullscreen ? 0 : Config.border.thickness
+            readonly property real borderLayoutThickness: hasFullscreen ? 0 : Config.border.thickness
+            property real borderRounding: hasFullscreen ? 0 : Config.border.rounding
+            property real shadowOpacity: hasFullscreen ? 0 : 0.7
             readonly property int dragMaskPadding: {
                 if (focusGrab.active || panels.popouts.isDetached)
                     return 0;
 
                 const mon = Hypr.monitorFor(screen);
-                if (mon?.lastIpcObject?.specialWorkspace?.name || mon?.activeWorkspace?.lastIpcObject?.windows > 0)
+                if (mon?.lastIpcObject.specialWorkspace?.name || mon?.activeWorkspace.lastIpcObject.windows > 0)
                     return 0;
 
                 const thresholds = [];
@@ -55,22 +72,47 @@ Variants {
             screen: scope.modelData
             name: "drawers"
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.keyboardFocus: visibilities.launcher || visibilities.session || visibilities.claude ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.keyboardFocus: visibilities.launcher || visibilities.session || visibilities.claude || panels.dashboard.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
             mask: Region {
-                x: Config.border.thickness + win.dragMaskPadding
-                y: bar.implicitHeight + win.dragMaskPadding
-                width: win.width - Config.border.thickness * 2 - win.dragMaskPadding * 2
-                height: win.height - bar.implicitHeight - Config.border.thickness - win.dragMaskPadding * 2
+                x: Config.border.clampedThickness + win.dragMaskPadding
+                y: bar.clampedHeight + win.dragMaskPadding
+                width: win.width - Config.border.clampedThickness * 2 - win.dragMaskPadding * 2
+                height: win.height - bar.clampedHeight - Config.border.clampedThickness - win.dragMaskPadding * 2
                 intersection: Intersection.Xor
 
-                regions: regions.instances
+                regions: regions.instances // qmllint disable stale-property-read
             }
 
             anchors.top: true
             anchors.bottom: true
             anchors.left: true
             anchors.right: true
+
+            Behavior on borderThickness {
+                Anim {
+                    duration: Appearance.anim.durations.expressiveDefaultSpatial
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                }
+            }
+
+            Behavior on borderRounding {
+                Anim {
+                    duration: Appearance.anim.durations.expressiveDefaultSpatial
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                }
+            }
+
+            Behavior on shadowOpacity {
+                Anim {
+                    duration: Appearance.anim.durations.expressiveDefaultSpatial
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                }
+            }
 
             Variants {
                 id: regions
@@ -91,7 +133,7 @@ Variants {
             HyprlandFocusGrab {
                 id: focusGrab
 
-                active: (visibilities.launcher && Config.launcher.enabled) || (visibilities.session && Config.session.enabled) || (visibilities.sidebar && Config.sidebar.enabled) || (visibilities.claude && Config.claude.enabled) || (!Config.dashboard.showOnHover && visibilities.dashboard && Config.dashboard.enabled) || (panels.popouts.currentName.startsWith("traymenu") && panels.popouts.current?.depth > 1)
+                active: (visibilities.launcher && Config.launcher.enabled) || (visibilities.session && Config.session.enabled) || (visibilities.sidebar && Config.sidebar.enabled) || (visibilities.claude && Config.claude.enabled) || (!Config.dashboard.showOnHover && visibilities.dashboard && Config.dashboard.enabled) || (panels.popouts.currentName.startsWith("traymenu") && (panels.popouts.current as StackView)?.depth > 1)
                 windows: [win]
                 onCleared: {
                     visibilities.launcher = false;
@@ -121,30 +163,25 @@ Variants {
                 layer.effect: MultiEffect {
                     shadowEnabled: true
                     blurMax: 15
-                    shadowColor: Qt.alpha(Colours.palette.m3shadow, 0.7)
+                    shadowColor: Qt.alpha(Colours.palette.m3shadow, Math.max(0, win.shadowOpacity))
                 }
 
                 Border {
                     bar: bar
+                    borderThickness: win.borderThickness
+                    borderRounding: win.borderRounding
                 }
 
                 Backgrounds {
                     panels: panels
                     bar: bar
+                    borderThickness: win.borderThickness
+                    borderRounding: win.borderRounding
                 }
             }
 
-            PersistentProperties {
+            DrawerVisibilities {
                 id: visibilities
-
-                property bool bar
-                property bool osd
-                property bool session
-                property bool launcher
-                property bool dashboard
-                property bool utilities
-                property bool sidebar
-                property bool claude
 
                 Component.onCompleted: Visibilities.load(scope.modelData, this)
             }
@@ -155,6 +192,8 @@ Variants {
                 visibilities: visibilities
                 panels: panels
                 bar: bar
+                borderThickness: win.borderLayoutThickness
+                fullscreen: win.hasFullscreen
 
                 Panels {
                     id: panels
@@ -162,6 +201,7 @@ Variants {
                     screen: scope.modelData
                     visibilities: visibilities
                     bar: bar
+                    borderThickness: win.borderLayoutThickness
                 }
 
                 BarWrapper {
@@ -175,6 +215,7 @@ Variants {
                     popouts: panels.popouts
 
                     disabled: scope.barDisabled
+                    fullscreen: win.hasFullscreen
 
                     Component.onCompleted: Visibilities.bars.set(scope.modelData, this)
                 }

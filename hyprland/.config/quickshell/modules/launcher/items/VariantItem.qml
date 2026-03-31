@@ -1,8 +1,8 @@
-import "../services"
+import QtQuick
 import qs.components
 import qs.services
 import qs.config
-import QtQuick
+import qs.modules.launcher.services
 
 Item {
     id: root
@@ -15,23 +15,12 @@ Item {
     anchors.left: parent?.left
     anchors.right: parent?.right
 
-    scale: stateLayer.containsMouse ? Appearance.interaction.hoverScale : 1.0
-
-    Behavior on scale {
-        Anim {
-            duration: Appearance.anim.durations.small
-            easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
-        }
-    }
-
     StateLayer {
-        id: stateLayer
-
-        radius: Appearance.rounding.normal
-
         function onClicked(): void {
             root.modelData?.onClicked(root.list);
         }
+
+        radius: Appearance.rounding.normal
     }
 
     Item {
@@ -76,6 +65,7 @@ Item {
         Loader {
             id: current
 
+            asynchronous: true
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
 

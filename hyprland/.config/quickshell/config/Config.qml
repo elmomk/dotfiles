@@ -1,10 +1,10 @@
 pragma Singleton
 
-import qs.utils
-import Caelestia
+import QtQuick
 import Quickshell
 import Quickshell.Io
-import QtQuick
+import Caelestia
+import qs.utils
 
 Singleton {
     id: root
@@ -28,53 +28,13 @@ Singleton {
     property alias services: adapter.services
     property alias paths: adapter.paths
 
+    property bool recentlySaved: false
+
     // Public save function - call this to persist config changes
     function save(): void {
         saveTimer.restart();
         recentlySaved = true;
         recentSaveCooldown.restart();
-    }
-
-    property bool recentlySaved: false
-
-    ElapsedTimer {
-        id: timer
-    }
-
-    Timer {
-        id: saveTimer
-
-        interval: 500
-        onTriggered: {
-            timer.restart();
-            try {
-                // Parse current config to preserve structure and comments if possible
-                let config = {};
-                try {
-                    config = JSON.parse(fileView.text());
-                } catch (e) {
-                    // If parsing fails, start with empty object
-                    config = {};
-                }
-
-                // Update config with current values
-                config = serializeConfig();
-
-                // Save to file with pretty printing
-                fileView.setText(JSON.stringify(config, null, 2));
-            } catch (e) {
-                Toaster.toast(qsTr("Failed to serialize config"), e.message, "settings_alert", Toast.Error);
-            }
-        }
-    }
-
-    Timer {
-        id: recentSaveCooldown
-
-        interval: 2000
-        onTriggered: {
-            recentlySaved = false;
-        }
     }
 
     // Helper function to serialize the config object
@@ -141,6 +101,7 @@ Singleton {
     function serializeGeneral(): var {
         return {
             logo: general.logo,
+            excludedScreens: general.excludedScreens,
             apps: {
                 terminal: general.apps.terminal,
                 audio: general.apps.audio,
@@ -210,19 +171,27 @@ Singleton {
                 occupiedBg: bar.workspaces.occupiedBg,
                 showWindows: bar.workspaces.showWindows,
                 showWindowsOnSpecialWorkspaces: bar.workspaces.showWindowsOnSpecialWorkspaces,
+                maxWindowIcons: bar.workspaces.maxWindowIcons,
                 activeTrail: bar.workspaces.activeTrail,
                 perMonitorWorkspaces: bar.workspaces.perMonitorWorkspaces,
                 label: bar.workspaces.label,
                 occupiedLabel: bar.workspaces.occupiedLabel,
                 activeLabel: bar.workspaces.activeLabel,
                 capitalisation: bar.workspaces.capitalisation,
-                specialWorkspaceIcons: bar.workspaces.specialWorkspaceIcons
+                specialWorkspaceIcons: bar.workspaces.specialWorkspaceIcons,
+                windowIcons: bar.workspaces.windowIcons
+            },
+            activeWindow: {
+                compact: bar.activeWindow.compact,
+                inverted: bar.activeWindow.inverted,
+                showOnHover: bar.activeWindow.showOnHover
             },
             tray: {
                 background: bar.tray.background,
                 recolour: bar.tray.recolour,
                 compact: bar.tray.compact,
-                iconSubs: bar.tray.iconSubs
+                iconSubs: bar.tray.iconSubs,
+                hiddenIcons: bar.tray.hiddenIcons
             },
             status: {
                 showAudio: bar.status.showAudio,
@@ -235,16 +204,18 @@ Singleton {
                 showLockStatus: bar.status.showLockStatus
             },
             clock: {
+                background: bar.clock.background,
+                showDate: bar.clock.showDate,
                 showIcon: bar.clock.showIcon
             },
             sizes: {
-                scale: bar.sizes.scale,
                 innerWidth: bar.sizes.innerWidth,
                 windowPreviewSize: bar.sizes.windowPreviewSize,
                 trayMenuWidth: bar.sizes.trayMenuWidth,
                 batteryWidth: bar.sizes.batteryWidth,
                 networkWidth: bar.sizes.networkWidth,
-                kbLayoutWidth: bar.sizes.kbLayoutWidth
+                kbLayoutWidth: bar.sizes.kbLayoutWidth,
+                claudeWidth: bar.sizes.claudeWidth
             },
             entries: bar.entries,
             excludedScreens: bar.excludedScreens
@@ -262,7 +233,8 @@ Singleton {
         return {
             enabled: dashboard.enabled,
             showOnHover: dashboard.showOnHover,
-            updateInterval: dashboard.updateInterval,
+            mediaUpdateInterval: dashboard.mediaUpdateInterval,
+            resourceUpdateInterval: dashboard.resourceUpdateInterval,
             dragThreshold: dashboard.dragThreshold,
             performance: {
                 showBattery: dashboard.performance.showBattery,
@@ -271,33 +243,12 @@ Singleton {
                 showMemory: dashboard.performance.showMemory,
                 showStorage: dashboard.performance.showStorage,
                 showNetwork: dashboard.performance.showNetwork
-            },
-            sizes: {
-                scale: dashboard.sizes.scale,
-                tabIndicatorHeight: dashboard.sizes.tabIndicatorHeight,
-                tabIndicatorSpacing: dashboard.sizes.tabIndicatorSpacing,
-                infoWidth: dashboard.sizes.infoWidth,
-                infoIconSize: dashboard.sizes.infoIconSize,
-                dateTimeWidth: dashboard.sizes.dateTimeWidth,
-                mediaWidth: dashboard.sizes.mediaWidth,
-                mediaProgressSweep: dashboard.sizes.mediaProgressSweep,
-                mediaProgressThickness: dashboard.sizes.mediaProgressThickness,
-                resourceProgessThickness: dashboard.sizes.resourceProgessThickness,
-                weatherWidth: dashboard.sizes.weatherWidth,
-                mediaCoverArtSize: dashboard.sizes.mediaCoverArtSize,
-                mediaVisualiserSize: dashboard.sizes.mediaVisualiserSize,
-                resourceSize: dashboard.sizes.resourceSize
             }
         };
     }
 
     function serializeControlCenter(): var {
-        return {
-            sizes: {
-                heightMult: controlCenter.sizes.heightMult,
-                ratio: controlCenter.sizes.ratio
-            }
-        };
+        return {};
     }
 
     function serializeLauncher(): var {
@@ -321,7 +272,6 @@ Singleton {
                 wallpapers: launcher.useFuzzy.wallpapers
             },
             sizes: {
-                scale: launcher.sizes.scale,
                 itemWidth: launcher.sizes.itemWidth,
                 itemHeight: launcher.sizes.itemHeight,
                 wallpaperWidth: launcher.sizes.wallpaperWidth,
@@ -334,17 +284,13 @@ Singleton {
     function serializeNotifs(): var {
         return {
             expire: notifs.expire,
+            fullscreen: notifs.fullscreen,
             defaultExpireTimeout: notifs.defaultExpireTimeout,
             clearThreshold: notifs.clearThreshold,
             expandThreshold: notifs.expandThreshold,
             actionOnClick: notifs.actionOnClick,
             groupPreviewNum: notifs.groupPreviewNum,
-            sizes: {
-                scale: notifs.sizes.scale,
-                width: notifs.sizes.width,
-                image: notifs.sizes.image,
-                badge: notifs.sizes.badge
-            }
+            openExpanded: notifs.openExpanded
         };
     }
 
@@ -353,12 +299,7 @@ Singleton {
             enabled: osd.enabled,
             hideDelay: osd.hideDelay,
             enableBrightness: osd.enableBrightness,
-            enableMicrophone: osd.enableMicrophone,
-            sizes: {
-                scale: osd.sizes.scale,
-                sliderWidth: osd.sizes.sliderWidth,
-                sliderHeight: osd.sizes.sliderHeight
-            }
+            enableMicrophone: osd.enableMicrophone
         };
     }
 
@@ -367,27 +308,23 @@ Singleton {
             enabled: session.enabled,
             dragThreshold: session.dragThreshold,
             vimKeybinds: session.vimKeybinds,
+            icons: {
+                logout: session.icons.logout,
+                shutdown: session.icons.shutdown,
+                hibernate: session.icons.hibernate,
+                reboot: session.icons.reboot
+            },
             commands: {
                 logout: session.commands.logout,
                 shutdown: session.commands.shutdown,
                 hibernate: session.commands.hibernate,
                 reboot: session.commands.reboot
-            },
-            sizes: {
-                scale: session.sizes.scale,
-                button: session.sizes.button
             }
         };
     }
 
     function serializeWinfo(): var {
-        return {
-            sizes: {
-                scale: winfo.sizes.scale,
-                heightMult: winfo.sizes.heightMult,
-                detailsWidth: winfo.sizes.detailsWidth
-            }
-        };
+        return {};
     }
 
     function serializeLock(): var {
@@ -395,26 +332,35 @@ Singleton {
             recolourLogo: lock.recolourLogo,
             enableFprint: lock.enableFprint,
             maxFprintTries: lock.maxFprintTries,
-            sizes: {
-                scale: lock.sizes.scale,
-                heightMult: lock.sizes.heightMult,
-                ratio: lock.sizes.ratio,
-                centerWidth: lock.sizes.centerWidth
-            }
+            hideNotifs: lock.hideNotifs
         };
     }
 
     function serializeUtilities(): var {
+        const vpnProviders = [];
+        for (let i = 0; i < utilities.vpn.provider.length; i++) {
+            const p = utilities.vpn.provider[i];
+            const provider = {
+                displayName: p.displayName,
+                enabled: p.enabled,
+                iface: p.iface,
+                name: p.name
+            };
+            if (p.connectCmd && p.connectCmd.length > 0) {
+                provider.connectCmd = p.connectCmd;
+            }
+            if (p.disconnectCmd && p.disconnectCmd.length > 0) {
+                provider.disconnectCmd = p.disconnectCmd;
+            }
+            vpnProviders.push(provider);
+        }
+
         return {
             enabled: utilities.enabled,
             maxToasts: utilities.maxToasts,
-            sizes: {
-                scale: utilities.sizes.scale,
-                width: utilities.sizes.width,
-                toastWidth: utilities.sizes.toastWidth
-            },
             toasts: {
                 configLoaded: utilities.toasts.configLoaded,
+                fullscreen: utilities.toasts.fullscreen,
                 chargingChanged: utilities.toasts.chargingChanged,
                 gameModeChanged: utilities.toasts.gameModeChanged,
                 dndChanged: utilities.toasts.dndChanged,
@@ -428,19 +374,16 @@ Singleton {
             },
             vpn: {
                 enabled: utilities.vpn.enabled,
-                provider: utilities.vpn.provider
-            }
+                provider: vpnProviders
+            },
+            quickToggles: utilities.quickToggles
         };
     }
 
     function serializeSidebar(): var {
         return {
             enabled: sidebar.enabled,
-            dragThreshold: sidebar.dragThreshold,
-            sizes: {
-                scale: sidebar.sizes.scale,
-                width: sidebar.sizes.width
-            }
+            dragThreshold: sidebar.dragThreshold
         };
     }
 
@@ -458,6 +401,7 @@ Singleton {
         return {
             weatherLocation: services.weatherLocation,
             useFahrenheit: services.useFahrenheit,
+            useFahrenheitPerformance: services.useFahrenheitPerformance,
             useTwelveHourClock: services.useTwelveHourClock,
             gpuType: services.gpuType,
             visualiserBars: services.visualiserBars,
@@ -466,16 +410,59 @@ Singleton {
             maxVolume: services.maxVolume,
             smartScheme: services.smartScheme,
             defaultPlayer: services.defaultPlayer,
-            playerAliases: services.playerAliases
+            playerAliases: services.playerAliases,
+            showLyrics: services.showLyrics,
+            lyricsBackend: services.lyricsBackend
         };
     }
 
     function serializePaths(): var {
         return {
             wallpaperDir: paths.wallpaperDir,
+            lyricsDir: paths.lyricsDir,
             sessionGif: paths.sessionGif,
             mediaGif: paths.mediaGif
         };
+    }
+
+    ElapsedTimer {
+        id: timer
+    }
+
+    Timer {
+        id: saveTimer
+
+        interval: 500
+        onTriggered: {
+            timer.restart();
+            try {
+                // Parse current config to preserve structure and comments if possible
+                let config = {};
+                try {
+                    config = JSON.parse(fileView.text());
+                } catch (e) {
+                    // If parsing fails, start with empty object
+                    config = {};
+                }
+
+                // Update config with current values
+                config = root.serializeConfig();
+
+                // Save to file with pretty printing
+                fileView.setText(JSON.stringify(config, null, 2));
+            } catch (e) {
+                Toaster.toast(qsTr("Failed to serialize config"), e.message, "settings_alert", Toast.Error);
+            }
+        }
+    }
+
+    Timer {
+        id: recentSaveCooldown
+
+        interval: 2000
+        onTriggered: {
+            root.recentlySaved = false;
+        }
     }
 
     FileView {
@@ -485,7 +472,7 @@ Singleton {
         watchChanges: true
         onFileChanged: {
             // Prevent reload loop - don't reload if we just saved
-            if (!recentlySaved) {
+            if (!root.recentlySaved) {
                 timer.restart();
                 reload();
             } else {
@@ -498,9 +485,9 @@ Singleton {
                 JSON.parse(text());
                 const elapsed = timer.elapsedMs();
                 // Only show toast for external changes (not our own saves) and when elapsed time is meaningful
-                if (adapter.utilities.toasts.configLoaded && !recentlySaved && elapsed > 0) {
-                    Toaster.toast(qsTr("Config loaded"), qsTr("Config loaded in %1ms").arg(elapsed), "rule_settings");
-                } else if (adapter.utilities.toasts.configLoaded && recentlySaved && elapsed > 0) {
+                if (adapter.utilities.toasts.configLoaded && !root.recentlySaved && elapsed > 0) { // qmllint disable unresolved-type
+                    Toaster.toast(qsTr("Config loaded"), qsTr("Config loaded in %1ms").arg(elapsed), "rule_settings"); // qmllint disable unresolved-type
+                } else if (adapter.utilities.toasts.configLoaded && root.recentlySaved && elapsed > 0) { // qmllint disable unresolved-type
                     Toaster.toast(qsTr("Config saved"), qsTr("Config reloaded in %1ms").arg(elapsed), "rule_settings");
                 }
             } catch (e) {
@@ -513,7 +500,7 @@ Singleton {
         }
         onSaveFailed: err => Toaster.toast(qsTr("Failed to save config"), FileViewError.toString(err), "settings_alert", Toast.Error)
 
-        JsonAdapter {
+        JsonAdapter { // qmllint disable unresolved-type
             id: adapter
 
             property AppearanceConfig appearance: AppearanceConfig {}

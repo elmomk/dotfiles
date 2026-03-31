@@ -1,16 +1,17 @@
 pragma ComponentBehavior: Bound
 
+import QtQuick
+import Quickshell
 import qs.components
 import qs.config
-import Quickshell
-import QtQuick
+import qs.modules.bar.popouts as BarPopouts
 
 Item {
     id: root
 
-    required property var visibilities
+    required property DrawerVisibilities visibilities
     required property Item sidebar
-    required property Item popouts
+    required property BarPopouts.Wrapper popouts
 
     readonly property PersistentProperties props: PersistentProperties {
         property bool recordingListExpanded: false
@@ -60,7 +61,6 @@ Item {
             Anim {
                 target: root
                 property: "implicitHeight"
-                duration: Appearance.anim.durations.expressiveFastSpatial
                 easing.bezierCurve: Appearance.anim.curves.emphasized
             }
         }
@@ -70,7 +70,7 @@ Item {
         id: timer
 
         running: true
-        interval: Appearance.anim.durations.normal
+        interval: Appearance.anim.durations.extraLarge
         onTriggered: {
             content.active = Qt.binding(() => root.shouldBeActive || root.visible);
             content.visible = true;
@@ -80,6 +80,7 @@ Item {
     Loader {
         id: content
 
+        asynchronous: true
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.margins: Appearance.padding.large

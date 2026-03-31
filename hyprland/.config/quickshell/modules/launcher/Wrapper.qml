@@ -1,15 +1,15 @@
 pragma ComponentBehavior: Bound
 
+import QtQuick
+import Quickshell
 import qs.components
 import qs.config
-import Quickshell
-import QtQuick
 
 Item {
     id: root
 
     required property ShellScreen screen
-    required property PersistentProperties visibilities
+    required property DrawerVisibilities visibilities
     required property var panels
 
     readonly property bool shouldBeActive: visibilities.launcher && Config.launcher.enabled
@@ -64,14 +64,11 @@ Item {
             target: root
             property: "implicitHeight"
             to: 0
-            duration: Appearance.anim.durations.expressiveFastSpatial
             easing.bezierCurve: Appearance.anim.curves.emphasized
         }
     }
 
     Connections {
-        target: Config.launcher
-
         function onEnabledChanged(): void {
             timer.start();
         }
@@ -79,21 +76,23 @@ Item {
         function onMaxShownChanged(): void {
             timer.start();
         }
+
+        target: Config.launcher
     }
 
     Connections {
-        target: DesktopEntries.applications
-
         function onValuesChanged(): void {
             if (DesktopEntries.applications.values.length < Config.launcher.maxShown)
                 timer.start();
         }
+
+        target: DesktopEntries.applications
     }
 
     Timer {
         id: timer
 
-        interval: Appearance.anim.durations.normal
+        interval: Appearance.anim.durations.extraLarge
         onRunningChanged: {
             if (running && !root.shouldBeActive) {
                 content.visible = false;

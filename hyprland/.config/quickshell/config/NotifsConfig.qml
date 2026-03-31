@@ -2,6 +2,7 @@ import Quickshell.Io
 
 JsonObject {
     property bool expire: true
+    property string fullscreen: "on"
     property int defaultExpireTimeout: 5000
     property real clearThreshold: 0.3
     property int expandThreshold: 20
@@ -11,9 +12,8 @@ JsonObject {
     property Sizes sizes: Sizes {}
 
     component Sizes: JsonObject {
-        property real scale: 1
-        property int width: 500 * scale
-        property int image: 41 * scale
-        property int badge: 20 * scale
+        property int width: 400
+        property int image: 41
+        property int badge: 20
     }
 }

@@ -8,14 +8,45 @@ JsonObject {
     property Toasts toasts: Toasts {}
     property Vpn vpn: Vpn {}
 
+    property list<var> quickToggles: [
+        {
+            id: "wifi",
+            enabled: true
+        },
+        {
+            id: "bluetooth",
+            enabled: true
+        },
+        {
+            id: "mic",
+            enabled: true
+        },
+        {
+            id: "settings",
+            enabled: true
+        },
+        {
+            id: "gameMode",
+            enabled: true
+        },
+        {
+            id: "dnd",
+            enabled: true
+        },
+        {
+            id: "vpn",
+            enabled: false
+        }
+    ]
+
     component Sizes: JsonObject {
-        property real scale: 1
-        property int width: 430 * scale
-        property int toastWidth: 430 * scale
+        property int width: 430
+        property int toastWidth: 430
     }
 
     component Toasts: JsonObject {
         property bool configLoaded: true
+        property string fullscreen: "off"
         property bool chargingChanged: true
         property bool gameModeChanged: true
         property bool dndChanged: true
@@ -31,6 +62,6 @@ JsonObject {
 
     component Vpn: JsonObject {
         property bool enabled: false
-        property list<var> provider: ["netbird"]
+        property list<var> provider: []
     }
 }

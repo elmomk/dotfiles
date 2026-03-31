@@ -6,7 +6,6 @@ JsonObject {
     property Padding padding: Padding {}
     property FontStuff font: FontStuff {}
     property Anim anim: Anim {}
-    property Interaction interaction: Interaction {}
     property Transparency transparency: Transparency {}
 
     component Rounding: JsonObject {
@@ -85,12 +84,6 @@ JsonObject {
         property real sessionGifSpeed: 0.7
         property AnimCurves curves: AnimCurves {}
         property AnimDurations durations: AnimDurations {}
-    }
-
-    component Interaction: JsonObject {
-        property real hoverOpacity: 0.08
-        property real pressedOpacity: 0.12
-        property real hoverScale: 1.02
     }
 
     component Transparency: JsonObject {

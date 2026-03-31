@@ -1,20 +1,22 @@
 pragma ComponentBehavior: Bound
 
-import qs.services
-import qs.config
 import "popouts" as BarPopouts
 import "components"
 import "components/workspaces"
-import Quickshell
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
+import qs.components
+import qs.services
+import qs.config
 
 RowLayout {
     id: root
 
     required property ShellScreen screen
-    required property PersistentProperties visibilities
+    required property DrawerVisibilities visibilities
     required property BarPopouts.Wrapper popouts
+    required property bool fullscreen
     readonly property int hPadding: Appearance.padding.large
 
     function closeTray(): void {
@@ -22,9 +24,9 @@ RowLayout {
             return;
 
         for (let i = 0; i < repeater.count; i++) {
-            const item = repeater.itemAt(i);
-            if (item?.enabled && item.id === "tray") {
-                item.item.expanded = false;
+            const loader = repeater.itemAt(i) as WrappedLoader;
+            if (loader?.enabled && loader.id === "tray") {
+                (loader.item as Tray).expanded = false;
             }
         }
     }
@@ -42,29 +44,20 @@ RowLayout {
 
         const id = ch.id;
         const left = ch.x;
-        const item = ch.item;
-
-        if (!item) {
-            popouts.hasCurrent = false;
-            return;
-        }
-
-        const itemWidth = item.implicitWidth;
 
         if (id === "statusIcons" && Config.bar.popouts.statusIcons) {
-            const items = item.items;
+            const items = (ch.item as StatusIcons).items;
             const icon = items.childAt(mapToItem(items, x, 0).x, items.height / 2);
             if (icon) {
                 popouts.currentName = icon.name;
                 popouts.currentCenter = Qt.binding(() => icon.mapToItem(root, icon.implicitWidth / 2, 0).x);
                 popouts.hasCurrent = true;
-            } else {
-                popouts.hasCurrent = false;
             }
         } else if (id === "tray" && Config.bar.popouts.tray) {
-            if (!Config.bar.tray.compact || (item.expanded && !item.expandIcon.contains(mapToItem(item.expandIcon, x, item.implicitHeight / 2)))) {
-                const index = Math.floor(((x - left - item.padding * 2 + item.spacing) / item.layout.implicitWidth) * item.items.count);
-                const trayItem = item.items.itemAt(index);
+            const tray = ch.item as Tray;
+            if (!Config.bar.tray.compact || (tray.expanded && !tray.expandIcon.contains(mapToItem(tray.expandIcon, x, tray.implicitHeight / 2)))) {
+                const index = Math.floor(((x - left - tray.padding * 2 + tray.spacing) / tray.layout.implicitWidth) * tray.items.count);
+                const trayItem = tray.items.itemAt(index);
                 if (trayItem) {
                     popouts.currentName = `traymenu${index}`;
                     popouts.currentCenter = Qt.binding(() => trayItem.mapToItem(root, trayItem.implicitWidth / 2, 0).x);
@@ -74,18 +67,16 @@ RowLayout {
                 }
             } else {
                 popouts.hasCurrent = false;
-                item.expanded = true;
+                tray.expanded = true;
             }
-        } else if (id === "activeWindow" && Config.bar.popouts.activeWindow) {
+        } else if (id === "activeWindow" && Config.bar.popouts.activeWindow && Config.bar.activeWindow.showOnHover) {
             popouts.currentName = id.toLowerCase();
-            popouts.currentCenter = Qt.binding(() => item.mapToItem(root, item.implicitWidth / 2, 0).x);
+            popouts.currentCenter = (ch.item as Item).mapToItem(root, (ch.item as Item).implicitWidth / 2, 0).x ?? 0;
             popouts.hasCurrent = true;
-        } else if (id === "clock" && Config.bar.popouts.clock) {
+        } else if (id === "clock") {
             popouts.currentName = "clock";
-            popouts.currentCenter = Qt.binding(() => item.mapToItem(root, item.implicitWidth / 2, 0).x);
+            popouts.currentCenter = (ch.item as Item).mapToItem(root, (ch.item as Item).implicitWidth / 2, 0).x ?? 0;
             popouts.hasCurrent = true;
-        } else {
-            popouts.hasCurrent = false;
         }
     }
 
@@ -106,7 +97,7 @@ RowLayout {
             else if (angleDelta.y < 0)
                 Audio.decrementVolume();
         } else if (Config.bar.scrollActions.brightness) {
-            // Brightness scroll on bottom half
+            // Brightness scroll on right half
             const monitor = Brightness.getMonitorForScreen(screen);
             if (angleDelta.y > 0)
                 monitor.setBrightness(monitor.brightness + Config.services.brightnessIncrement);
@@ -142,12 +133,15 @@ RowLayout {
                 delegate: WrappedLoader {
                     sourceComponent: Workspaces {
                         screen: root.screen
+                        fullscreen: root.fullscreen
                     }
                 }
             }
             DelegateChoice {
                 roleValue: "activeWindow"
                 delegate: WrappedLoader {
+                    Layout.fillWidth: true
+                    visible: !root.fullscreen
                     sourceComponent: ActiveWindow {
                         bar: root
                         monitor: Brightness.getMonitorForScreen(root.screen)
@@ -157,18 +151,21 @@ RowLayout {
             DelegateChoice {
                 roleValue: "tray"
                 delegate: WrappedLoader {
+                    visible: !root.fullscreen
                     sourceComponent: Tray {}
                 }
             }
             DelegateChoice {
                 roleValue: "clock"
                 delegate: WrappedLoader {
+                    visible: !root.fullscreen
                     sourceComponent: Clock {}
                 }
             }
             DelegateChoice {
                 roleValue: "statusIcons"
                 delegate: WrappedLoader {
+                    visible: !root.fullscreen
                     sourceComponent: StatusIcons {}
                 }
             }
@@ -184,7 +181,7 @@ RowLayout {
     }
 
     component WrappedLoader: Loader {
-        required property bool enabled
+        required enabled
         required property string id
         required property int index
 
@@ -207,9 +204,10 @@ RowLayout {
             return null;
         }
 
+        asynchronous: true
         Layout.alignment: Qt.AlignVCenter
 
-        // Padding for first and last enabled components
+        // Cursed ahh thing to add padding to first and last enabled components
         Layout.leftMargin: findFirstEnabled() === this ? root.hPadding : 0
         Layout.rightMargin: findLastEnabled() === this ? root.hPadding : 0
 

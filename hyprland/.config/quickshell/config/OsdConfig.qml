@@ -8,8 +8,7 @@ JsonObject {
     property Sizes sizes: Sizes {}
 
     component Sizes: JsonObject {
-        property real scale: 1
-        property int sliderWidth: 30 * scale
-        property int sliderHeight: 150 * scale
+        property int sliderWidth: 30
+        property int sliderHeight: 150
     }
 }

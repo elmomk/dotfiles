@@ -1,13 +1,13 @@
 pragma ComponentBehavior: Bound
 
+import QtQuick
 import qs.components
 import qs.config
-import QtQuick
 
 Item {
     id: root
 
-    required property var visibilities
+    required property DrawerVisibilities visibilities
     required property var panels
     readonly property Props props: Props {}
 
@@ -42,7 +42,6 @@ Item {
             Anim {
                 target: root
                 property: "implicitWidth"
-                duration: Appearance.anim.durations.expressiveFastSpatial
                 easing.bezierCurve: root.panels.osd.width > 0 || root.panels.session.width > 0 ? Appearance.anim.curves.expressiveDefaultSpatial : Appearance.anim.curves.emphasized
             }
         }
