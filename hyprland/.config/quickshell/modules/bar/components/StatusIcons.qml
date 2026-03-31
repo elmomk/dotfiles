@@ -130,7 +130,7 @@ StyledRect {
         // Keyboard layout icon
         WrappedLoader {
             name: "kblayout"
-            active: Config.bar.status.showKbLayout && !Fcitx.available
+            active: false
 
             sourceComponent: StyledText {
                 animate: true

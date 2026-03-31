@@ -90,10 +90,5 @@ Shape {
         startY: root.panels.notifications.height
     }
 
-    Claude.Background {
-        wrapper: root.panels.claude // qmllint disable incompatible-type
-
-        startX: 0
-        startY: 0
-    }
+    // Claude background disabled - scratchpad terminal provides its own visual
 }

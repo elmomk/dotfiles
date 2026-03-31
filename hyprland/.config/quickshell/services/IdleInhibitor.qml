@@ -18,7 +18,7 @@ Singleton {
     PersistentProperties {
         id: props
 
-        property bool enabled
+        property bool enabled: true
         property date enabledSince
 
         reloadableId: "idleInhibitor"
