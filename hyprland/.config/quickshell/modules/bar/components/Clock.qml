@@ -61,7 +61,7 @@ StyledRect {
             anchors.verticalCenter: parent.verticalCenter
 
             text: Time.format(Config.services.useTwelveHourClock ? "hh:mm A" : "hh:mm")
-            font.pointSize: Appearance.font.size.smaller
+            font.pointSize: Appearance.font.size.large
             font.family: Appearance.font.family.mono
             color: root.colour
         }
