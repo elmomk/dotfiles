@@ -31,9 +31,9 @@ git clone https://github.com/<user>/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 
 # Pick your machine type
-./profiles/home.sh     # 4K desktop
-./profiles/laptop.sh   # Laptop
-./profiles/wsl.sh      # WSL (work)
+./profiles/deploy.sh home     # 4K desktop
+./profiles/deploy.sh laptop   # Laptop
+./profiles/deploy.sh wsl      # WSL (work)
 ```
 
 Or stow individual packages:
@@ -48,9 +48,9 @@ stow -D <package>    # remove
 
 | Profile | Machine | Packages |
 |---------|---------|----------|
-| `home.sh` | 4K desktop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
-| `laptop.sh` | Laptop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
-| `wsl.sh` | WSL (work) | core, wsl, zsh, zsh-personal, starship, tmux, gitconfig, mo-vim |
+| `home` | 4K desktop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
+| `laptop` | Laptop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
+| `wsl` | WSL (work) | core, wsl, zsh, zsh-personal, starship, tmux, gitconfig, mo-vim |
 
 See [docs/profiles.md](docs/profiles.md) for details.
 

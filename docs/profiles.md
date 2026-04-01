@@ -6,17 +6,16 @@ Profiles are deployment scripts that stow the right packages for each machine ty
 
 | Profile | Machine | Packages |
 |---------|---------|----------|
-| `home.sh` | 4K desktop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
-| `laptop.sh` | Laptop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
-| `wsl.sh` | WSL (work) | core, wsl, zsh, zsh-personal, starship, tmux, gitconfig, mo-vim |
+| `home` | 4K desktop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
+| `laptop` | Laptop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
+| `wsl` | WSL (work) | core, wsl, zsh, zsh-personal, starship, tmux, gitconfig, mo-vim |
 
 ## Usage
 
 ```bash
-# Deploy for your machine type
-./profiles/home.sh
-./profiles/laptop.sh
-./profiles/wsl.sh
+./profiles/deploy.sh home
+./profiles/deploy.sh laptop
+./profiles/deploy.sh wsl
 ```
 
 ## Profile Differences
@@ -26,10 +25,10 @@ Profiles are deployment scripts that stow the right packages for each machine ty
 
 ## Adding a New Profile
 
-Create a new script in `profiles/` following the same pattern:
+Add a new case to `profiles/deploy.sh`:
 
 ```bash
-#!/bin/bash
-cd "$(dirname "$0")/.." || exit 1
-stow -v <packages...>
+  newprofile)
+    stow -v <packages...>
+    ;;
 ```
