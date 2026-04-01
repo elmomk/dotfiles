@@ -8,6 +8,8 @@
 # use delta as the default diff viewer
 [core]
     pager = delta
+    autocrlf = false
+    eol = lf
 
 [interactive]
     diffFilter = delta --color-only
@@ -43,7 +45,7 @@
 ;     IdentitiesOnly yes
 ;     AddKeysToAgent yes
 
-[includeIf "gitdir:~/Documents/work/"]
+[includeIf "gitdir:~/work/"]
    path = ~/.gitconfig-work
     ; [user]
         ; email = work@work

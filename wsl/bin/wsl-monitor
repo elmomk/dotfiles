@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# ==========================================
+# WSL MONITOR (Verbose Daemon Version)
+# Checks: C: Drive, WSL Disk, Dotfiles
+# ==========================================
+
+# Configuration
+THRESHOLD_PERCENT=82
+WSL_LIMIT_GB=80 # Alert if WSL uses more than 50GiB
+DOTFILES_DIR="$HOME/dotfiles"
+
+# Helper: Send Windows Notification
+notify_windows() {
+  local title="$1"
+  local message="$2"
+  echo "  -> TRIGGERING NOTIFICATION: $title - $message"
+  /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "& {
+        [reflection.assembly]::loadwithpartialname('System.Windows.Forms') | Out-Null;
+        \$obj = New-Object System.Windows.Forms.NotifyIcon;
+        \$obj.Icon = [System.Drawing.SystemIcons]::Warning;
+        \$obj.BalloonTipIcon = 'Warning';
+        \$obj.BalloonTipText = '$message';
+        \$obj.BalloonTipTitle = '$title';
+        \$obj.Visible = \$true;
+        \$obj.ShowBalloonTip(5000);
+    }"
+}
+
+echo "--- Monitor Run Started: $(date) ---"
+
+# 1. Check Windows C: Drive
+C_USAGE=$(df -h /mnt/c | awk 'NR==2 {print $5}' | sed 's/%//')
+echo "C: Drive Usage: ${C_USAGE}% (Threshold: ${THRESHOLD_PERCENT}%)"
+
+if [ "$C_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
+  notify_windows "Storage Critical" "Windows C: Drive is ${C_USAGE}% full."
+fi
+#
+# 2. Check Windows D: Drive
+D_USAGE=$(df -h /mnt/d | awk 'NR==2 {print $5}' | sed 's/%//')
+echo "D: Drive Usage: ${D_USAGE}% (Threshold: ${THRESHOLD_PERCENT}%)"
+
+if [ "$D_USAGE" -ge "$THRESHOLD_PERCENT" ]; then
+  notify_windows "Storage Critical" "Windows D: Drive is ${C_USAGE}% full."
+fi
+
+# 3. Check WSL Virtual Disk (Used GiB)
+# -BG forces block size to 1G, 'print $3' gets Used column, sed strips 'G'
+WSL_USED_GB=$(df -BG / | awk 'NR==2 {print $3}' | sed 's/G//')
+echo "WSL Disk Usage: ${WSL_USED_GB}GiB (Limit: ${WSL_LIMIT_GB}GiB)"
+
+if [ "$WSL_USED_GB" -ge "$WSL_LIMIT_GB" ]; then
+  notify_windows "WSL Storage Alert" "WSL is using ${WSL_USED_GB}GiB (Limit: ${WSL_LIMIT_GB}GiB)."
+fi
+
+# 3. Check Dotfiles
+if [ -d "$DOTFILES_DIR" ]; then
+  # Git status check
+  CHANGES=$(git -C "$DOTFILES_DIR" status --porcelain)
+  if [ -n "$CHANGES" ]; then
+    COUNT=$(echo "$CHANGES" | grep -c '^')
+    echo "Dotfiles Status: DIRTY ($COUNT uncommitted files)"
+    notify_windows "Dotfiles Dirty" "You have $COUNT uncommitted changes."
+  else
+    echo "Dotfiles Status: CLEAN"
+  fi
+else
+  echo "Dotfiles Directory not found at $DOTFILES_DIR"
+fi
+
+echo "--- Monitor Run Finished ---"
