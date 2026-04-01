@@ -1,6 +1,6 @@
 # My dotfiles
 
-This repository contains my configuration files for Linux (Arch + Hyprland).
+Configuration files for Linux (Arch + Hyprland) and WSL, managed with [GNU Stow](https://www.gnu.org/software/stow/).
 
 ## Screenshots
 
@@ -22,17 +22,55 @@ This repository contains my configuration files for Linux (Arch + Hyprland).
 ### Session Menu
 ![Session](assets/screenshots/session.png)
 
+## Quick Start
+
+Deploy configs for your machine with a profile:
+
+```bash
+git clone https://github.com/<user>/dotfiles.git ~/.dotfiles
+cd ~/.dotfiles
+
+# Pick your machine type
+./profiles/home.sh     # 4K desktop
+./profiles/laptop.sh   # Laptop
+./profiles/wsl.sh      # WSL (work)
+```
+
+Or stow individual packages:
+
+```bash
+cd ~/.dotfiles
+stow <package>       # deploy
+stow -D <package>    # remove
+```
+
+## Profiles
+
+| Profile | Machine | Packages |
+|---------|---------|----------|
+| `home.sh` | 4K desktop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
+| `laptop.sh` | Laptop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
+| `wsl.sh` | WSL (work) | core, wsl, zsh, zsh-personal, starship, tmux, gitconfig, mo-vim |
+
+See [docs/profiles.md](docs/profiles.md) for details.
+
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| `hyprland` | Hyprland WM config, QuickShell desktop shell, display auto-detection, hypridle, hyprlock |
-| `alacritty` | Terminal emulator |
-| `fish` | Fish shell config |
-| `tmux` | Terminal multiplexer |
-| `nvim` | Neovim editor |
-| `git` | Git configuration |
+| `core` | Shared scripts and utilities (tmux helpers, clipboard, system tools) |
+| `wsl` | WSL work environment: AWS/GCP/k8s scripts, mise toolchain, systemd monitor |
+| `zsh` | Zsh config with zinit |
+| `zsh-personal` | Personal zsh overrides and functions |
+| `starship` | Starship prompt |
+| `tmux` | Tmux config |
+| `gitconfig` | Git config with delta, conditional work includes |
+| `hyprland` | Hyprland WM, QuickShell desktop shell, display auto-detection, hypridle, hyprlock |
+| `mo-vim` | Neovim config |
 | `udev` | Custom udev rules |
+| `alacritty` | Alacritty terminal |
+
+See [docs/packages.md](docs/packages.md) for the full list and [docs/wsl-tools.md](docs/wsl-tools.md) for WSL script reference.
 
 ## QuickShell Desktop Shell
 
@@ -67,24 +105,6 @@ Monitors are auto-detected at startup and on hotplug. A profile system maps moni
 
 ## Requirements
 
-- git (to clone this repository)
-- stow (to deploy the configuration files)
-- $HOME/.config directory used as XDG_HOME_CONFIG
-
-## How to use
-
-Clone this repository into your home directory.
-
-Go into `$HOME/.dotfiles` and use `stow` to deploy the config files you want to.
-
-```bash
-cd $HOME/.dotfiles
-stow <package name>
-```
-
-To delete the symbolic links.
-
-```bash
-cd $HOME/.dotfiles
-stow -D <package name>
-```
+- git
+- [GNU Stow](https://www.gnu.org/software/stow/)
+- `$HOME/.config` as XDG config directory
