@@ -27,10 +27,10 @@ export KUBE_EDITOR='nvim'
 # eval $(thefuck --alias)
 # eval "$(luarocks path --bin)"
 # eval $(thefuck --alias)
-eval "$(zoxide init zsh)"
+# zoxide initialized in .zshrc-zinit (with --cmd cd)
 # eval "$(fnm env --use-on-cd)"
 eval "$(direnv hook zsh)"
-eval "$(starship init zsh)"
+command -v starship &>/dev/null && eval "$(starship init zsh)"
 # eval "$(github-copilot-cli alias -- "$0")"
 
 alias ls='eza --icons'
@@ -62,6 +62,7 @@ alias tfz='tmux attach -t `tmux list-sessions | fzf | cut -d: -f1`'
 alias vi="nvim"
 alias v="nvim"
 alias doco="docker-compose"
+alias claude-scratch='hyprctl dispatch exec "[workspace special:claude silent] foot -a claude-code -T Claude\ Code -o font=monospace:size=36 claude"'
 
 # fzf git
 alias fzf-git-branch='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'

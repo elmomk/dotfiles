@@ -119,12 +119,6 @@ local plugins = {
 			require("project_nvim").setup(opt)
 		end,
 	},
-	{
-		"lewis6991/impatient.nvim",
-		config = function()
-			require("impatient").enable_profile()
-		end,
-	},
 	{ "lukas-reineke/indent-blankline.nvim" },
 	{
 		"goolord/alpha-nvim",
@@ -289,9 +283,6 @@ local plugins = {
 			return require("plugins.config.treesitter")
 		end,
 		build = ":TSUpdate",
-		dependencies = {
-			{ "nvim-treesitter/playground" },
-		},
 	},
 
 	{ "mbbill/undotree" },
