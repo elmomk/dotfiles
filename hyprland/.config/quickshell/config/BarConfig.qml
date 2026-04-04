@@ -83,6 +83,14 @@ JsonObject {
             {
                 regex: "steam(_app_(default|[0-9]+))?",
                 icon: "sports_esports"
+            },
+            {
+                regex: "brave-agimnkijcaahngcdmfeangaknmldooml-Default",
+                icon: "play_circle"
+            },
+            {
+                regex: "brave-cinhimbnkkaeohfgghhklpknlkffjgod-Default",
+                icon: "music_note"
             }
         ]
     }

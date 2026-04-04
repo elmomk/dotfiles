@@ -16,7 +16,7 @@ JsonObject {
 
     component Idle: JsonObject {
         property bool lockBeforeSleep: true
-        property bool inhibitWhenAudio: true
+        property bool inhibitWhenAudio: false // disabled: triggers QS crash in idle_notify (upstream bug)
         property list<var> timeouts: [
             {
                 timeout: 180,
