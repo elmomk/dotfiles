@@ -39,9 +39,9 @@ Singleton {
         if (lower.startsWith("keyboard-kr") || lower === "hangul" || lower.startsWith("hangul"))
             return "KR";
         if (lower.startsWith("keyboard-cn") || lower === "pinyin" || lower === "shuangpin" || lower === "wubi" || lower.startsWith("rime"))
-            return "ZH";
+            return "文";
         if (lower.startsWith("keyboard-tw") || lower === "chewing" || lower === "zhuyin")
-            return "ZH";
+            return "文";
         if (lower.startsWith("keyboard-de"))
             return "DE";
         if (lower.startsWith("keyboard-fr"))

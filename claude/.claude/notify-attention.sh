@@ -44,7 +44,7 @@ fi
 (
   ACTION=$(notify-send -u normal -a "Claude Code" \
     -A "focus=Focus" \
-    -t 0 \
+    -t 30000 \
     "Claude Code needs attention" \
     "Session: ${TMUX_SESSION:-?}, Window: ${TMUX_WINDOW:-?}, Pane: ${TMUX_PANE_IDX:-?}" 2>/dev/null)
 

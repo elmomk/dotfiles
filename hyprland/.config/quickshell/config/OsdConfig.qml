@@ -2,6 +2,7 @@ import Quickshell.Io
 
 JsonObject {
     property bool enabled: true
+    property bool showOnHover: false
     property int hideDelay: 2000
     property bool enableBrightness: true
     property bool enableMicrophone: false

@@ -297,6 +297,7 @@ Singleton {
     function serializeOsd(): var {
         return {
             enabled: osd.enabled,
+            showOnHover: osd.showOnHover,
             hideDelay: osd.hideDelay,
             enableBrightness: osd.enableBrightness,
             enableMicrophone: osd.enableMicrophone
@@ -357,6 +358,7 @@ Singleton {
 
         return {
             enabled: utilities.enabled,
+            showOnHover: utilities.showOnHover,
             maxToasts: utilities.maxToasts,
             toasts: {
                 configLoaded: utilities.toasts.configLoaded,

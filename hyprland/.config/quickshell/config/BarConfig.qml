@@ -2,7 +2,7 @@ import Quickshell.Io
 
 JsonObject {
     property bool persistent: true
-    property bool showOnHover: true
+    property bool showOnHover: false
     property int dragThreshold: 20
     property ScrollActions scrollActions: ScrollActions {}
     property Popouts popouts: Popouts {}
@@ -98,7 +98,7 @@ JsonObject {
     component ActiveWindow: JsonObject {
         property bool compact: false
         property bool inverted: false
-        property bool showOnHover: true
+        property bool showOnHover: false
     }
 
     component Tray: JsonObject {

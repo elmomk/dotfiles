@@ -233,14 +233,19 @@ StyledRect {
         // Fcitx input method icon
         WrappedLoader {
             name: "fcitx"
-            active: Fcitx.available
+            active: Fcitx.running
+            Layout.preferredWidth: 22
 
             sourceComponent: StyledText {
+                width: 22
                 animate: true
-                text: Fcitx.currentAbbr || "EN"
+                text: Fcitx.currentLabel || "EN"
                 color: root.colour
                 font.family: Appearance.font.family.mono
                 font.weight: 600
+                font.pixelSize: Appearance.font.pixelSize * 0.75
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
             }
         }
 
