@@ -13,3 +13,5 @@ newdistro
 containers
 *crc*
 mimeinfo.cache
+# Claude Code local state (machine-specific)
+settings.local.json

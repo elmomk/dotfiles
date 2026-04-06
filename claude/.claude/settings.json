@@ -1,0 +1,191 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo tree:*)",
+      "Bash(cargo metadata:*)",
+      "Bash(cargo update:*)",
+      "Bash(cargo clean:*)",
+      "Bash(cargo audit:*)",
+      "Bash(cargo search:*)",
+      "Bash(rustc:*)",
+      "Bash(rustup:*)",
+      "Bash(dx build:*)",
+      "Bash(dx serve:*)",
+      "Bash(trunk build:*)",
+      "Bash(trunk serve:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git stash:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git tag:*)",
+      "Bash(git grep:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker build:*)",
+      "Bash(docker buildx:*)",
+      "Bash(ls:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(date:*)",
+      "Bash(diff:*)",
+      "Bash(stat:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(sort:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(sleep:*)",
+      "Bash(sed:*)",
+      "Bash(du:*)",
+      "Bash(ps:*)",
+      "Bash(top:*)",
+      "Bash(nproc:*)",
+      "Bash(node:*)",
+      "Bash(python3:*)",
+      "Bash(pipx run:*)",
+      "Bash(pipx install:*)",
+      "Bash(pipx list:*)",
+      "Bash(npx playwright:*)",
+      "Bash(curl:*)",
+      "Bash(sqlite3:*)",
+      "Bash(pkill:*)",
+      "Bash(pgrep:*)",
+      "Bash(nohup:*)",
+      "Bash(cd:*)",
+      "Bash(set -a:*)",
+      "Bash(claude --version)",
+      "Bash(tailscale status:*)",
+      "Bash(pip show:*)",
+      "Bash(tesseract:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Bash(chmod 777:*)",
+      "Bash(curl * | sh:*)",
+      "Bash(curl * | bash:*)",
+      "Bash(wget * | sh:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Read(.env)",
+      "Read(.env.bak)",
+      "Read(.env.local)",
+      "Read(.env.production)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)",
+      "Edit(.env)",
+      "Edit(.env.bak)",
+      "Edit(.env.local)",
+      "Edit(.env.production)",
+      "Write(.env)",
+      "Write(.env.bak)",
+      "Write(.env.local)",
+      "Write(.env.production)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(python3 -m pip install:*)",
+      "Bash(python -m pip install:*)"
+    ]
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt|elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/mo/.tmux/plugins/tmux_cc_attention/scripts/notify.sh"
+          },
+          {
+            "type": "command",
+            "command": "/home/mo/.claude/notify-attention.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/mo/.tmux/plugins/tmux_cc_attention/scripts/stopped.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/mo/.tmux/plugins/tmux_cc_attention/scripts/active.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/mo/.claude/hooks/guard-secrets.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/mo/.claude/hooks/guard-secrets.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/mo/.claude/hooks/enforce-pipx.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/mo/.tmux/plugins/tmux_cc_attention/scripts/stopped.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "sh /home/mo/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
+  },
+  "skipDangerousModePermissionPrompt": true
+}

@@ -48,9 +48,9 @@ stow -D <package>    # remove
 
 | Profile | Machine | Packages |
 |---------|---------|----------|
-| `home` | 4K desktop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
-| `laptop` | Laptop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev |
-| `wsl` | WSL (work) | core, wsl, zsh, zsh-personal, starship, tmux, gitconfig, mo-vim |
+| `home` | 4K desktop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev, claude |
+| `laptop` | Laptop (Arch + Hyprland) | core, zsh, zsh-personal, starship, tmux, gitconfig, hyprland, mo-vim, udev, claude |
+| `wsl` | WSL (work) | core, wsl, zsh, zsh-personal, starship, tmux, gitconfig, mo-vim, claude |
 
 See [docs/profiles.md](docs/profiles.md) for details.
 
@@ -68,6 +68,7 @@ See [docs/profiles.md](docs/profiles.md) for details.
 | `hyprland` | Hyprland WM, QuickShell desktop shell, display auto-detection, hypridle, hyprlock |
 | `mo-vim` | Neovim config |
 | `udev` | Custom udev rules |
+| `claude` | Claude Code config: permissions, security hooks, skills, statusline |
 | `alacritty` | Alacritty terminal |
 
 See [docs/packages.md](docs/packages.md) for the full list and [docs/wsl-tools.md](docs/wsl-tools.md) for WSL script reference.
