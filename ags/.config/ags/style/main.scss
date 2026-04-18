@@ -29,13 +29,20 @@ $font-sans: "Rubik", sans-serif;
 $font-mono: "CaskaydiaCove NF", monospace;
 $font-icon: "Material Symbols Rounded";
 
-$font-size-sm: 11px;
-$font-size-md: 13px;
-$font-size-lg: 16px;
-$font-size-xl: 22px;
+// Scale factor for HiDPI (3840x2160 @ scale 1.0)
+$scale: 2;
 
-$bar-height: 38px;
-$bar-margin: 4px;
+$font-size-sm: 11px * $scale;
+$font-size-md: 13px * $scale;
+$font-size-lg: 16px * $scale;
+$font-size-xl: 22px * $scale;
+
+$rounding-sm: 8px * $scale;
+$rounding-md: 12px * $scale;
+$rounding-lg: 18px * $scale;
+
+$bar-height: 38px * $scale;
+$bar-margin: 4px * $scale;
 
 // ===== Base =====
 * {
@@ -48,8 +55,8 @@ window {
   background-color: transparent;
 }
 
-.icon { font-family: $font-icon; font-size: 20px; }
-.icon-lg { font-family: $font-icon; font-size: 24px; }
+.icon { font-family: $font-icon; font-size: 20px * $scale; }
+.icon-lg { font-family: $font-icon; font-size: 24px * $scale; }
 .dim { color: $fg-dim; }
 .muted { color: $fg-muted; }
 
@@ -72,16 +79,16 @@ separator {
     background-color: $bg;
     border-radius: $rounding-lg;
     margin: $bar-margin;
-    padding: 0 12px;
+    padding: 0 12px * $scale;
     min-height: $bar-height;
   }
 
   .workspaces {
     .ws-button {
-      min-width: 28px;
-      min-height: 28px;
+      min-width: 28px * $scale;
+      min-height: 28px * $scale;
       border-radius: $rounding-full;
-      margin: 0 1px;
+      margin: 0 2px;
       transition: 150ms ease-in-out;
 
       label { font-size: $font-size-sm; }
@@ -89,7 +96,7 @@ separator {
       &.occupied { background-color: $bg-surface-variant; }
       &.active {
         background-color: $primary;
-        min-width: 36px;
+        min-width: 36px * $scale;
         label { color: $on-primary; }
       }
       &:hover { background-color: $bg-hover; }
@@ -105,9 +112,9 @@ separator {
 
     .clock-icon {
       font-family: $font-icon;
-      font-size: 16px;
+      font-size: 16px * $scale;
       color: $primary;
-      margin-right: 4px;
+      margin-right: 4px * $scale;
     }
     .clock-time { font-weight: 500; }
     .clock-date { color: $fg-dim; font-size: $font-size-sm; margin-left: 6px; }
@@ -116,9 +123,9 @@ separator {
   .status-icons {
     .status-icon {
       font-family: $font-icon;
-      font-size: 18px;
-      min-width: 30px;
-      min-height: 30px;
+      font-size: 18px * $scale;
+      min-width: 30px * $scale;
+      min-height: 30px * $scale;
       border-radius: $rounding-full;
       color: $fg-dim;
       transition: 150ms ease-in-out;
@@ -132,10 +139,10 @@ separator {
 
   .tray {
     .tray-item {
-      min-width: 28px;
-      min-height: 28px;
+      min-width: 28px * $scale;
+      min-height: 28px * $scale;
       border-radius: $rounding-full;
-      padding: 4px;
+      padding: 4px * $scale;
       &:hover { background-color: $bg-hover; }
     }
   }

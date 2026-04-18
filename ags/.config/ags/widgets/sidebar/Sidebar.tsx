@@ -18,7 +18,7 @@ export default function Sidebar(gdkmonitor: Gdk.Monitor) {
       gdkmonitor={gdkmonitor}
       anchor={TOP | BOTTOM | RIGHT}
       layer={Astal.Layer.OVERLAY}
-      keymode={Astal.Keymode.EXCLUSIVE}
+      keymode={Astal.Keymode.ON_DEMAND}
       application={app}
       $={(self: Astal.Window) => onKeyPress(self, (keyval) => {
         if (keyval === Gdk.KEY_Escape) {

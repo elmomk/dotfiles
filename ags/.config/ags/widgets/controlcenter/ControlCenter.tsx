@@ -86,7 +86,7 @@ export default function ControlCenter(gdkmonitor: Gdk.Monitor) {
       cssClasses={["ControlCenter"]}
       gdkmonitor={gdkmonitor}
       layer={Astal.Layer.OVERLAY}
-      keymode={Astal.Keymode.EXCLUSIVE}
+      keymode={Astal.Keymode.ON_DEMAND}
       application={app}
       $={(self: Astal.Window) => onKeyPress(self, (keyval) => {
         if (keyval === Gdk.KEY_Escape) {
