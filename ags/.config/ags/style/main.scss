@@ -1,526 +1,391 @@
-// ===== Variables =====
-$bg: #1a1a2e;
-$bg-surface: #16213e;
-$bg-surface-variant: #1e2a4a;
-$bg-hover: rgba(255, 255, 255, 0.08);
-$bg-active: rgba(255, 255, 255, 0.12);
+// ═══════════════════════════════════════════════════════
+//  OBSIDIAN & AMBER — Desktop Shell Theme
+//  Warm charcoal base, amber/gold accents, editorial type
+// ═══════════════════════════════════════════════════════
 
-$fg: #e0e0e0;
-$fg-dim: #a0a0a0;
-$fg-muted: #6e6e6e;
+// --- Palette ---
+$obsidian:       #141414;
+$obsidian-light: #1e1e1e;
+$obsidian-mid:   #262626;
+$obsidian-soft:  #2f2f2f;
+$glass:          rgba(255, 255, 255, 0.04);
+$glass-hover:    rgba(255, 255, 255, 0.08);
+$glass-active:   rgba(255, 255, 255, 0.14);
+$glass-border:   rgba(255, 255, 255, 0.06);
 
-$primary: #7c83ff;
-$primary-container: #3a3f9f;
-$on-primary: #ffffff;
+$amber:          #e2a44d;
+$amber-dim:      #b8863f;
+$amber-glow:     rgba(226, 164, 77, 0.15);
+$amber-container: rgba(226, 164, 77, 0.12);
 
-$error: #f44336;
-$warning: #ff9800;
-$success: #4caf50;
+$fg:             #d4d0c8;
+$fg-bright:      #f0ece4;
+$fg-dim:         #8a8578;
+$fg-muted:       #5a5650;
 
-$border: rgba(255, 255, 255, 0.12);
-$shadow: rgba(0, 0, 0, 0.3);
+$red:            #d4564e;
+$orange:         #d4884e;
+$green:          #7ab87a;
+$blue:           #5a8fba;
 
-$rounding-sm: 8px;
-$rounding-md: 12px;
-$rounding-lg: 18px;
-$rounding-full: 999px;
+// --- Scale (4K @ 1.0) ---
+$s: 2;
 
-$font-sans: "Rubik", sans-serif;
-$font-mono: "CaskaydiaCove NF", monospace;
-$font-icon: "Material Symbols Rounded";
+// --- Type ---
+$font-body:  "Rubik", "Cantarell", sans-serif;
+$font-mono:  "CaskaydiaCove NF", "JetBrains Mono", monospace;
+$font-icon:  "Material Symbols Rounded";
 
-// Scale factor for HiDPI (3840x2160 @ scale 1.0)
-$scale: 2;
+$fs-xs:   10px * $s;
+$fs-sm:   11px * $s;
+$fs-md:   13px * $s;
+$fs-lg:   15px * $s;
+$fs-xl:   20px * $s;
+$fs-2xl:  28px * $s;
+$fs-3xl:  42px * $s;
 
-$font-size-sm: 11px * $scale;
-$font-size-md: 13px * $scale;
-$font-size-lg: 16px * $scale;
-$font-size-xl: 22px * $scale;
+// --- Geometry ---
+$r-sm:   6px * $s;
+$r-md:   10px * $s;
+$r-lg:   16px * $s;
+$r-xl:   24px * $s;
+$r-full: 999px;
 
-$rounding-sm: 8px * $scale;
-$rounding-md: 12px * $scale;
-$rounding-lg: 18px * $scale;
+$bar-h:  42px * $s;
+$bar-m:  6px * $s;
 
-$bar-height: 38px * $scale;
-$bar-margin: 4px * $scale;
+// ═══════════════════════════════════════
+//  BASE
+// ═══════════════════════════════════════
 
-// ===== Base =====
 * {
-  font-family: $font-sans;
-  font-size: $font-size-md;
+  font-family: $font-body;
+  font-size: $fs-md;
   color: $fg;
 }
 
-window {
-  background-color: transparent;
-}
+window { background-color: transparent; }
 
-.icon { font-family: $font-icon; font-size: 20px * $scale; }
-.icon-lg { font-family: $font-icon; font-size: 24px * $scale; }
-.dim { color: $fg-dim; }
-.muted { color: $fg-muted; }
+.icon    { font-family: $font-icon; font-size: 20px * $s; }
+.icon-lg { font-family: $font-icon; font-size: 26px * $s; }
 
 tooltip {
-  background-color: $bg-surface-variant;
-  border-radius: $rounding-sm;
-  padding: 4px 8px;
+  background-color: $obsidian-mid;
+  border-radius: $r-sm;
+  border: 1px solid $glass-border;
+  padding: 6px * $s 10px * $s;
+  font-size: $fs-sm;
 }
 
-separator {
-  background-color: $border;
-  min-height: 1px;
-}
+// ═══════════════════════════════════════
+//  BAR
+// ═══════════════════════════════════════
 
-// ===== Bar =====
 .Bar {
-  background-color: transparent;
-
   .bar-inner {
-    background-color: $bg;
-    border-radius: $rounding-lg;
-    margin: $bar-margin;
-    padding: 0 12px * $scale;
-    min-height: $bar-height;
+    background-color: $obsidian;
+    border-radius: $r-xl;
+    border: 1px solid $glass-border;
+    margin: $bar-m;
+    padding: 0 16px * $s;
+    min-height: $bar-h;
   }
 
-  .workspaces {
-    .ws-button {
-      min-width: 28px * $scale;
-      min-height: 28px * $scale;
-      border-radius: $rounding-full;
-      margin: 0 2px;
-      transition: 150ms ease-in-out;
+  .workspaces .ws-button {
+    min-width: 10px * $s;
+    min-height: 10px * $s;
+    border-radius: $r-full;
+    margin: 0 3px * $s;
+    background-color: $obsidian-soft;
+    transition: 200ms ease-out;
 
-      label { font-size: $font-size-sm; }
+    label { font-size: 0; min-width: 0; min-height: 0; }  // hide label, dot-only
 
-      &.occupied { background-color: $bg-surface-variant; }
-      &.active {
-        background-color: $primary;
-        min-width: 36px * $scale;
-        label { color: $on-primary; }
-      }
-      &:hover { background-color: $bg-hover; }
-      &.active:hover { background-color: #8a91ff; }
+    &.occupied {
+      background-color: $fg-muted;
+      min-width: 10px * $s;
     }
+    &.active {
+      background-color: $amber;
+      min-width: 20px * $s;
+      min-height: 10px * $s;
+    }
+    &:hover { background-color: $fg-dim; }
+    &.active:hover { background-color: $amber-dim; }
   }
 
   .clock {
-    border-radius: $rounding-full;
-    padding: 4px 12px;
-
-    &:hover { background-color: $bg-hover; }
+    border-radius: $r-full;
+    padding: 4px * $s 14px * $s;
 
     .clock-icon {
       font-family: $font-icon;
-      font-size: 16px * $scale;
-      color: $primary;
-      margin-right: 4px * $scale;
+      font-size: 16px * $s;
+      color: $amber;
+      margin-right: 6px * $s;
     }
-    .clock-time { font-weight: 500; }
-    .clock-date { color: $fg-dim; font-size: $font-size-sm; margin-left: 6px; }
-  }
-
-  .status-icons {
-    .status-icon {
-      font-family: $font-icon;
-      font-size: 18px * $scale;
-      min-width: 30px * $scale;
-      min-height: 30px * $scale;
-      border-radius: $rounding-full;
+    .clock-time {
+      font-weight: 500;
+      font-size: $fs-md;
+      letter-spacing: 0.5px;
+    }
+    .clock-date {
       color: $fg-dim;
-      transition: 150ms ease-in-out;
-
-      &:hover { color: $fg; }
-      &.active { color: $primary; }
-      &.warning { color: $warning; }
-      &.error { color: $error; }
+      font-size: $fs-sm;
+      margin-left: 8px * $s;
     }
   }
 
-  .tray {
-    .tray-item {
-      min-width: 28px * $scale;
-      min-height: 28px * $scale;
-      border-radius: $rounding-full;
-      padding: 4px * $scale;
-      &:hover { background-color: $bg-hover; }
-    }
+  .status-icons .status-icon {
+    font-family: $font-icon;
+    font-size: 18px * $s;
+    min-width: 34px * $s;
+    min-height: 34px * $s;
+    border-radius: $r-full;
+    color: $fg-dim;
+    transition: 200ms ease-out;
+
+    &:hover    { color: $fg; background-color: $glass-hover; }
+    &.active   { color: $amber; }
+    &.warning  { color: $orange; }
+    &.error    { color: $red; }
+  }
+
+  .tray .tray-item {
+    min-width: 32px * $s;
+    min-height: 32px * $s;
+    border-radius: $r-full;
+    padding: 4px * $s;
+    &:hover { background-color: $glass-hover; }
   }
 
   .active-window label {
     color: $fg-dim;
-    font-size: $font-size-sm;
+    font-size: $fs-sm;
+    font-weight: 400;
+    letter-spacing: 0.3px;
   }
 
   .power-button {
-    font-family: $font-icon;
-    font-size: 18px;
-    min-width: 30px;
-    min-height: 30px;
-    border-radius: $rounding-full;
-    color: $fg-dim;
-    &:hover { color: $error; background-color: rgba($error, 0.1); }
+    min-width: 34px * $s;
+    min-height: 34px * $s;
+    border-radius: $r-full;
+    color: $fg-muted;
+    transition: 200ms ease-out;
+    &:hover { color: $red; background-color: rgba($red, 0.1); }
   }
 
   .logo {
-    font-family: $font-icon;
-    font-size: 20px;
-    color: $primary;
-    margin: 0 6px;
+    color: $amber;
+    margin: 0 8px * $s;
   }
 }
 
-// ===== OSD =====
+// ═══════════════════════════════════════
+//  OSD
+// ═══════════════════════════════════════
+
 .OSD {
-  background-color: transparent;
-
   .osd-inner {
-    background-color: $bg;
-    border-radius: $rounding-lg;
-    padding: 12px;
-    margin: 8px;
+    background-color: $obsidian;
+    border: 1px solid $glass-border;
+    border-radius: $r-lg;
+    padding: 16px * $s;
+    margin: 12px * $s;
 
-    .osd-icon { font-family: $font-icon; font-size: 22px; color: $primary; margin-bottom: 6px; }
-
-    scale {
-      min-height: 150px;
-      min-width: 8px;
-      trough { background-color: $bg-surface-variant; border-radius: $rounding-full; min-width: 8px; }
-      highlight { background-color: $primary; border-radius: $rounding-full; min-width: 8px; }
-      slider { background-color: $primary; border-radius: $rounding-full; min-width: 16px; min-height: 16px; margin: -4px; }
+    .osd-icon {
+      font-family: $font-icon;
+      font-size: 24px * $s;
+      color: $amber;
+      margin-bottom: 8px * $s;
     }
 
     .osd-bar-track {
-      background-color: $bg-surface-variant;
-      border-radius: $rounding-full;
-      min-width: 8px;
-      min-height: 140px;
+      background-color: $obsidian-soft;
+      border-radius: $r-full;
+      min-width: 6px * $s;
+      min-height: 140px * $s;
     }
-
     .osd-bar-fill {
-      background-color: $primary;
-      border-radius: $rounding-full;
-      min-width: 8px;
-      transition: 150ms ease-in-out;
+      background-color: $amber;
+      border-radius: $r-full;
+      min-width: 6px * $s;
+      transition: 150ms ease-out;
     }
 
-    .osd-value { font-size: $font-size-sm; color: $fg-dim; margin-top: 6px; }
+    .osd-value {
+      font-size: $fs-sm;
+      color: $fg-dim;
+      margin-top: 8px * $s;
+      font-weight: 500;
+    }
   }
 }
 
-// ===== Notifications =====
-.Notifications { background-color: transparent; }
+// ═══════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════
 
 .notification {
-  background-color: $bg;
-  border-radius: $rounding-lg;
-  padding: 12px;
-  margin: 6px 8px;
-  min-width: 380px;
+  background-color: $obsidian;
+  border: 1px solid $glass-border;
+  border-radius: $r-lg;
+  padding: 14px * $s;
+  margin: 6px * $s 10px * $s;
+  min-width: 400px * $s;
 
-  &.critical { border: 1px solid rgba($error, 0.5); }
+  &.critical { border-color: rgba($red, 0.4); }
 
   .notif-header {
-    .notif-app-name { font-size: $font-size-sm; color: $fg-dim; font-weight: 500; }
-    .notif-time { font-size: $font-size-sm; color: $fg-muted; }
+    .notif-app-name {
+      font-size: $fs-xs;
+      color: $fg-muted;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .notif-time  { font-size: $fs-xs; color: $fg-muted; }
     .notif-close {
       font-family: $font-icon;
-      font-size: 16px;
-      min-width: 24px;
-      min-height: 24px;
-      border-radius: $rounding-full;
+      font-size: 16px * $s;
+      min-width: 28px * $s;
+      min-height: 28px * $s;
+      border-radius: $r-full;
       color: $fg-muted;
-      &:hover { color: $fg; }
+      &:hover { color: $fg; background-color: $glass-hover; }
     }
   }
 
   .notif-body {
-    margin-top: 6px;
-    .notif-summary { font-weight: 500; }
-    .notif-text { color: $fg-dim; font-size: $font-size-sm; margin-top: 2px; }
-    .notif-image { border-radius: $rounding-sm; min-width: 64px; min-height: 64px; margin-right: 10px; }
+    margin-top: 8px * $s;
+    .notif-summary { font-weight: 500; font-size: $fs-md; }
+    .notif-text    { color: $fg-dim; font-size: $fs-sm; margin-top: 3px * $s; }
+    .notif-image   { border-radius: $r-md; min-width: 64px * $s; min-height: 64px * $s; margin-right: 12px * $s; }
   }
 
   .notif-actions {
-    margin-top: 10px;
+    margin-top: 12px * $s;
     .notif-action {
-      border-radius: $rounding-full;
-      padding: 4px 12px;
-      background-color: $bg-surface-variant;
-      font-size: $font-size-sm;
-      margin-right: 6px;
-      &:hover { background-color: $bg-hover; }
+      border-radius: $r-full;
+      padding: 6px * $s 14px * $s;
+      background-color: $glass;
+      border: 1px solid $glass-border;
+      font-size: $fs-sm;
+      font-weight: 500;
+      margin-right: 6px * $s;
+      &:hover { background-color: $glass-hover; }
     }
   }
 }
 
-// ===== Launcher =====
-.Launcher {
-  background-color: transparent;
+// ═══════════════════════════════════════
+//  SESSION
+// ═══════════════════════════════════════
 
-  .launcher-inner {
-    background-color: $bg;
-    border-radius: $rounding-lg;
-    margin: 8px;
-    min-width: 580px;
-
-    .search-box {
-      padding: 12px;
-      border-bottom: 1px solid $border;
-
-      .search-icon { font-family: $font-icon; font-size: 22px; color: $fg-dim; margin-right: 10px; }
-      entry { font-size: $font-size-lg; min-height: 36px; caret-color: $primary; }
-    }
-
-    .results {
-      padding: 4px;
-      min-height: 100px;
-
-      .app-item {
-        padding: 8px 12px;
-        border-radius: $rounding-md;
-        transition: 150ms ease-in-out;
-
-        &:hover, &.selected { background-color: $bg-hover; }
-        &.selected { background-color: $bg-active; }
-
-        .app-icon { -gtk-icon-size: 36px; margin-right: 10px; }
-        .app-name { font-weight: 500; }
-        .app-description { font-size: $font-size-sm; color: $fg-dim; }
-      }
-    }
-  }
-}
-
-// ===== Dashboard =====
-.Dashboard {
-  background-color: transparent;
-
-  .dash-inner {
-    background-color: $bg;
-    border-radius: $rounding-lg;
-    margin: 8px;
-    padding: 12px;
-  }
-
-  .dash-section {
-    background-color: $bg-surface;
-    border-radius: $rounding-md;
-    padding: 12px;
-    margin: 6px;
-
-    .section-title {
-      font-size: $font-size-sm;
-      font-weight: 600;
-      color: $fg-dim;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-    }
-  }
-
-  .media {
-    .media-title { font-weight: 500; font-size: $font-size-lg; }
-    .media-artist { color: $fg-dim; }
-    .media-art { border-radius: $rounding-md; min-width: 140px; min-height: 140px; }
-    .media-controls {
-      .media-btn {
-        font-family: $font-icon;
-        font-size: 24px;
-        min-width: 40px;
-        min-height: 40px;
-        border-radius: $rounding-full;
-        &:hover { background-color: $bg-hover; }
-
-        &.play {
-          background-color: $primary;
-          color: $on-primary;
-          min-width: 48px;
-          min-height: 48px;
-          font-size: 28px;
-        }
-      }
-    }
-  }
-
-  .resources {
-    .resource-label { font-size: $font-size-sm; color: $fg-dim; }
-    .resource-value { font-size: $font-size-sm; font-weight: 500; }
-  }
-}
-
-// ===== Session =====
 .Session {
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7);
 
   .session-button {
-    background-color: $bg-surface;
-    border-radius: $rounding-lg;
-    min-width: 100px;
-    min-height: 100px;
-    margin: 10px;
-    transition: 250ms ease-in-out;
+    background-color: $obsidian-light;
+    border: 1px solid $glass-border;
+    border-radius: $r-xl;
+    min-width: 120px * $s;
+    min-height: 120px * $s;
+    margin: 12px * $s;
+    transition: 250ms ease-out;
 
-    .session-icon { font-family: $font-icon; font-size: 36px; color: $fg-dim; }
-    .session-label { font-size: $font-size-sm; color: $fg-dim; margin-top: 6px; }
+    .session-icon  { font-family: $font-icon; font-size: 36px * $s; color: $fg-dim; }
+    .session-label { font-size: $fs-sm; color: $fg-muted; margin-top: 8px * $s; font-weight: 500; }
 
     &:hover {
-      background-color: $bg-surface-variant;
-      .session-icon, .session-label { color: $fg; }
+      background-color: $obsidian-mid;
+      border-color: rgba(255, 255, 255, 0.1);
+      .session-icon, .session-label { color: $fg-bright; }
     }
-    &.shutdown:hover .session-icon { color: $error; }
-    &.reboot:hover .session-icon { color: $warning; }
+    &.shutdown:hover .session-icon { color: $red; }
+    &.reboot:hover   .session-icon { color: $orange; }
+    &.logout:hover   .session-icon { color: $amber; }
   }
 }
 
-// ===== Sidebar =====
-.Sidebar {
-  background-color: transparent;
+// ═══════════════════════════════════════
+//  LOCK
+// ═══════════════════════════════════════
 
-  .sidebar-inner {
-    background-color: $bg;
-    border-radius: $rounding-lg;
-    margin: 8px;
-    padding: 12px;
-    min-width: 380px;
-
-    .sidebar-header {
-      padding-bottom: 10px;
-      border-bottom: 1px solid $border;
-      margin-bottom: 10px;
-      .sidebar-title { font-weight: 600; font-size: $font-size-lg; }
-      .clear-all {
-        border-radius: $rounding-full;
-        padding: 4px 12px;
-        font-size: $font-size-sm;
-        color: $fg-dim;
-        &:hover { background-color: $bg-hover; }
-      }
-    }
-
-    .sidebar-empty { padding: 20px; color: $fg-muted; }
-  }
-}
-
-// ===== Control Center =====
-.ControlCenter {
-  background-color: transparent;
-
-  .cc-inner {
-    background-color: $bg;
-    border-radius: $rounding-lg;
-    margin: 8px;
-    min-width: 700px;
-    min-height: 500px;
-
-    .nav-rail {
-      background-color: $bg-surface;
-      border-radius: $rounding-lg 0 0 $rounding-lg;
-      padding: 8px;
-      min-width: 64px;
-
-      .nav-item {
-        font-family: $font-icon;
-        font-size: 22px;
-        min-width: 48px;
-        min-height: 48px;
-        border-radius: $rounding-md;
-        color: $fg-dim;
-        margin: 4px 0;
-        &:hover { background-color: $bg-hover; }
-        &.active { background-color: $primary-container; color: $on-primary; }
-      }
-    }
-
-    .pane {
-      padding: 12px;
-      .pane-title { font-size: $font-size-xl; font-weight: 600; margin-bottom: 14px; }
-      .setting-row { padding: 8px 0; }
-      .setting-label { font-weight: 500; }
-      .setting-description { font-size: $font-size-sm; color: $fg-dim; }
-
-      scale {
-        min-height: 6px;
-        trough { background-color: $bg-surface-variant; border-radius: $rounding-full; min-height: 6px; }
-        highlight { background-color: $primary; border-radius: $rounding-full; }
-        slider { background-color: $primary; border-radius: $rounding-full; min-width: 18px; min-height: 18px; margin: -6px; }
-      }
-    }
-  }
-}
-
-// ===== Lock =====
 .Lock {
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(0, 0, 0, 0.88);
 
-  .lock-clock { font-size: 72px; font-weight: 200; }
-  .lock-date { font-size: $font-size-xl; color: $fg-dim; margin-bottom: 20px; }
+  .lock-clock {
+    font-size: $fs-3xl * 2;
+    font-weight: 200;
+    color: $fg-bright;
+    letter-spacing: -2px;
+  }
+  .lock-date {
+    font-size: $fs-xl;
+    color: $fg-dim;
+    margin-bottom: 24px * $s;
+    font-weight: 300;
+  }
   .lock-input {
-    background-color: $bg-surface;
-    border-radius: $rounding-full;
-    padding: 8px 12px;
-    min-width: 300px;
-    .lock-icon { font-family: $font-icon; font-size: 22px; color: $fg-dim; margin-right: 10px; }
-    entry { font-size: $font-size-lg; min-height: 40px; caret-color: $primary; }
+    background-color: $obsidian-light;
+    border: 1px solid $glass-border;
+    border-radius: $r-full;
+    padding: 10px * $s 16px * $s;
+    min-width: 320px * $s;
+
+    .lock-icon {
+      font-family: $font-icon;
+      font-size: 22px * $s;
+      color: $amber-dim;
+      margin-right: 12px * $s;
+    }
+    entry {
+      font-size: $fs-lg;
+      min-height: 44px * $s;
+      caret-color: $amber;
+    }
   }
   .lock-message {
-    font-size: $font-size-sm;
+    font-size: $fs-sm;
     color: $fg-muted;
-    margin-top: 10px;
-    &.error { color: $error; }
+    margin-top: 12px * $s;
+    &.error { color: $red; }
   }
 }
 
-// ===== Background =====
-.Background {
-  background-color: transparent;
+// ═══════════════════════════════════════
+//  BACKGROUND
+// ═══════════════════════════════════════
 
-  .desktop-clock {
-    .clock-time { font-size: 96px; font-weight: 200; color: white; }
-    .clock-date { font-size: 24px; font-weight: 300; color: rgba(255, 255, 255, 0.8); }
+.Background .desktop-clock {
+  .clock-time {
+    font-size: $fs-3xl * 3;
+    font-weight: 100;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: -4px;
+  }
+  .clock-date {
+    font-size: $fs-2xl;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
   }
 }
 
-// ===== Utilities =====
-.Utilities {
-  background-color: transparent;
-
-  .utilities-inner {
-    background-color: $bg;
-    border-radius: $rounding-lg;
-    margin: 8px;
-    padding: 12px;
-    min-width: 380px;
-
-    .toggle {
-      background-color: $bg-surface;
-      border-radius: $rounding-md;
-      padding: 8px;
-      min-width: 80px;
-      min-height: 70px;
-      margin: 4px;
-      transition: 150ms ease-in-out;
-
-      .toggle-icon { font-family: $font-icon; font-size: 22px; color: $fg-dim; }
-      .toggle-label { font-size: $font-size-sm; color: $fg-dim; margin-top: 4px; }
-
-      &.active {
-        background-color: $primary-container;
-        .toggle-icon, .toggle-label { color: $on-primary; }
-      }
-      &:hover { background-color: $bg-surface-variant; }
-    }
-  }
-}
+// ═══════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════
 
 .Toast {
-  background-color: $bg;
-  border-radius: $rounding-lg;
-  padding: 8px 12px;
-  margin: 6px 8px;
-  min-width: 300px;
+  background-color: $obsidian;
+  border: 1px solid $glass-border;
+  border-radius: $r-lg;
+  padding: 10px * $s 14px * $s;
+  margin: 6px * $s 10px * $s;
+  min-width: 320px * $s;
 
-  .toast-icon { font-family: $font-icon; font-size: 20px; color: $primary; margin-right: 10px; }
+  .toast-icon  { font-family: $font-icon; font-size: 20px * $s; color: $amber; margin-right: 12px * $s; }
   .toast-title { font-weight: 500; }
-  .toast-body { font-size: $font-size-sm; color: $fg-dim; }
+  .toast-body  { font-size: $fs-sm; color: $fg-dim; }
 }

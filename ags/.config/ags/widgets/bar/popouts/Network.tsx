@@ -29,7 +29,7 @@ export default function NetworkPopout(gdkmonitor: Gdk.Monitor) {
       })}
     >
       <box cssClasses={["popout-inner"]} orientation={Gtk.Orientation.VERTICAL} spacing={8}
-        css="background-color: #1a1a2e; border-radius: 18px; margin: 8px; padding: 12px; min-width: 300px;"
+        css="background-color: #141414; border-radius: 32px; margin: 8px; padding: 12px; min-width: 300px;"
       >
         <label css="font-weight: 600; font-size: 16px;" label="Network" halign={Gtk.Align.START} />
 

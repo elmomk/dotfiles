@@ -29,7 +29,7 @@ export default function Sidebar(gdkmonitor: Gdk.Monitor) {
         return false
       })}
     >
-      <box cssClasses={["sidebar-inner"]} css="background-color: #1a1a2e; border-radius: 18px; margin: 8px; padding: 12px; min-width: 380px;" orientation={Gtk.Orientation.VERTICAL}>
+      <box cssClasses={["sidebar-inner"]} css="background-color: #141414; border-radius: 32px; margin: 8px; padding: 12px; min-width: 380px;" orientation={Gtk.Orientation.VERTICAL}>
         <box cssClasses={["sidebar-header"]}>
           <label cssClasses={["sidebar-title"]} label="Notifications" hexpand halign={Gtk.Align.START} />
           <button cssClasses={["clear-all"]} onClicked={() => {

@@ -92,7 +92,7 @@ export default function OSD(gdkmonitor: Gdk.Monitor) {
       layer={Astal.Layer.OVERLAY}
       application={app}
     >
-      <box cssClasses={["osd-inner"]} css="background-color: #1a1a2e; border-radius: 18px; padding: 12px; margin: 8px;" orientation={Gtk.Orientation.VERTICAL} halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER}>
+      <box cssClasses={["osd-inner"]} css="background-color: #141414; border-radius: 32px; padding: 12px; margin: 8px;" orientation={Gtk.Orientation.VERTICAL} halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER}>
         <label cssClasses={["osd-icon"]} label={osdIcon} />
         <OsdBar />
         <label cssClasses={["osd-value"]} label={osdValue.as(v =>
