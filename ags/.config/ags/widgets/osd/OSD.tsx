@@ -4,6 +4,7 @@ import app from "ags/gtk4/app"
 import GLib from "gi://GLib"
 import Wp from "gi://AstalWp"
 import config from "../../config/config"
+import { brightness } from "../../services/brightness"
 
 const [visible, setVisible] = createState(false)
 const [osdIcon, setOsdIcon] = createState("volume_up")
@@ -49,6 +50,19 @@ export function setupOSD() {
   if (mic && config.config.osd.enableMicrophone) {
     mic.connect("notify::volume", () => {
       show(mic.mute ? "mic_off" : "mic", mic.volume)
+    })
+  }
+
+  // Brightness OSD
+  if (config.config.osd.enableBrightness) {
+    let lastBrightness = brightness.peek()
+    brightness.subscribe(() => {
+      const val = brightness.peek()
+      if (Math.abs(val - lastBrightness) > 0.001) {
+        const icon = val > 0.66 ? "brightness_high" : val > 0.33 ? "brightness_medium" : "brightness_low"
+        show(icon, val)
+        lastBrightness = val
+      }
     })
   }
 }

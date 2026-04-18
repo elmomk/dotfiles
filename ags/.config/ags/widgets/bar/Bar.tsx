@@ -1,10 +1,13 @@
 import { Astal, Gtk, Gdk } from "ags/gtk4"
 import app from "ags/gtk4/app"
+import Hyprland from "gi://AstalHyprland"
+import Wp from "gi://AstalWp"
 import Workspaces from "./Workspaces"
 import Clock from "./Clock"
 import StatusIcons from "./StatusIcons"
 import SysTray from "./SysTray"
 import ActiveWindow from "./ActiveWindow"
+import { incrementBrightness, decrementBrightness } from "../../services/brightness"
 import config from "../../config/config"
 
 function BarEntry({ id }: { id: string }) {
@@ -54,7 +57,26 @@ export default function Bar(gdkmonitor: Gdk.Monitor) {
       anchor={TOP | LEFT | RIGHT}
       application={app}
     >
-      <box cssClasses={["bar-inner"]} spacing={8}>
+      <box cssClasses={["bar-inner"]} spacing={8}
+        $={(self: Gtk.Box) => {
+          const scroll = new Gtk.EventControllerScroll()
+          scroll.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)
+          scroll.connect("scroll", (_ctrl: Gtk.EventControllerScroll, _dx: number, dy: number) => {
+            if (cfg.scrollActions.volume) {
+              const wp = Wp.get_default()!
+              const speaker = wp.audio.defaultSpeaker!
+              const increment = config.config.services.audioIncrement
+              if (dy < 0) {
+                speaker.volume = Math.min(config.config.services.maxVolume, speaker.volume + increment)
+              } else {
+                speaker.volume = Math.max(0, speaker.volume - increment)
+              }
+            }
+            return true
+          })
+          self.add_controller(scroll)
+        }}
+      >
         {cfg.entries
           .filter(e => e.enabled)
           .map(e => <BarEntry id={e.id} />)}

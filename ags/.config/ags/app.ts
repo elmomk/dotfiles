@@ -13,6 +13,9 @@ import ControlCenter from "./widgets/controlcenter/ControlCenter"
 import Background from "./widgets/background/Background"
 import Lock from "./widgets/lock/Lock"
 import WindowInfo from "./widgets/windowinfo/WindowInfo"
+import AudioPopout from "./widgets/bar/popouts/Audio"
+import BatteryPopout from "./widgets/bar/popouts/Battery"
+import NetworkPopout from "./widgets/bar/popouts/Network"
 import config from "./config/config"
 
 app.start({
@@ -78,6 +81,9 @@ app.start({
       ControlCenter(primary)
       Lock(primary)
       WindowInfo(primary)
+      AudioPopout(primary)
+      BatteryPopout(primary)
+      NetworkPopout(primary)
     }
   },
 })
