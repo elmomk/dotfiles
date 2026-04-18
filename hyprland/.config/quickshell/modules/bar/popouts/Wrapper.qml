@@ -201,6 +201,7 @@ Item {
                     }
                     Anim {
                         property: "opacity"
+                        duration: Appearance.anim.durations.small
                     }
                 }
             },
@@ -211,6 +212,7 @@ Item {
                 SequentialAnimation {
                     Anim {
                         property: "opacity"
+                        duration: Appearance.anim.durations.small
                     }
                     PropertyAction {
                         property: "active"

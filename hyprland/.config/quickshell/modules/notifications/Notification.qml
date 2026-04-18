@@ -101,7 +101,6 @@ StyledRect {
 
             Behavior on implicitHeight {
                 Anim {
-                    duration: Appearance.anim.durations.expressiveDefaultSpatial
                     easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
                 }
             }
@@ -217,7 +216,7 @@ StyledRect {
 
                         Behavior on sweepAngle {
                             Anim {
-                                easing.bezierCurve: Appearance.anim.curves.emphasizedDecel
+                                easing.type: Easing.Linear
                             }
                         }
                     }
@@ -293,7 +292,9 @@ StyledRect {
                 }
 
                 Behavior on height {
-                    Anim {}
+                    Anim {
+                        duration: Appearance.anim.durations.small
+                    }
                 }
             }
 

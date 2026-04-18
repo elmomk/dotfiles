@@ -37,7 +37,7 @@ GridLayout {
         Layout.preferredWidth: Config.dashboard.sizes.weatherWidth
         Layout.fillHeight: true
 
-        radius: Appearance.rounding.large * 1.5
+        radius: Appearance.rounding.large
 
         SmallWeather {}
     }
@@ -90,7 +90,7 @@ GridLayout {
         Layout.preferredWidth: media.implicitWidth
         Layout.fillHeight: true
 
-        radius: Appearance.rounding.large * 2
+        radius: Appearance.rounding.large
 
         Media {
             id: media

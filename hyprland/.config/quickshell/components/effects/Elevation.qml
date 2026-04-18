@@ -13,6 +13,8 @@ RectangularShadow {
     offset.y: dp / 2
 
     Behavior on dp {
-        Anim {}
+        Anim {
+            duration: Appearance.anim.durations.small
+        }
     }
 }
