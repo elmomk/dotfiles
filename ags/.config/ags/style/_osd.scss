@@ -1,0 +1,47 @@
+.OSD {
+  background-color: transparent;
+
+  .osd-inner {
+    @include surface($bg, $rounding-lg);
+    @include elevated(2);
+    padding: $padding-lg;
+    margin: 8px;
+
+    .osd-icon {
+      @include material-icon(22px);
+      color: $primary;
+      margin-bottom: $spacing-sm;
+    }
+
+    scale {
+      min-height: 150px;
+      min-width: 8px;
+
+      trough {
+        background-color: $bg-surface-variant;
+        border-radius: $rounding-full;
+        min-width: 8px;
+      }
+
+      highlight {
+        background-color: $primary;
+        border-radius: $rounding-full;
+        min-width: 8px;
+      }
+
+      slider {
+        background-color: $primary;
+        border-radius: $rounding-full;
+        min-width: 16px;
+        min-height: 16px;
+        margin: -4px;
+      }
+    }
+
+    .osd-value {
+      font-size: $font-size-sm;
+      color: $fg-dim;
+      margin-top: $spacing-sm;
+    }
+  }
+}

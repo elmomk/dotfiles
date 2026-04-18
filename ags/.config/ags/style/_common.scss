@@ -1,0 +1,45 @@
+* {
+  all: unset;
+  font-family: $font-sans;
+  font-size: $font-size-md;
+  color: $fg;
+}
+
+.icon {
+  @include material-icon;
+}
+
+.icon-lg {
+  @include material-icon(24px);
+}
+
+.dim {
+  color: $fg-dim;
+}
+
+.muted {
+  color: $fg-muted;
+}
+
+tooltip {
+  @include surface($bg-surface-variant, $rounding-sm);
+  padding: $padding-sm $padding-md;
+  @include elevated(2);
+}
+
+menu {
+  @include surface($bg-surface, $rounding-md);
+  padding: $padding-sm;
+  @include elevated(2);
+
+  menuitem {
+    padding: $padding-sm $padding-md;
+    border-radius: $rounding-sm;
+    @include hover-state;
+  }
+}
+
+separator {
+  background-color: $border;
+  min-height: 1px;
+}

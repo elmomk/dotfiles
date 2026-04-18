@@ -1,0 +1,19 @@
+.Background {
+  background-color: transparent;
+
+  .desktop-clock {
+    .clock-time {
+      font-size: 96px;
+      font-weight: 200;
+      color: white;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .clock-date {
+      font-size: 24px;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.8);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    }
+  }
+}

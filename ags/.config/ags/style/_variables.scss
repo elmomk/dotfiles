@@ -1,0 +1,61 @@
+// Material 3 inspired color tokens
+// These will be overridden at runtime via CSS variables when color scheme changes
+
+$bg: #1a1a2e;
+$bg-surface: #16213e;
+$bg-surface-variant: #1e2a4a;
+$bg-hover: rgba(255, 255, 255, 0.08);
+$bg-active: rgba(255, 255, 255, 0.12);
+
+$fg: #e0e0e0;
+$fg-dim: #a0a0a0;
+$fg-muted: #6e6e6e;
+
+$primary: #7c83ff;
+$primary-container: #3a3f9f;
+$on-primary: #ffffff;
+
+$secondary: #c0c6ff;
+$tertiary: #e8b4f8;
+
+$error: #f44336;
+$warning: #ff9800;
+$success: #4caf50;
+
+$border: rgba(255, 255, 255, 0.12);
+$shadow: rgba(0, 0, 0, 0.3);
+
+// Sizing
+$rounding-sm: 8px;
+$rounding-md: 12px;
+$rounding-lg: 18px;
+$rounding-full: 999px;
+
+$spacing-xs: 4px;
+$spacing-sm: 6px;
+$spacing-md: 10px;
+$spacing-lg: 14px;
+$spacing-xl: 20px;
+
+$padding-sm: 4px;
+$padding-md: 8px;
+$padding-lg: 12px;
+
+// Typography
+$font-sans: "Rubik", sans-serif;
+$font-mono: "CaskaydiaCove NF", monospace;
+$font-icon: "Material Symbols Rounded";
+
+$font-size-sm: 11px;
+$font-size-md: 13px;
+$font-size-lg: 16px;
+$font-size-xl: 22px;
+
+// Transitions
+$transition-fast: 150ms ease-in-out;
+$transition-normal: 250ms ease-in-out;
+$transition-slow: 400ms ease-in-out;
+
+// Bar
+$bar-height: 38px;
+$bar-margin: 4px;

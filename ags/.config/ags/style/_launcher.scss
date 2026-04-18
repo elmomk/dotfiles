@@ -1,0 +1,61 @@
+.Launcher {
+  background-color: transparent;
+
+  .launcher-inner {
+    @include surface($bg, $rounding-lg);
+    @include elevated(3);
+    margin: 8px;
+    min-width: 580px;
+
+    .search-box {
+      padding: $padding-lg;
+      border-bottom: 1px solid $border;
+
+      .search-icon {
+        @include material-icon(22px);
+        color: $fg-dim;
+        margin-right: $spacing-md;
+      }
+
+      entry {
+        font-size: $font-size-lg;
+        min-height: 36px;
+        caret-color: $primary;
+        selection-background-color: rgba($primary, 0.3);
+      }
+    }
+
+    .results {
+      padding: $padding-sm;
+      min-height: 100px;
+
+      .app-item {
+        padding: $padding-md $padding-lg;
+        border-radius: $rounding-md;
+        transition: $transition-fast;
+
+        &:hover, &.selected {
+          background-color: $bg-hover;
+        }
+
+        &.selected {
+          background-color: $bg-active;
+        }
+
+        .app-icon {
+          -gtk-icon-size: 36px;
+          margin-right: $spacing-md;
+        }
+
+        .app-name {
+          font-weight: 500;
+        }
+
+        .app-description {
+          font-size: $font-size-sm;
+          color: $fg-dim;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,78 @@
+.Notifications {
+  background-color: transparent;
+
+  .notification {
+    @include surface($bg, $rounding-lg);
+    @include elevated(2);
+    padding: $padding-lg;
+    margin: $spacing-sm 8px;
+    min-width: 380px;
+    transition: $transition-normal;
+
+    .notif-header {
+      .notif-app-icon {
+        -gtk-icon-size: 18px;
+        margin-right: $spacing-sm;
+      }
+
+      .notif-app-name {
+        font-size: $font-size-sm;
+        color: $fg-dim;
+        font-weight: 500;
+      }
+
+      .notif-time {
+        font-size: $font-size-sm;
+        color: $fg-muted;
+      }
+
+      .notif-close {
+        @include icon-button(24px);
+        @include material-icon(16px);
+        color: $fg-muted;
+
+        &:hover {
+          color: $fg;
+        }
+      }
+    }
+
+    .notif-body {
+      margin-top: $spacing-sm;
+
+      .notif-summary {
+        font-weight: 500;
+        font-size: $font-size-md;
+      }
+
+      .notif-text {
+        color: $fg-dim;
+        font-size: $font-size-sm;
+        margin-top: 2px;
+      }
+
+      .notif-image {
+        border-radius: $rounding-sm;
+        min-width: 64px;
+        min-height: 64px;
+        margin-right: $spacing-md;
+      }
+    }
+
+    .notif-actions {
+      margin-top: $spacing-md;
+
+      .notif-action {
+        @include pill;
+        @include surface($bg-surface-variant, $rounding-full);
+        font-size: $font-size-sm;
+        @include hover-state;
+        margin-right: $spacing-sm;
+      }
+    }
+
+    &.critical {
+      border: 1px solid rgba($error, 0.5);
+    }
+  }
+}

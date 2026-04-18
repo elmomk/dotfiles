@@ -1,0 +1,40 @@
+.Session {
+  background-color: rgba(0, 0, 0, 0.6);
+
+  .session-inner {
+    .session-button {
+      @include surface($bg-surface, $rounding-lg);
+      @include elevated(2);
+      min-width: 100px;
+      min-height: 100px;
+      margin: $spacing-md;
+      transition: $transition-normal;
+
+      .session-icon {
+        @include material-icon(36px);
+        color: $fg-dim;
+      }
+
+      .session-label {
+        font-size: $font-size-sm;
+        color: $fg-dim;
+        margin-top: $spacing-sm;
+      }
+
+      &:hover {
+        background-color: $bg-surface-variant;
+
+        .session-icon { color: $fg; }
+        .session-label { color: $fg; }
+      }
+
+      &.shutdown:hover {
+        .session-icon { color: $error; }
+      }
+
+      &.reboot:hover {
+        .session-icon { color: $warning; }
+      }
+    }
+  }
+}

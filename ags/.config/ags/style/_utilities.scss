@@ -1,0 +1,67 @@
+.Utilities {
+  background-color: transparent;
+
+  .utilities-inner {
+    @include surface($bg, $rounding-lg);
+    @include elevated(2);
+    margin: 8px;
+    padding: $padding-lg;
+    min-width: 380px;
+
+    .toggle-grid {
+      .toggle {
+        @include surface($bg-surface, $rounding-md);
+        padding: $padding-md;
+        min-width: 80px;
+        min-height: 70px;
+        margin: $spacing-xs;
+        transition: $transition-fast;
+
+        .toggle-icon {
+          @include material-icon(22px);
+          color: $fg-dim;
+        }
+
+        .toggle-label {
+          font-size: $font-size-sm;
+          color: $fg-dim;
+          margin-top: $spacing-xs;
+        }
+
+        &.active {
+          background-color: $primary-container;
+
+          .toggle-icon { color: $on-primary; }
+          .toggle-label { color: $on-primary; }
+        }
+
+        &:hover {
+          background-color: $bg-surface-variant;
+        }
+      }
+    }
+  }
+}
+
+.Toast {
+  @include surface($bg, $rounding-lg);
+  @include elevated(2);
+  padding: $padding-md $padding-lg;
+  margin: $spacing-sm 8px;
+  min-width: 300px;
+
+  .toast-icon {
+    @include material-icon(20px);
+    color: $primary;
+    margin-right: $spacing-md;
+  }
+
+  .toast-title {
+    font-weight: 500;
+  }
+
+  .toast-body {
+    font-size: $font-size-sm;
+    color: $fg-dim;
+  }
+}

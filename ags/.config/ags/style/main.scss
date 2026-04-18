@@ -1,0 +1,519 @@
+// ===== Variables =====
+$bg: #1a1a2e;
+$bg-surface: #16213e;
+$bg-surface-variant: #1e2a4a;
+$bg-hover: rgba(255, 255, 255, 0.08);
+$bg-active: rgba(255, 255, 255, 0.12);
+
+$fg: #e0e0e0;
+$fg-dim: #a0a0a0;
+$fg-muted: #6e6e6e;
+
+$primary: #7c83ff;
+$primary-container: #3a3f9f;
+$on-primary: #ffffff;
+
+$error: #f44336;
+$warning: #ff9800;
+$success: #4caf50;
+
+$border: rgba(255, 255, 255, 0.12);
+$shadow: rgba(0, 0, 0, 0.3);
+
+$rounding-sm: 8px;
+$rounding-md: 12px;
+$rounding-lg: 18px;
+$rounding-full: 999px;
+
+$font-sans: "Rubik", sans-serif;
+$font-mono: "CaskaydiaCove NF", monospace;
+$font-icon: "Material Symbols Rounded";
+
+$font-size-sm: 11px;
+$font-size-md: 13px;
+$font-size-lg: 16px;
+$font-size-xl: 22px;
+
+$bar-height: 38px;
+$bar-margin: 4px;
+
+// ===== Base =====
+* {
+  font-family: $font-sans;
+  font-size: $font-size-md;
+  color: $fg;
+}
+
+window {
+  background-color: transparent;
+}
+
+.icon { font-family: $font-icon; font-size: 20px; }
+.icon-lg { font-family: $font-icon; font-size: 24px; }
+.dim { color: $fg-dim; }
+.muted { color: $fg-muted; }
+
+tooltip {
+  background-color: $bg-surface-variant;
+  border-radius: $rounding-sm;
+  padding: 4px 8px;
+}
+
+separator {
+  background-color: $border;
+  min-height: 1px;
+}
+
+// ===== Bar =====
+.Bar {
+  background-color: transparent;
+
+  .bar-inner {
+    background-color: $bg;
+    border-radius: $rounding-lg;
+    margin: $bar-margin;
+    padding: 0 12px;
+    min-height: $bar-height;
+  }
+
+  .workspaces {
+    .ws-button {
+      min-width: 28px;
+      min-height: 28px;
+      border-radius: $rounding-full;
+      margin: 0 1px;
+      transition: 150ms ease-in-out;
+
+      label { font-size: $font-size-sm; }
+
+      &.occupied { background-color: $bg-surface-variant; }
+      &.active {
+        background-color: $primary;
+        min-width: 36px;
+        label { color: $on-primary; }
+      }
+      &:hover { background-color: $bg-hover; }
+      &.active:hover { background-color: #8a91ff; }
+    }
+  }
+
+  .clock {
+    border-radius: $rounding-full;
+    padding: 4px 12px;
+
+    &:hover { background-color: $bg-hover; }
+
+    .clock-icon {
+      font-family: $font-icon;
+      font-size: 16px;
+      color: $primary;
+      margin-right: 4px;
+    }
+    .clock-time { font-weight: 500; }
+    .clock-date { color: $fg-dim; font-size: $font-size-sm; margin-left: 6px; }
+  }
+
+  .status-icons {
+    .status-icon {
+      font-family: $font-icon;
+      font-size: 18px;
+      min-width: 30px;
+      min-height: 30px;
+      border-radius: $rounding-full;
+      color: $fg-dim;
+      transition: 150ms ease-in-out;
+
+      &:hover { color: $fg; }
+      &.active { color: $primary; }
+      &.warning { color: $warning; }
+      &.error { color: $error; }
+    }
+  }
+
+  .tray {
+    .tray-item {
+      min-width: 28px;
+      min-height: 28px;
+      border-radius: $rounding-full;
+      padding: 4px;
+      &:hover { background-color: $bg-hover; }
+    }
+  }
+
+  .active-window label {
+    color: $fg-dim;
+    font-size: $font-size-sm;
+  }
+
+  .power-button {
+    font-family: $font-icon;
+    font-size: 18px;
+    min-width: 30px;
+    min-height: 30px;
+    border-radius: $rounding-full;
+    color: $fg-dim;
+    &:hover { color: $error; background-color: rgba($error, 0.1); }
+  }
+
+  .logo {
+    font-family: $font-icon;
+    font-size: 20px;
+    color: $primary;
+    margin: 0 6px;
+  }
+}
+
+// ===== OSD =====
+.OSD {
+  background-color: transparent;
+
+  .osd-inner {
+    background-color: $bg;
+    border-radius: $rounding-lg;
+    padding: 12px;
+    margin: 8px;
+
+    .osd-icon { font-family: $font-icon; font-size: 22px; color: $primary; margin-bottom: 6px; }
+
+    scale {
+      min-height: 150px;
+      min-width: 8px;
+      trough { background-color: $bg-surface-variant; border-radius: $rounding-full; min-width: 8px; }
+      highlight { background-color: $primary; border-radius: $rounding-full; min-width: 8px; }
+      slider { background-color: $primary; border-radius: $rounding-full; min-width: 16px; min-height: 16px; margin: -4px; }
+    }
+
+    .osd-bar-track {
+      background-color: $bg-surface-variant;
+      border-radius: $rounding-full;
+      min-width: 8px;
+      min-height: 140px;
+    }
+
+    .osd-bar-fill {
+      background-color: $primary;
+      border-radius: $rounding-full;
+      min-width: 8px;
+      transition: 150ms ease-in-out;
+    }
+
+    .osd-value { font-size: $font-size-sm; color: $fg-dim; margin-top: 6px; }
+  }
+}
+
+// ===== Notifications =====
+.Notifications { background-color: transparent; }
+
+.notification {
+  background-color: $bg;
+  border-radius: $rounding-lg;
+  padding: 12px;
+  margin: 6px 8px;
+  min-width: 380px;
+
+  &.critical { border: 1px solid rgba($error, 0.5); }
+
+  .notif-header {
+    .notif-app-name { font-size: $font-size-sm; color: $fg-dim; font-weight: 500; }
+    .notif-time { font-size: $font-size-sm; color: $fg-muted; }
+    .notif-close {
+      font-family: $font-icon;
+      font-size: 16px;
+      min-width: 24px;
+      min-height: 24px;
+      border-radius: $rounding-full;
+      color: $fg-muted;
+      &:hover { color: $fg; }
+    }
+  }
+
+  .notif-body {
+    margin-top: 6px;
+    .notif-summary { font-weight: 500; }
+    .notif-text { color: $fg-dim; font-size: $font-size-sm; margin-top: 2px; }
+    .notif-image { border-radius: $rounding-sm; min-width: 64px; min-height: 64px; margin-right: 10px; }
+  }
+
+  .notif-actions {
+    margin-top: 10px;
+    .notif-action {
+      border-radius: $rounding-full;
+      padding: 4px 12px;
+      background-color: $bg-surface-variant;
+      font-size: $font-size-sm;
+      margin-right: 6px;
+      &:hover { background-color: $bg-hover; }
+    }
+  }
+}
+
+// ===== Launcher =====
+.Launcher {
+  background-color: transparent;
+
+  .launcher-inner {
+    background-color: $bg;
+    border-radius: $rounding-lg;
+    margin: 8px;
+    min-width: 580px;
+
+    .search-box {
+      padding: 12px;
+      border-bottom: 1px solid $border;
+
+      .search-icon { font-family: $font-icon; font-size: 22px; color: $fg-dim; margin-right: 10px; }
+      entry { font-size: $font-size-lg; min-height: 36px; caret-color: $primary; }
+    }
+
+    .results {
+      padding: 4px;
+      min-height: 100px;
+
+      .app-item {
+        padding: 8px 12px;
+        border-radius: $rounding-md;
+        transition: 150ms ease-in-out;
+
+        &:hover, &.selected { background-color: $bg-hover; }
+        &.selected { background-color: $bg-active; }
+
+        .app-icon { -gtk-icon-size: 36px; margin-right: 10px; }
+        .app-name { font-weight: 500; }
+        .app-description { font-size: $font-size-sm; color: $fg-dim; }
+      }
+    }
+  }
+}
+
+// ===== Dashboard =====
+.Dashboard {
+  background-color: transparent;
+
+  .dash-inner {
+    background-color: $bg;
+    border-radius: $rounding-lg;
+    margin: 8px;
+    padding: 12px;
+  }
+
+  .dash-section {
+    background-color: $bg-surface;
+    border-radius: $rounding-md;
+    padding: 12px;
+    margin: 6px;
+
+    .section-title {
+      font-size: $font-size-sm;
+      font-weight: 600;
+      color: $fg-dim;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+  }
+
+  .media {
+    .media-title { font-weight: 500; font-size: $font-size-lg; }
+    .media-artist { color: $fg-dim; }
+    .media-art { border-radius: $rounding-md; min-width: 140px; min-height: 140px; }
+    .media-controls {
+      .media-btn {
+        font-family: $font-icon;
+        font-size: 24px;
+        min-width: 40px;
+        min-height: 40px;
+        border-radius: $rounding-full;
+        &:hover { background-color: $bg-hover; }
+
+        &.play {
+          background-color: $primary;
+          color: $on-primary;
+          min-width: 48px;
+          min-height: 48px;
+          font-size: 28px;
+        }
+      }
+    }
+  }
+
+  .resources {
+    .resource-label { font-size: $font-size-sm; color: $fg-dim; }
+    .resource-value { font-size: $font-size-sm; font-weight: 500; }
+  }
+}
+
+// ===== Session =====
+.Session {
+  background-color: rgba(0, 0, 0, 0.6);
+
+  .session-button {
+    background-color: $bg-surface;
+    border-radius: $rounding-lg;
+    min-width: 100px;
+    min-height: 100px;
+    margin: 10px;
+    transition: 250ms ease-in-out;
+
+    .session-icon { font-family: $font-icon; font-size: 36px; color: $fg-dim; }
+    .session-label { font-size: $font-size-sm; color: $fg-dim; margin-top: 6px; }
+
+    &:hover {
+      background-color: $bg-surface-variant;
+      .session-icon, .session-label { color: $fg; }
+    }
+    &.shutdown:hover .session-icon { color: $error; }
+    &.reboot:hover .session-icon { color: $warning; }
+  }
+}
+
+// ===== Sidebar =====
+.Sidebar {
+  background-color: transparent;
+
+  .sidebar-inner {
+    background-color: $bg;
+    border-radius: $rounding-lg;
+    margin: 8px;
+    padding: 12px;
+    min-width: 380px;
+
+    .sidebar-header {
+      padding-bottom: 10px;
+      border-bottom: 1px solid $border;
+      margin-bottom: 10px;
+      .sidebar-title { font-weight: 600; font-size: $font-size-lg; }
+      .clear-all {
+        border-radius: $rounding-full;
+        padding: 4px 12px;
+        font-size: $font-size-sm;
+        color: $fg-dim;
+        &:hover { background-color: $bg-hover; }
+      }
+    }
+
+    .sidebar-empty { padding: 20px; color: $fg-muted; }
+  }
+}
+
+// ===== Control Center =====
+.ControlCenter {
+  background-color: transparent;
+
+  .cc-inner {
+    background-color: $bg;
+    border-radius: $rounding-lg;
+    margin: 8px;
+    min-width: 700px;
+    min-height: 500px;
+
+    .nav-rail {
+      background-color: $bg-surface;
+      border-radius: $rounding-lg 0 0 $rounding-lg;
+      padding: 8px;
+      min-width: 64px;
+
+      .nav-item {
+        font-family: $font-icon;
+        font-size: 22px;
+        min-width: 48px;
+        min-height: 48px;
+        border-radius: $rounding-md;
+        color: $fg-dim;
+        margin: 4px 0;
+        &:hover { background-color: $bg-hover; }
+        &.active { background-color: $primary-container; color: $on-primary; }
+      }
+    }
+
+    .pane {
+      padding: 12px;
+      .pane-title { font-size: $font-size-xl; font-weight: 600; margin-bottom: 14px; }
+      .setting-row { padding: 8px 0; }
+      .setting-label { font-weight: 500; }
+      .setting-description { font-size: $font-size-sm; color: $fg-dim; }
+
+      scale {
+        min-height: 6px;
+        trough { background-color: $bg-surface-variant; border-radius: $rounding-full; min-height: 6px; }
+        highlight { background-color: $primary; border-radius: $rounding-full; }
+        slider { background-color: $primary; border-radius: $rounding-full; min-width: 18px; min-height: 18px; margin: -6px; }
+      }
+    }
+  }
+}
+
+// ===== Lock =====
+.Lock {
+  background-color: rgba(0, 0, 0, 0.85);
+
+  .lock-clock { font-size: 72px; font-weight: 200; }
+  .lock-date { font-size: $font-size-xl; color: $fg-dim; margin-bottom: 20px; }
+  .lock-input {
+    background-color: $bg-surface;
+    border-radius: $rounding-full;
+    padding: 8px 12px;
+    min-width: 300px;
+    .lock-icon { font-family: $font-icon; font-size: 22px; color: $fg-dim; margin-right: 10px; }
+    entry { font-size: $font-size-lg; min-height: 40px; caret-color: $primary; }
+  }
+  .lock-message {
+    font-size: $font-size-sm;
+    color: $fg-muted;
+    margin-top: 10px;
+    &.error { color: $error; }
+  }
+}
+
+// ===== Background =====
+.Background {
+  background-color: transparent;
+
+  .desktop-clock {
+    .clock-time { font-size: 96px; font-weight: 200; color: white; }
+    .clock-date { font-size: 24px; font-weight: 300; color: rgba(255, 255, 255, 0.8); }
+  }
+}
+
+// ===== Utilities =====
+.Utilities {
+  background-color: transparent;
+
+  .utilities-inner {
+    background-color: $bg;
+    border-radius: $rounding-lg;
+    margin: 8px;
+    padding: 12px;
+    min-width: 380px;
+
+    .toggle {
+      background-color: $bg-surface;
+      border-radius: $rounding-md;
+      padding: 8px;
+      min-width: 80px;
+      min-height: 70px;
+      margin: 4px;
+      transition: 150ms ease-in-out;
+
+      .toggle-icon { font-family: $font-icon; font-size: 22px; color: $fg-dim; }
+      .toggle-label { font-size: $font-size-sm; color: $fg-dim; margin-top: 4px; }
+
+      &.active {
+        background-color: $primary-container;
+        .toggle-icon, .toggle-label { color: $on-primary; }
+      }
+      &:hover { background-color: $bg-surface-variant; }
+    }
+  }
+}
+
+.Toast {
+  background-color: $bg;
+  border-radius: $rounding-lg;
+  padding: 8px 12px;
+  margin: 6px 8px;
+  min-width: 300px;
+
+  .toast-icon { font-family: $font-icon; font-size: 20px; color: $primary; margin-right: 10px; }
+  .toast-title { font-weight: 500; }
+  .toast-body { font-size: $font-size-sm; color: $fg-dim; }
+}

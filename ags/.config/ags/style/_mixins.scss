@@ -1,0 +1,45 @@
+@mixin surface($bg: $bg-surface, $rounding: $rounding-md) {
+  background-color: $bg;
+  border-radius: $rounding;
+}
+
+@mixin elevated($level: 1) {
+  @if $level == 1 {
+    box-shadow: 0 1px 3px $shadow;
+  } @else if $level == 2 {
+    box-shadow: 0 2px 6px $shadow;
+  } @else if $level == 3 {
+    box-shadow: 0 4px 12px $shadow;
+  }
+}
+
+@mixin hover-state {
+  &:hover {
+    background-color: $bg-hover;
+  }
+  &:active {
+    background-color: $bg-active;
+  }
+}
+
+@mixin icon-button($size: 32px) {
+  min-width: $size;
+  min-height: $size;
+  border-radius: $rounding-full;
+  padding: 0;
+  @include hover-state;
+}
+
+@mixin material-icon($size: 20px) {
+  font-family: $font-icon;
+  font-size: $size;
+}
+
+@mixin pill {
+  border-radius: $rounding-full;
+  padding: $padding-sm $padding-lg;
+}
+
+@mixin truncate {
+  min-width: 0;
+}

@@ -1,0 +1,7 @@
+{
+  "name": "caelestia-shell",
+  "private": true,
+  "dependencies": {
+    "ags": "*"
+  }
+}

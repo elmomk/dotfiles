@@ -1,0 +1,45 @@
+.Lock {
+  background-color: rgba(0, 0, 0, 0.85);
+
+  .lock-inner {
+    .lock-clock {
+      font-size: 72px;
+      font-weight: 200;
+      color: $fg;
+    }
+
+    .lock-date {
+      font-size: $font-size-xl;
+      color: $fg-dim;
+      margin-bottom: $spacing-xl;
+    }
+
+    .lock-input {
+      @include surface($bg-surface, $rounding-full);
+      padding: $padding-md $padding-lg;
+      min-width: 300px;
+
+      entry {
+        font-size: $font-size-lg;
+        min-height: 40px;
+        caret-color: $primary;
+      }
+
+      .lock-icon {
+        @include material-icon(22px);
+        color: $fg-dim;
+        margin-right: $spacing-md;
+      }
+    }
+
+    .lock-message {
+      font-size: $font-size-sm;
+      color: $fg-muted;
+      margin-top: $spacing-md;
+
+      &.error {
+        color: $error;
+      }
+    }
+  }
+}
