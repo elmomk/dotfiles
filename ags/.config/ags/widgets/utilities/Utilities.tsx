@@ -51,7 +51,7 @@ export default function Utilities(gdkmonitor: Gdk.Monitor) {
         return false
       })}
     >
-      <box cssClasses={["utilities-inner"]} css="background-color: #141414; border-radius: 32px; margin: 8px; padding: 12px; min-width: 380px;" orientation={Gtk.Orientation.VERTICAL}>
+      <box cssClasses={["panel"]} css="min-width: 380px;" orientation={Gtk.Orientation.VERTICAL}>
         <box cssClasses={["toggle-grid"]} homogeneous>
           {getToggles()
             .filter(t => enabledIds.has(t.id))

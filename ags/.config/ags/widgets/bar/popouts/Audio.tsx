@@ -31,8 +31,8 @@ export default function AudioPopout(gdkmonitor: Gdk.Monitor) {
         return false
       })}
     >
-      <box cssClasses={["popout-inner"]} orientation={Gtk.Orientation.VERTICAL}
-        css="background-color: #141414; border-radius: 32px; margin: 8px; padding: 12px; min-width: 300px;"
+      <box cssClasses={["panel", "popout-inner"]} orientation={Gtk.Orientation.VERTICAL}
+        css="min-width: 300px;"
       >
         {/* Volume control */}
         <box spacing={8}>

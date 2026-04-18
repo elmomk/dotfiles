@@ -97,7 +97,7 @@ export default function ControlCenter(gdkmonitor: Gdk.Monitor) {
         return false
       })}
     >
-      <box cssClasses={["cc-inner"]} css="background-color: #141414; border-radius: 32px; margin: 8px; min-width: 700px; min-height: 500px;" halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER}>
+      <box cssClasses={["panel", "cc-inner"]} css="min-width: 700px; min-height: 500px;" halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER}>
         <NavRail />
         <PaneContent />
       </box>

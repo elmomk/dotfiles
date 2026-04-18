@@ -68,7 +68,7 @@ export default function Launcher(gdkmonitor: Gdk.Monitor) {
         return false
       })}
     >
-      <box cssClasses={["launcher-inner"]} css="background-color: #141414; border-radius: 32px; margin: 8px; min-width: 580px;" orientation={Gtk.Orientation.VERTICAL} halign={Gtk.Align.CENTER} valign={Gtk.Align.END}>
+      <box cssClasses={["panel", "launcher-inner"]} css="min-width: 580px;" orientation={Gtk.Orientation.VERTICAL} halign={Gtk.Align.CENTER} valign={Gtk.Align.END}>
         <box cssClasses={["search-box"]}>
           <label cssClasses={["search-icon"]} label="search" />
           <entry

@@ -1,6 +1,5 @@
 // ═══════════════════════════════════════════════════════
 //  OBSIDIAN & AMBER — Desktop Shell Theme
-//  Warm charcoal base, amber/gold accents, editorial type
 // ═══════════════════════════════════════════════════════
 
 // --- Palette ---
@@ -31,28 +30,38 @@ $blue:           #5a8fba;
 // --- Scale (4K @ 1.0) ---
 $s: 2;
 
-// --- Type ---
-$font-body:  "Rubik", "Cantarell", sans-serif;
-$font-mono:  "CaskaydiaCove NF", "JetBrains Mono", monospace;
-$font-icon:  "Material Symbols Rounded";
+// --- Easing (strong curves, not defaults) ---
+$ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+$ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
-$fs-xs:   10px * $s;
-$fs-sm:   11px * $s;
-$fs-md:   13px * $s;
-$fs-lg:   15px * $s;
-$fs-xl:   20px * $s;
-$fs-2xl:  28px * $s;
-$fs-3xl:  42px * $s;
+// --- Type ---
+$font-body: "Rubik", "Cantarell", sans-serif;
+$font-mono: "CaskaydiaCove NF", "JetBrains Mono", monospace;
+$font-icon: "Material Symbols Rounded";
+
+$fs-xs:  10px * $s;
+$fs-sm:  11px * $s;
+$fs-md:  13px * $s;
+$fs-lg:  15px * $s;
+$fs-xl:  20px * $s;
+$fs-2xl: 28px * $s;
+$fs-3xl: 42px * $s;
 
 // --- Geometry ---
 $r-sm:   6px * $s;
 $r-md:   10px * $s;
 $r-lg:   16px * $s;
-$r-xl:   24px * $s;
+$r-xl:   20px * $s;
 $r-full: 999px;
 
-$bar-h:  42px * $s;
-$bar-m:  6px * $s;
+$bar-h: 42px * $s;
+$bar-m: 6px * $s;
+
+$sp-xs:  4px * $s;
+$sp-sm:  6px * $s;
+$sp-md:  10px * $s;
+$sp-lg:  14px * $s;
+$sp-xl:  20px * $s;
 
 // ═══════════════════════════════════════
 //  BASE
@@ -71,10 +80,38 @@ window { background-color: transparent; }
 
 tooltip {
   background-color: $obsidian-mid;
-  border-radius: $r-sm;
   border: 1px solid $glass-border;
-  padding: 6px * $s 10px * $s;
+  border-radius: $r-sm;
+  padding: $sp-xs $sp-md;
   font-size: $fs-sm;
+}
+
+// ═══════════════════════════════════════
+//  SHARED: Panel containers (flat selectors)
+// ═══════════════════════════════════════
+
+.panel {
+  background-color: $obsidian;
+  border: 1px solid $glass-border;
+  border-radius: $r-xl;
+  margin: $sp-md;
+  padding: $sp-lg;
+}
+
+.panel-section {
+  background-color: $obsidian-light;
+  border: 1px solid $glass-border;
+  border-radius: $r-lg;
+  padding: $sp-lg;
+  margin: $sp-sm;
+}
+
+.section-title {
+  font-size: $fs-xs;
+  font-weight: 600;
+  color: $fg-muted;
+  letter-spacing: 1.5px;
+  margin-bottom: $sp-md;
 }
 
 // ═══════════════════════════════════════
@@ -84,10 +121,10 @@ tooltip {
 .Bar {
   .bar-inner {
     background-color: $obsidian;
-    border-radius: $r-xl;
+    border-radius: $r-lg;
     border: 1px solid $glass-border;
     margin: $bar-m;
-    padding: 0 16px * $s;
+    padding: 0 $sp-xl;
     min-height: $bar-h;
   }
 
@@ -97,18 +134,16 @@ tooltip {
     border-radius: $r-full;
     margin: 0 3px * $s;
     background-color: $obsidian-soft;
-    transition: 200ms ease-out;
+    transition: min-width 200ms $ease-out, background-color 150ms ease;
 
-    label { font-size: 0; min-width: 0; min-height: 0; }  // hide label, dot-only
+    label { font-size: 0; min-width: 0; min-height: 0; }
 
     &.occupied {
       background-color: $fg-muted;
-      min-width: 10px * $s;
     }
     &.active {
       background-color: $amber;
       min-width: 20px * $s;
-      min-height: 10px * $s;
     }
     &:hover { background-color: $fg-dim; }
     &.active:hover { background-color: $amber-dim; }
@@ -116,23 +151,26 @@ tooltip {
 
   .clock {
     border-radius: $r-full;
-    padding: 4px * $s 14px * $s;
+    padding: $sp-xs $sp-lg;
+    transition: background-color 150ms ease;
+
+    &:hover { background-color: $glass-hover; }
+    &:active { background-color: $glass-active; }
 
     .clock-icon {
       font-family: $font-icon;
       font-size: 16px * $s;
       color: $amber;
-      margin-right: 6px * $s;
+      margin-right: $sp-sm;
     }
     .clock-time {
       font-weight: 500;
-      font-size: $fs-md;
       letter-spacing: 0.5px;
     }
     .clock-date {
       color: $fg-dim;
       font-size: $fs-sm;
-      margin-left: 8px * $s;
+      margin-left: $sp-md;
     }
   }
 
@@ -143,9 +181,10 @@ tooltip {
     min-height: 34px * $s;
     border-radius: $r-full;
     color: $fg-dim;
-    transition: 200ms ease-out;
+    transition: color 150ms ease, background-color 150ms ease;
 
     &:hover    { color: $fg; background-color: $glass-hover; }
+    &:active   { background-color: $glass-active; }
     &.active   { color: $amber; }
     &.warning  { color: $orange; }
     &.error    { color: $red; }
@@ -155,8 +194,10 @@ tooltip {
     min-width: 32px * $s;
     min-height: 32px * $s;
     border-radius: $r-full;
-    padding: 4px * $s;
-    &:hover { background-color: $glass-hover; }
+    padding: $sp-xs;
+    transition: background-color 150ms ease;
+    &:hover  { background-color: $glass-hover; }
+    &:active { background-color: $glass-active; }
   }
 
   .active-window label {
@@ -171,13 +212,14 @@ tooltip {
     min-height: 34px * $s;
     border-radius: $r-full;
     color: $fg-muted;
-    transition: 200ms ease-out;
-    &:hover { color: $red; background-color: rgba($red, 0.1); }
+    transition: color 150ms ease, background-color 150ms ease, transform 160ms $ease-out;
+    &:hover  { color: $red; background-color: rgba($red, 0.1); }
+    &:active { transform: scale(0.93); }
   }
 
   .logo {
     color: $amber;
-    margin: 0 8px * $s;
+    margin: 0 $sp-md;
   }
 }
 
@@ -185,40 +227,38 @@ tooltip {
 //  OSD
 // ═══════════════════════════════════════
 
-.OSD {
-  .osd-inner {
-    background-color: $obsidian;
-    border: 1px solid $glass-border;
-    border-radius: $r-lg;
-    padding: 16px * $s;
-    margin: 12px * $s;
+.OSD .osd-inner {
+  background-color: $obsidian;
+  border: 1px solid $glass-border;
+  border-radius: $r-lg;
+  padding: $sp-xl;
+  margin: $sp-lg;
 
-    .osd-icon {
-      font-family: $font-icon;
-      font-size: 24px * $s;
-      color: $amber;
-      margin-bottom: 8px * $s;
-    }
+  .osd-icon {
+    font-family: $font-icon;
+    font-size: 24px * $s;
+    color: $amber;
+    margin-bottom: $sp-md;
+  }
 
-    .osd-bar-track {
-      background-color: $obsidian-soft;
-      border-radius: $r-full;
-      min-width: 6px * $s;
-      min-height: 140px * $s;
-    }
-    .osd-bar-fill {
-      background-color: $amber;
-      border-radius: $r-full;
-      min-width: 6px * $s;
-      transition: 150ms ease-out;
-    }
+  .osd-bar-track {
+    background-color: $obsidian-soft;
+    border-radius: $r-full;
+    min-width: 6px * $s;
+    min-height: 140px * $s;
+  }
+  .osd-bar-fill {
+    background-color: $amber;
+    border-radius: $r-full;
+    min-width: 6px * $s;
+    transition: min-height 120ms $ease-out;
+  }
 
-    .osd-value {
-      font-size: $fs-sm;
-      color: $fg-dim;
-      margin-top: 8px * $s;
-      font-weight: 500;
-    }
+  .osd-value {
+    font-size: $fs-sm;
+    color: $fg-dim;
+    font-weight: 500;
+    margin-top: $sp-md;
   }
 }
 
@@ -230,8 +270,8 @@ tooltip {
   background-color: $obsidian;
   border: 1px solid $glass-border;
   border-radius: $r-lg;
-  padding: 14px * $s;
-  margin: 6px * $s 10px * $s;
+  padding: $sp-lg;
+  margin: $sp-sm $sp-md;
   min-width: 400px * $s;
 
   &.critical { border-color: rgba($red, 0.4); }
@@ -241,10 +281,9 @@ tooltip {
       font-size: $fs-xs;
       color: $fg-muted;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
     }
-    .notif-time  { font-size: $fs-xs; color: $fg-muted; }
+    .notif-time { font-size: $fs-xs; color: $fg-muted; }
     .notif-close {
       font-family: $font-icon;
       font-size: 16px * $s;
@@ -252,28 +291,31 @@ tooltip {
       min-height: 28px * $s;
       border-radius: $r-full;
       color: $fg-muted;
+      transition: color 150ms ease, background-color 150ms ease;
       &:hover { color: $fg; background-color: $glass-hover; }
     }
   }
 
   .notif-body {
-    margin-top: 8px * $s;
-    .notif-summary { font-weight: 500; font-size: $fs-md; }
+    margin-top: $sp-md;
+    .notif-summary { font-weight: 500; }
     .notif-text    { color: $fg-dim; font-size: $fs-sm; margin-top: 3px * $s; }
-    .notif-image   { border-radius: $r-md; min-width: 64px * $s; min-height: 64px * $s; margin-right: 12px * $s; }
+    .notif-image   { border-radius: $r-md; min-width: 64px * $s; min-height: 64px * $s; margin-right: $sp-lg; }
   }
 
   .notif-actions {
-    margin-top: 12px * $s;
+    margin-top: $sp-lg;
     .notif-action {
       border-radius: $r-full;
-      padding: 6px * $s 14px * $s;
+      padding: $sp-sm $sp-lg;
       background-color: $glass;
       border: 1px solid $glass-border;
       font-size: $fs-sm;
       font-weight: 500;
-      margin-right: 6px * $s;
-      &:hover { background-color: $glass-hover; }
+      margin-right: $sp-sm;
+      transition: background-color 150ms ease, transform 160ms $ease-out;
+      &:hover  { background-color: $glass-hover; }
+      &:active { transform: scale(0.97); }
     }
   }
 }
@@ -291,17 +333,18 @@ tooltip {
     border-radius: $r-xl;
     min-width: 120px * $s;
     min-height: 120px * $s;
-    margin: 12px * $s;
-    transition: 250ms ease-out;
+    margin: $sp-lg;
+    transition: background-color 200ms ease, border-color 200ms ease, transform 160ms $ease-out;
 
-    .session-icon  { font-family: $font-icon; font-size: 36px * $s; color: $fg-dim; }
-    .session-label { font-size: $fs-sm; color: $fg-muted; margin-top: 8px * $s; font-weight: 500; }
+    .session-icon  { font-family: $font-icon; font-size: 36px * $s; color: $fg-dim; transition: color 200ms ease; }
+    .session-label { font-size: $fs-sm; color: $fg-muted; margin-top: $sp-md; font-weight: 500; transition: color 200ms ease; }
 
     &:hover {
       background-color: $obsidian-mid;
       border-color: rgba(255, 255, 255, 0.1);
       .session-icon, .session-label { color: $fg-bright; }
     }
+    &:active { transform: scale(0.95); }
     &.shutdown:hover .session-icon { color: $red; }
     &.reboot:hover   .session-icon { color: $orange; }
     &.logout:hover   .session-icon { color: $amber; }
@@ -324,21 +367,21 @@ tooltip {
   .lock-date {
     font-size: $fs-xl;
     color: $fg-dim;
-    margin-bottom: 24px * $s;
+    margin-bottom: $sp-xl * 2;
     font-weight: 300;
   }
   .lock-input {
     background-color: $obsidian-light;
     border: 1px solid $glass-border;
     border-radius: $r-full;
-    padding: 10px * $s 16px * $s;
+    padding: $sp-md $sp-xl;
     min-width: 320px * $s;
 
     .lock-icon {
       font-family: $font-icon;
       font-size: 22px * $s;
       color: $amber-dim;
-      margin-right: 12px * $s;
+      margin-right: $sp-lg;
     }
     entry {
       font-size: $fs-lg;
@@ -349,7 +392,7 @@ tooltip {
   .lock-message {
     font-size: $fs-sm;
     color: $fg-muted;
-    margin-top: 12px * $s;
+    margin-top: $sp-lg;
     &.error { color: $red; }
   }
 }
@@ -374,6 +417,148 @@ tooltip {
 }
 
 // ═══════════════════════════════════════
+//  LAUNCHER
+// ═══════════════════════════════════════
+
+.launcher-inner {
+  .search-box {
+    padding: $sp-lg;
+    border-bottom: 1px solid $glass-border;
+
+    .search-icon {
+      font-family: $font-icon;
+      font-size: 22px * $s;
+      color: $fg-dim;
+      margin-right: $sp-md;
+    }
+    entry {
+      font-size: $fs-lg;
+      min-height: 40px * $s;
+      caret-color: $amber;
+    }
+  }
+
+  .results {
+    padding: $sp-xs;
+    min-height: 100px * $s;
+  }
+}
+
+.app-item {
+  padding: $sp-md $sp-lg;
+  border-radius: $r-md;
+  transition: background-color 120ms ease, transform 160ms $ease-out;
+
+  &:hover    { background-color: $glass-hover; }
+  &.selected { background-color: $glass-active; }
+  &:active   { transform: scale(0.98); }
+
+  .app-icon { -gtk-icon-size: 36px * $s; margin-right: $sp-md; }
+  .app-name { font-weight: 500; }
+  .app-description { font-size: $fs-sm; color: $fg-dim; }
+}
+
+// ═══════════════════════════════════════
+//  SIDEBAR
+// ═══════════════════════════════════════
+
+.sidebar-inner {
+  .sidebar-header {
+    padding-bottom: $sp-md;
+    border-bottom: 1px solid $glass-border;
+    margin-bottom: $sp-md;
+
+    .sidebar-title { font-weight: 600; font-size: $fs-lg; }
+    .clear-all {
+      border-radius: $r-full;
+      padding: $sp-xs $sp-lg;
+      font-size: $fs-sm;
+      color: $fg-dim;
+      transition: background-color 150ms ease, transform 160ms $ease-out;
+      &:hover  { background-color: $glass-hover; }
+      &:active { transform: scale(0.97); }
+    }
+  }
+
+  .sidebar-empty { padding: $sp-xl; color: $fg-muted; }
+}
+
+// ═══════════════════════════════════════
+//  CONTROL CENTER
+// ═══════════════════════════════════════
+
+.nav-rail {
+  background-color: $obsidian-light;
+  border-radius: $r-xl 0 0 $r-xl;
+  border-right: 1px solid $glass-border;
+  padding: $sp-md;
+  min-width: 64px * $s;
+
+  .nav-item {
+    font-family: $font-icon;
+    font-size: 22px * $s;
+    min-width: 48px * $s;
+    min-height: 48px * $s;
+    border-radius: $r-md;
+    color: $fg-dim;
+    margin: $sp-xs 0;
+    transition: background-color 150ms ease, color 150ms ease, transform 160ms $ease-out;
+    &:hover  { background-color: $glass-hover; color: $fg; }
+    &:active { transform: scale(0.93); }
+    &.active { background-color: $amber-container; color: $amber; }
+  }
+}
+
+.pane {
+  padding: $sp-lg;
+  .pane-title { font-size: $fs-xl; font-weight: 600; margin-bottom: $sp-lg; }
+  .setting-row { padding: $sp-md 0; }
+  .setting-label { font-weight: 500; }
+  .setting-description { font-size: $fs-sm; color: $fg-dim; }
+}
+
+// ═══════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════
+
+.toggle {
+  background-color: $obsidian-light;
+  border: 1px solid $glass-border;
+  border-radius: $r-md;
+  padding: $sp-md;
+  min-width: 80px * $s;
+  min-height: 70px * $s;
+  margin: $sp-xs;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 160ms $ease-out;
+
+  .toggle-icon  { font-family: $font-icon; font-size: 22px * $s; color: $fg-dim; transition: color 150ms ease; }
+  .toggle-label { font-size: $fs-sm; color: $fg-dim; margin-top: $sp-xs; transition: color 150ms ease; }
+
+  &.active {
+    background-color: $amber-container;
+    border-color: rgba($amber, 0.2);
+    .toggle-icon, .toggle-label { color: $amber; }
+  }
+  &:hover {
+    background-color: $obsidian-mid;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  &:active { transform: scale(0.95); }
+}
+
+// ═══════════════════════════════════════
+//  POPOUTS
+// ═══════════════════════════════════════
+
+.popout-inner {
+  button {
+    transition: background-color 150ms ease, transform 160ms $ease-out;
+    &:hover  { background-color: $glass-hover; }
+    &:active { transform: scale(0.97); }
+  }
+}
+
+// ═══════════════════════════════════════
 //  TOAST
 // ═══════════════════════════════════════
 
@@ -381,11 +566,11 @@ tooltip {
   background-color: $obsidian;
   border: 1px solid $glass-border;
   border-radius: $r-lg;
-  padding: 10px * $s 14px * $s;
-  margin: 6px * $s 10px * $s;
+  padding: $sp-md $sp-lg;
+  margin: $sp-sm $sp-md;
   min-width: 320px * $s;
 
-  .toast-icon  { font-family: $font-icon; font-size: 20px * $s; color: $amber; margin-right: 12px * $s; }
+  .toast-icon  { font-family: $font-icon; font-size: 20px * $s; color: $amber; margin-right: $sp-lg; }
   .toast-title { font-weight: 500; }
   .toast-body  { font-size: $fs-sm; color: $fg-dim; }
 }

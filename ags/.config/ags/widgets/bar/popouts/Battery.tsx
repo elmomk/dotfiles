@@ -31,8 +31,8 @@ export default function BatteryPopout(gdkmonitor: Gdk.Monitor) {
         return false
       })}
     >
-      <box cssClasses={["popout-inner"]} orientation={Gtk.Orientation.VERTICAL} spacing={8}
-        css="background-color: #141414; border-radius: 32px; margin: 8px; padding: 12px; min-width: 250px;"
+      <box cssClasses={["panel", "popout-inner"]} orientation={Gtk.Orientation.VERTICAL} spacing={8}
+        css="min-width: 250px;"
       >
         <box spacing={8}>
           <label cssClasses={["icon"]} label={pct.as(p => {
@@ -40,9 +40,9 @@ export default function BatteryPopout(gdkmonitor: Gdk.Monitor) {
             if (p > 0.9) return "battery_full"
             if (p > 0.6) return "battery_5_bar"
             return "battery_3_bar"
-          })} css="font-size: 28px;" />
+          })} css="font-size: 56px;" />
           <box orientation={Gtk.Orientation.VERTICAL}>
-            <label label={pct.as(p => `${Math.round(p * 100)}%`)} halign={Gtk.Align.START} css="font-size: 22px; font-weight: 300;" />
+            <label label={pct.as(p => `${Math.round(p * 100)}%`)} halign={Gtk.Align.START} css="font-size: 44px; font-weight: 300;" />
             <label cssClasses={["dim"]} label={charging.as(c => c ? "Charging" : "On Battery")} halign={Gtk.Align.START} />
           </box>
         </box>
