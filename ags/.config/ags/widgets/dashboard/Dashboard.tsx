@@ -1,27 +1,90 @@
 import { createBinding, createComputed, With } from "ags"
-import { createPoll } from "ags/time"
 import { Astal, Gtk, Gdk } from "ags/gtk4"
 import app from "ags/gtk4/app"
 import Mpris from "gi://AstalMpris"
 import { clock, date, uptime } from "../../lib/variables"
 import { onKeyPress } from "../../lib/utils"
+import { weather } from "../../services/weather"
+import { usage } from "../../services/systemUsage"
+import config from "../../config/config"
+
+const V = Gtk.Orientation.VERTICAL
+const sectionCss = "background-color: #16213e; border-radius: 12px; padding: 12px; margin: 6px;"
 
 function DateTime() {
   return (
-    <box cssClasses={["dash-section"]} css="background-color: #16213e; border-radius: 12px; padding: 12px; margin: 6px;" orientation={Gtk.Orientation.VERTICAL}>
-      <label cssClasses={["section-title"]} label="Date & Time" halign={Gtk.Align.START} />
+    <box orientation={V} css={sectionCss}>
+      <label label="DATE & TIME" halign={Gtk.Align.START} css="font-size: 11px; font-weight: 600; color: #a0a0a0; margin-bottom: 10px;" />
       <label label={clock} halign={Gtk.Align.START} css="font-size: 32px; font-weight: 300;" />
-      <label label={date} halign={Gtk.Align.START} css="font-size: 16px;" cssClasses={["dim"]} />
-      <label label={uptime.as(u => `Uptime: ${u}`)} halign={Gtk.Align.START} cssClasses={["muted"]} />
+      <label label={date} halign={Gtk.Align.START} css="font-size: 16px; color: #a0a0a0;" />
+      <label label={uptime.as(u => `Uptime: ${u}`)} halign={Gtk.Align.START} css="color: #6e6e6e;" />
     </box>
   )
 }
 
 function Calendar() {
   return (
-    <box cssClasses={["dash-section", "calendar"]} css="background-color: #16213e; border-radius: 12px; padding: 12px; margin: 6px;" orientation={Gtk.Orientation.VERTICAL}>
-      <label cssClasses={["section-title"]} label="Calendar" halign={Gtk.Align.START} />
+    <box orientation={V} css={sectionCss}>
       <Gtk.Calendar />
+    </box>
+  )
+}
+
+function Weather() {
+  return (
+    <box orientation={V} css={sectionCss}>
+      <label label="WEATHER" halign={Gtk.Align.START} css="font-size: 11px; font-weight: 600; color: #a0a0a0; margin-bottom: 10px;" />
+      <With value={weather}>
+        {(w) => {
+          if (!w) return <label css="color: #6e6e6e;" label="Loading weather..." halign={Gtk.Align.START} />
+          return (
+            <box spacing={12}>
+              <label cssClasses={["icon"]} label={w.icon} css="font-size: 36px; color: #7c83ff;" />
+              <box orientation={V}>
+                <label label={`${w.temp}°`} halign={Gtk.Align.START} css="font-size: 28px; font-weight: 300;" />
+                <label label={w.description} halign={Gtk.Align.START} css="color: #a0a0a0;" />
+                <label label={`Feels like ${w.feelsLike}° · ${w.humidity}% humidity`} halign={Gtk.Align.START} css="font-size: 11px; color: #6e6e6e;" />
+              </box>
+            </box>
+          )
+        }}
+      </With>
+    </box>
+  )
+}
+
+function ResourceBar({ label, pct, detail }: { label: string; pct: number; detail: string }) {
+  const color = pct > 90 ? "#f44336" : pct > 70 ? "#ff9800" : "#7c83ff"
+  const width = Math.max(2, Math.round(pct * 2))
+  return (
+    <box orientation={V} spacing={2} css="margin: 4px 0;">
+      <box>
+        <label label={label} halign={Gtk.Align.START} css="font-size: 11px; color: #a0a0a0;" />
+        <label label={`${Math.round(pct)}% ${detail}`} hexpand halign={Gtk.Align.END} css="font-size: 11px; font-weight: 500;" />
+      </box>
+      <box css="background-color: #1e2a4a; border-radius: 999px; min-height: 6px;">
+        <box css={`background-color: ${color}; border-radius: 999px; min-height: 6px; min-width: ${width}px;`} />
+      </box>
+    </box>
+  )
+}
+
+function Resources() {
+  const perf = config.config.dashboard.performance
+
+  return (
+    <box orientation={V} css={sectionCss}>
+      <label label="SYSTEM" halign={Gtk.Align.START} css="font-size: 11px; font-weight: 600; color: #a0a0a0; margin-bottom: 10px;" />
+      <With value={usage}>
+        {(u) => (
+          <box orientation={V}>
+            {perf.showCpu && <ResourceBar label="CPU" pct={u.cpuPercent} detail={u.cpuTempC ? `· ${u.cpuTempC}°C` : ""} />}
+            {perf.showMemory && <ResourceBar label="RAM" pct={u.memPercent} detail={`${u.memUsedGb.toFixed(1)}/${u.memTotalGb.toFixed(0)} GB`} />}
+            {perf.showStorage && <ResourceBar label="Storage" pct={u.storagePercent} detail={`${u.storageUsedGb.toFixed(0)}/${u.storageTotalGb.toFixed(0)} GB`} />}
+            {perf.showGpu && u.gpuPercent > 0 && <ResourceBar label="GPU" pct={u.gpuPercent} detail={u.gpuTempC ? `· ${u.gpuTempC}°C` : ""} />}
+          </box>
+        )}
+      </With>
     </box>
   )
 }
@@ -33,20 +96,20 @@ function MediaPlayer({ player }: { player: Mpris.Player }) {
 
   return (
     <box spacing={12}>
-      <box orientation={Gtk.Orientation.VERTICAL} hexpand valign={Gtk.Align.CENTER}>
-        <label cssClasses={["media-title"]} label={title.as(t => t ?? "Unknown")} halign={Gtk.Align.START} ellipsize={3} />
-        <label cssClasses={["media-artist"]} label={artist.as(a => a ?? "Unknown")} halign={Gtk.Align.START} ellipsize={3} />
-        <box cssClasses={["media-controls"]} spacing={8} halign={Gtk.Align.START}>
-          <button cssClasses={["media-btn"]} onClicked={() => player.previous()}>
-            <label label="skip_previous" />
+      <box orientation={V} hexpand valign={Gtk.Align.CENTER}>
+        <label label={title.as(t => t ?? "Unknown")} halign={Gtk.Align.START} ellipsize={3} css="font-weight: 500; font-size: 16px;" />
+        <label label={artist.as(a => a ?? "Unknown")} halign={Gtk.Align.START} ellipsize={3} css="color: #a0a0a0;" />
+        <box spacing={8} halign={Gtk.Align.START} css="margin-top: 8px;">
+          <button css="min-width: 40px; min-height: 40px; border-radius: 999px;" onClicked={() => player.previous()}>
+            <label cssClasses={["icon"]} label="skip_previous" />
           </button>
-          <button cssClasses={["media-btn", "play"]} onClicked={() => player.play_pause()}>
-            <label label={status.as(s =>
+          <button css="min-width: 48px; min-height: 48px; border-radius: 999px; background-color: #7c83ff;" onClicked={() => player.play_pause()}>
+            <label cssClasses={["icon"]} label={status.as(s =>
               s === Mpris.PlaybackStatus.PLAYING ? "pause" : "play_arrow"
-            )} />
+            )} css="font-size: 28px; color: white;" />
           </button>
-          <button cssClasses={["media-btn"]} onClicked={() => player.next()}>
-            <label label="skip_next" />
+          <button css="min-width: 40px; min-height: 40px; border-radius: 999px;" onClicked={() => player.next()}>
+            <label cssClasses={["icon"]} label="skip_next" />
           </button>
         </box>
       </box>
@@ -63,34 +126,15 @@ function Media() {
   })
 
   return (
-    <box cssClasses={["dash-section", "media"]} css="background-color: #16213e; border-radius: 12px; padding: 12px; margin: 6px;" orientation={Gtk.Orientation.VERTICAL}>
-      <label cssClasses={["section-title"]} label="Now Playing" halign={Gtk.Align.START} />
+    <box orientation={V} css={sectionCss}>
+      <label label="NOW PLAYING" halign={Gtk.Align.START} css="font-size: 11px; font-weight: 600; color: #a0a0a0; margin-bottom: 10px;" />
       <With value={firstPlayer}>
         {(player: Mpris.Player | null) =>
           player
             ? <MediaPlayer player={player} />
-            : <label cssClasses={["dim"]} label="Nothing playing" halign={Gtk.Align.START} />
+            : <label css="color: #6e6e6e;" label="Nothing playing" halign={Gtk.Align.START} />
         }
       </With>
-    </box>
-  )
-}
-
-function Resources() {
-  const cpuUsage = createPoll("0%", 2000, ["bash", "-c", "top -bn1 | grep 'Cpu(s)' | awk '{print int($2)}'"], (out: string) => `${out.trim()}%`)
-  const memUsage = createPoll("0%", 2000, ["bash", "-c", "free | awk '/Mem:/ {printf \"%.0f\", $3/$2*100}'"], (out: string) => `${out.trim()}%`)
-
-  return (
-    <box cssClasses={["dash-section", "resources"]} css="background-color: #16213e; border-radius: 12px; padding: 12px; margin: 6px;" orientation={Gtk.Orientation.VERTICAL}>
-      <label cssClasses={["section-title"]} label="System" halign={Gtk.Align.START} />
-      <box spacing={4}>
-        <label cssClasses={["resource-label"]} label="CPU" />
-        <label cssClasses={["resource-value"]} label={cpuUsage} hexpand halign={Gtk.Align.END} />
-      </box>
-      <box spacing={4}>
-        <label cssClasses={["resource-label"]} label="RAM" />
-        <label cssClasses={["resource-value"]} label={memUsage} hexpand halign={Gtk.Align.END} />
-      </box>
     </box>
   )
 }
@@ -117,12 +161,13 @@ export default function Dashboard(gdkmonitor: Gdk.Monitor) {
         return false
       })}
     >
-      <box cssClasses={["dash-inner"]} css="background-color: #1a1a2e; border-radius: 18px; margin: 8px; padding: 12px;" halign={Gtk.Align.CENTER} valign={Gtk.Align.START} spacing={8}>
-        <box orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+      <box css="background-color: #1a1a2e; border-radius: 18px; margin: 8px; padding: 12px;" halign={Gtk.Align.CENTER} valign={Gtk.Align.START} spacing={8}>
+        <box orientation={V} spacing={8}>
           <DateTime />
           <Calendar />
+          <Weather />
         </box>
-        <box orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+        <box orientation={V} spacing={8}>
           <Media />
           <Resources />
         </box>
