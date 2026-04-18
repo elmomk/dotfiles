@@ -70,13 +70,13 @@ JsonObject {
 
     component AnimDurations: JsonObject {
         property real scale: 1
-        property int small: 200 * scale
-        property int normal: 400 * scale
-        property int large: 600 * scale
-        property int extraLarge: 1000 * scale
-        property int expressiveFastSpatial: 350 * scale
-        property int expressiveDefaultSpatial: 500 * scale
-        property int expressiveEffects: 200 * scale
+        property int small: 150 * scale
+        property int normal: 250 * scale
+        property int large: 400 * scale
+        property int extraLarge: 600 * scale
+        property int expressiveFastSpatial: 200 * scale
+        property int expressiveDefaultSpatial: 350 * scale
+        property int expressiveEffects: 150 * scale
     }
 
     component Anim: JsonObject {

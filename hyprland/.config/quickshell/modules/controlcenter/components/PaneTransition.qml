@@ -10,7 +10,7 @@ SequentialAnimation {
     property list<PropertyAction> propertyActions
 
     property real scaleFrom: 1.0
-    property real scaleTo: 0.8
+    property real scaleTo: 0.95
     property real opacityFrom: 1.0
     property real opacityTo: 0.0
 

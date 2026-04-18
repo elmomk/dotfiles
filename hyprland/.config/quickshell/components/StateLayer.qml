@@ -78,6 +78,7 @@ MouseArea {
         anchors.fill: parent
 
         color: Qt.alpha(root.color, root.disabled ? 0 : root.pressed ? 0.12 : (root.showHoverBackground && root.containsMouse) ? 0.08 : 0)
+        Behavior on color { CAnim { duration: Appearance.anim.durations.small } }
         radius: root.radius
 
         StyledRect {

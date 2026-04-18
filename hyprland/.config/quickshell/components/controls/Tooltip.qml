@@ -13,14 +13,23 @@ Popup {
     property int delay: 500
     property int timeout: 0
 
+    // Skip delay when another tooltip was recently visible
+    readonly property bool instant: Tooltip._anyRecentlyVisible
     property bool tooltipVisible: false
     property Timer showTimer: Timer {
-        interval: root.delay
+        interval: root.instant ? 0 : root.delay
         onTriggered: root.tooltipVisible = true
     }
     property Timer hideTimer: Timer {
         interval: root.timeout
         onTriggered: root.tooltipVisible = false
+    }
+
+    // Shared grace period across all Tooltip instances
+    static property bool _anyRecentlyVisible: false
+    static property Timer _graceTimer: Timer {
+        interval: 400
+        onTriggered: Tooltip._anyRecentlyVisible = false
     }
 
     function updatePosition() {
@@ -86,7 +95,11 @@ Popup {
     // Update position when target moves or tooltip becomes visible
     onTooltipVisibleChanged: {
         if (tooltipVisible) {
+            Tooltip._anyRecentlyVisible = true;
+            Tooltip._graceTimer.stop();
             Qt.callLater(updatePosition);
+        } else {
+            Tooltip._graceTimer.restart();
         }
     }
     Component.onCompleted: {
@@ -100,7 +113,7 @@ Popup {
             property: "opacity"
             from: 0
             to: 1
-            duration: Appearance.anim.durations.expressiveFastSpatial
+            duration: root.instant ? 0 : Appearance.anim.durations.expressiveFastSpatial
             easing.bezierCurve: Appearance.anim.curves.expressiveFastSpatial
         }
     }
@@ -110,8 +123,8 @@ Popup {
             property: "opacity"
             from: 1
             to: 0
-            duration: Appearance.anim.durations.expressiveFastSpatial
-            easing.bezierCurve: Appearance.anim.curves.expressiveFastSpatial
+            duration: Appearance.anim.durations.small
+            easing.bezierCurve: Appearance.anim.curves.standardAccel
         }
     }
 
