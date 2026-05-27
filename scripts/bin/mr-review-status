@@ -1,0 +1,303 @@
+#!/usr/bin/env bash
+# mr-review-status — N-column pending MR review dashboard for a team
+# Designed to run inside a tmux popup (e.g. via a key bound to display-popup).
+#
+# Required env vars:
+#   GITLAB_HOST       — host for glab API calls (e.g. gitlab.com or self-hosted)
+#   MR_REVIEW_GROUP   — GitLab group ID or URL-encoded path (e.g. 1234, mygroup)
+#   MR_REVIEW_USERS   — comma-separated label=username pairs, in column order
+#                       e.g. "me=alice,Bob=bob,Carol=carol"
+#
+# NOTE: no `set -e`. Inside a popup, any silent failure exits and closes the
+# popup before the user can read the error.
+set -u
+
+die() { printf '\033[31merror:\033[0m %s\n\npress q to close\n' "$1"; while IFS= read -rsn1 k; do [[ "$k" == q || "$k" == ' ' || "$k" == $'\x1b' ]] && exit 1; done; sleep 86400; }
+
+: "${GITLAB_HOST:?set GITLAB_HOST to your GitLab instance (e.g. gitlab.com)}" 2>/dev/null || die "GITLAB_HOST not set — export it in your shell init"
+: "${MR_REVIEW_GROUP:?}" 2>/dev/null || die "MR_REVIEW_GROUP not set — export a GitLab group id or path"
+: "${MR_REVIEW_USERS:?}" 2>/dev/null || die "MR_REVIEW_USERS not set — e.g. 'me=alice,Bob=bob,Carol=carol'"
+
+GLAB="$(command -v glab 2>/dev/null || echo glab)"
+command -v "$GLAB" >/dev/null 2>&1 || die "glab not found on PATH"
+
+# Detect terminal width (tmux popup may not set $COLUMNS).
+if [[ -z "${COLUMNS:-}" ]]; then
+  COLUMNS=$(tput cols 2>/dev/null || echo 120)
+fi
+
+# Parse "label1=user1,label2=user2,..." into two parallel arrays and JSON dumps.
+declare -a LABELS=() USERS=() PAYLOADS=()
+IFS=',' read -ra _pairs <<< "$MR_REVIEW_USERS"
+for pair in "${_pairs[@]}"; do
+  label="${pair%%=*}"
+  user="${pair#*=}"
+  [[ -z "$label" || -z "$user" || "$label" == "$pair" ]] && die "bad MR_REVIEW_USERS entry: '$pair' (expected label=username)"
+  LABELS+=("$label")
+  USERS+=("$user")
+  PAYLOADS+=("$("$GLAB" api "/groups/${MR_REVIEW_GROUP}/merge_requests?reviewer_username=${user}&state=opened&wip=no&per_page=100" 2>&1)")
+done
+
+# Marshal labels + payloads to Python via NUL-delimited env entries.
+SECTIONS_JSON=$(python3 -c '
+import sys, json
+labels = sys.argv[1].split("\x1f")
+users  = sys.argv[2].split("\x1f")
+blobs  = sys.argv[3].split("\x1f")
+print(json.dumps(list(zip(labels, users, blobs))))
+' "$(IFS=$'\x1f'; echo "${LABELS[*]}")" "$(IFS=$'\x1f'; echo "${USERS[*]}")" "$(IFS=$'\x1f'; echo "${PAYLOADS[*]}")")
+
+SECTIONS_JSON="$SECTIONS_JSON" WIDTH="$COLUMNS" GLAB_BIN="$GLAB" python3 - <<'PY'
+import os, re, json, subprocess, concurrent.futures, datetime as dt
+
+WIDTH = max(60, int(os.environ.get('WIDTH', 120)))
+GLAB  = os.environ.get('GLAB_BIN', 'glab')
+
+raw = json.loads(os.environ['SECTIONS_JSON'])
+sections = [(label, blob) for label, _user, blob in raw]
+LABEL_TO_USER = {label: user for label, user, _ in raw}
+
+# ─── ANSI helpers ──────────────────────────────────────────────────
+R   = '\033[0m'
+B   = '\033[1m'
+D   = '\033[2m'
+YEL = '\033[33m'; BYEL = '\033[1;33m'
+CYN = '\033[36m'; BCYN = '\033[1;36m'
+GRN = '\033[32m'; BGRN = '\033[1;32m'
+RED = '\033[31m'; BRED = '\033[1;31m'
+WHT = '\033[37m'; BWHT = '\033[1;37m'
+
+ANSI = re.compile(r'\033\[[0-9;]*m')
+WIDE = {'✅', '⏳'}                 # treat as 2 cells
+ZW   = {'️'}                  # variation selector, 0 cells
+
+def vlen(s):
+    """Visible width, ignoring ANSI and counting common wide glyphs."""
+    s = ANSI.sub('', s)
+    n = 0
+    for c in s:
+        if c in ZW:
+            continue
+        if c in WIDE or c == '⚠':
+            n += 2
+        else:
+            n += 1
+    return n
+
+def vpad(s, target):
+    cur = vlen(s)
+    if cur >= target:
+        return s
+    return s + ' ' * (target - cur)
+
+def vtrunc(s, target):
+    """Truncate a *plain* (no ANSI) string to visible width, adding … if cut."""
+    if vlen(s) <= target:
+        return s
+    out, n = [], 0
+    for c in s:
+        if c in ZW:
+            out.append(c); continue
+        w = 2 if (c in WIDE or c == '⚠') else 1
+        if n + w > target - 1:
+            break
+        out.append(c); n += w
+    return ''.join(out) + '…'
+
+# ─── data ──────────────────────────────────────────────────────────
+def parse(blob):
+    try:
+        data = json.loads(blob)
+        if isinstance(data, list):
+            return data, None
+    except Exception:
+        pass
+    return None, (blob or 'empty response')[:200]
+
+parsed = [(label, *parse(b)) for label, b in sections]
+
+# ─── filter to "Review requested" only (per-reviewer state == unreviewed) ──
+SUB_ENV = dict(os.environ)  # inherit GITLAB_HOST etc. set by caller
+
+def reviewer_state(project_id, iid, target):
+    try:
+        out = subprocess.run(
+            [GLAB, 'api', f'/projects/{project_id}/merge_requests/{iid}/reviewers'],
+            capture_output=True, text=True, timeout=10, env=SUB_ENV,
+        )
+        data = json.loads(out.stdout)
+        for r in data:
+            if r['user']['username'] == target:
+                return r.get('state', 'unknown')
+    except Exception:
+        pass
+    return 'unknown'
+
+jobs = []
+for label, data, _ in parsed:
+    if not data: continue
+    target = LABEL_TO_USER.get(label)
+    if not target: continue
+    for mr in data:
+        jobs.append((label, mr['iid'], mr['project_id'], target))
+
+states = {}
+if jobs:
+    def _do(j):
+        label, iid, pid, target = j
+        return (label, iid), reviewer_state(pid, iid, target)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as exe:
+        for k, v in exe.map(_do, jobs):
+            states[k] = v
+
+# Filter to "Review requested": keep state=='unreviewed', also keep 'unknown'
+# (lookup failed → don't silently hide the MR; show it rather than drop it).
+KEEP_STATES = {'unreviewed', 'unknown'}
+parsed = [
+    (label,
+     [mr for mr in (data or []) if states.get((label, mr['iid']), 'unknown') in KEEP_STATES] if data is not None else None,
+     err)
+    for label, data, err in parsed
+]
+
+def classify(mr):
+    s = mr.get('detailed_merge_status', '')
+    if mr.get('has_conflicts') or s == 'conflict':
+        return 'conflict'
+    if s == 'mergeable':
+        return 'mergeable'
+    return 'pending'
+
+now = dt.datetime.now(dt.timezone.utc)
+
+def age_fmt(days):
+    if days <= 0:   return 'today', GRN
+    if days == 1:   return '1d',    GRN
+    if days < 7:    return f'{days}d', WHT
+    if days < 30:   return f'{days}d', YEL
+    return f'{days // 30}mo', RED
+
+# ─── header tallies ────────────────────────────────────────────────
+total = n_ok = n_warn = n_wait = 0
+for _, data, _ in parsed:
+    if not data: continue
+    total += len(data)
+    for mr in data:
+        c = classify(mr)
+        if   c == 'mergeable': n_ok   += 1
+        elif c == 'conflict':  n_warn += 1
+        else:                  n_wait += 1
+
+# ─── header box ────────────────────────────────────────────────────
+title = 'MR Review Dashboard'
+ts    = dt.datetime.now().strftime('%Y-%m-%d %H:%M')
+inner = WIDTH - 2
+
+print(f'{BYEL}╭{"─" * inner}╮{R}')
+left  = f'  {BWHT}{title}{R}'
+right = f'{D}{ts}{R}  '
+pad   = max(1, inner - 2 - len(title) - len(ts) - 2)
+print(f'{BYEL}│{R}{left}{" " * pad}{right}{BYEL}│{R}')
+
+chips = []
+chips.append(f'{D}{total} pending{R}')
+if n_ok:   chips.append(f'{GRN}✅ {n_ok}{R}')
+if n_warn: chips.append(f'{RED}⚠️  {n_warn}{R}')
+if n_wait: chips.append(f'{YEL}⏳ {n_wait}{R}')
+chips_str = '   '.join(chips)
+chips_v = vlen(chips_str)
+pad2 = max(1, inner - 2 - chips_v - 2)
+print(f'{BYEL}│{R}  {chips_str}{" " * pad2}  {BYEL}│{R}')
+print(f'{BYEL}╰{"─" * inner}╯{R}')
+
+# ─── three-column layout ───────────────────────────────────────────
+GAP  = 2                              # spaces between columns
+COLS = 3
+COL_W = (WIDTH - GAP * (COLS - 1)) // COLS
+INDENT = 5                            # body lines indent under MR #
+BODY_W = COL_W - INDENT - 1
+
+def section_header_lines(label, data, err):
+    """Return [line, line] visible-color header for a column."""
+    if err is not None:
+        return [
+            f'{BRED}▎ {label}{R}',
+            f'{D}glab error{R}',
+        ]
+    n = 0 if data is None else len(data)
+    if n == 0:
+        return [
+            f'{D}▎{R} {BWHT}{label}{R}',
+            f'{GRN}✓ all clear{R}',
+        ]
+    return [
+        f'{BCYN}▎{R} {BWHT}{label}{R}',
+        f'{YEL}{n} pending{R}',
+    ]
+
+def card_lines(mr):
+    """Return ONE compact line per MR: icon !iid age [proj] title."""
+    iid    = mr['iid']
+    proj   = mr['references']['full'].rsplit('!', 1)[0]
+    if proj.startswith('platform-engineering/'):
+        proj = proj[len('platform-engineering/'):]
+    # only show project prefix when it's NOT the default 'configs' repo
+    proj_tag = '' if proj == 'configs' else f'[{proj.split("/")[-1]}] '
+
+    created = dt.datetime.fromisoformat(mr['created_at'])
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=dt.timezone.utc)
+    age = (now - created).days
+    age_s, age_c = age_fmt(age)
+
+    cls = classify(mr)
+    if   cls == 'conflict':  icon = f'{RED}⚠️{R} '
+    elif cls == 'mergeable': icon = f'{GRN}✅{R}'
+    else:                    icon = f'{YEL}⏳{R}'
+
+    # head visible width: icon(2) + sp + !iid + sp + age
+    head_v = 3 + 1 + (1 + len(str(iid))) + 1 + len(age_s)
+    rest_w = max(8, COL_W - head_v - 1)
+    body = f'{proj_tag}{mr["title"]}'
+    body_v = vtrunc(body, rest_w)
+
+    return [f'{icon} {BYEL}!{iid}{R} {age_c}{age_s}{R} {WHT}{body_v}{R}']
+
+# build per-column content as list-of-lines
+columns = []
+for label, data, err in parsed:
+    col = []
+    col.extend(section_header_lines(label, data, err))
+    col.append('')
+    if data:
+        for mr in data:
+            col.extend(card_lines(mr))
+    columns.append(col)
+
+max_lines = max(len(c) for c in columns)
+print()
+for i in range(max_lines):
+    parts = []
+    for col in columns:
+        line = col[i] if i < len(col) else ''
+        parts.append(vpad(line, COL_W))
+    print((' ' * GAP).join(parts).rstrip())
+
+print(f'\n  {D}press q, space, or esc to close{R}')
+PY
+
+# Keep popup open until user presses q or Esc.
+# tmux popup does not natively dismiss on q/Esc — the running process gets the
+# keystrokes, so we read /dev/tty ourselves. SIGHUP/INT/TERM also exit cleanly.
+trap 'exit 0' HUP INT TERM
+if [[ -r /dev/tty ]]; then
+  exec </dev/tty
+fi
+while IFS= read -rsn1 key 2>/dev/null; do
+  case "$key" in
+    q|Q|' '|$'\x1b') exit 0 ;;
+  esac
+done
+# Fallback if read can't get a tty: just block.
+sleep 86400 &
+wait
