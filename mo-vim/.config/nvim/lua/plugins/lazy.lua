@@ -4,7 +4,7 @@ local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 local plugins = {
 	{ "folke/lazy.nvim" },
 	{
-		dir = "/home/mo/data/Documents/git/nvim_claude_code_plugin",
+		"elmomk/cc-watcher.nvim",
 		name = "cc-watcher.nvim",
 		event = { "BufReadPost", "BufNewFile" },
 		cmd = { "ClaudeSidebar", "ClaudeDiff", "ClaudeSnacks", "ClaudeFzf", "ClaudeTrouble", "ClaudeDiffview", "ClaudeMcp" },
