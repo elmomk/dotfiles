@@ -1,63 +1,186 @@
 #!/usr/bin/env bash
-# mr-review-status — N-column pending MR review dashboard for a team
-# Designed to run inside a tmux popup (e.g. via a key bound to display-popup).
+# mr-review-status — N-column pending MR review dashboard for a team.
+# Designed for a tmux popup. Renders a cache *instantly*; a background daemon
+# keeps that cache warm so the popup opens with no network latency.
 #
-# Required env vars:
-#   GITLAB_HOST       — host for glab API calls (e.g. gitlab.com or self-hosted)
-#   MR_REVIEW_GROUP   — GitLab group ID or URL-encoded path (e.g. 1234, mygroup)
-#   MR_REVIEW_USERS   — comma-separated label=username pairs, in column order
-#                       e.g. "me=alice,Bob=bob,Carol=carol"
+# In the popup:
+#   [a]…[z] / [A]…  press the letter beside an MR to open it in the browser
+#   ctrl+click      open an MR's link directly (OSC 8 hyperlink)
+#   r               force an instant refresh + redraw
+#   q / space / esc close
+#
+# Modes:
+#   (default)   render the cache + interactive key loop (open / refresh / close).
+#   --popup     open a tmux popup sized to fit the cached content, running the
+#               default (render) mode inside it. Bind a key to this.
+#   --size      print "<interior_width> <interior_height>" for the cached content.
+#   --refresh   one-shot fetch from GitLab → write cache JSON, no UI.
+#   --daemon    loop --refresh every $MR_REVIEW_INTERVAL seconds (singleton via flock).
+#
+# Config (env, else auto-loaded — no values ever live in the dotfiles repo):
+#   GITLAB_HOST, GITLAB_TOKEN   ← ~/.secrets.json .gitlab.{host,token}
+#   MR_REVIEW_GROUP             ← ~/.work.json    .mr_review.group
+#   MR_REVIEW_USERS             ← ~/.work.json    .mr_review.users ("label=user,...")
+#   MR_REVIEW_INTERVAL          daemon refresh period in seconds (default 120)
+#
+# Cache + daemon state live in ${XDG_CACHE_HOME:-~/.cache}/mr-review-status/.
 #
 # NOTE: no `set -e`. Inside a popup, any silent failure exits and closes the
 # popup before the user can read the error.
 set -u
 
+# mise-managed tools may not be on PATH when spawned detached (daemon); ensure them.
+[[ -d "$HOME/.local/share/mise/shims" ]] && PATH="$HOME/.local/share/mise/shims:$PATH"
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/mr-review-status"
+CACHE_FILE="$CACHE_DIR/data.json"
+MAP_FILE="$CACHE_DIR/links.map"
+LOCK_FILE="$CACHE_DIR/daemon.lock"
+LOG_FILE="$CACHE_DIR/daemon.log"
+INTERVAL="${MR_REVIEW_INTERVAL:-120}"
+mkdir -p "$CACHE_DIR"
+
 die() { printf '\033[31merror:\033[0m %s\n\npress q to close\n' "$1"; while IFS= read -rsn1 k; do [[ "$k" == q || "$k" == ' ' || "$k" == $'\x1b' ]] && exit 1; done; sleep 86400; }
 
-: "${GITLAB_HOST:?set GITLAB_HOST to your GitLab instance (e.g. gitlab.com)}" 2>/dev/null || die "GITLAB_HOST not set — export it in your shell init"
-: "${MR_REVIEW_GROUP:?}" 2>/dev/null || die "MR_REVIEW_GROUP not set — export a GitLab group id or path"
-: "${MR_REVIEW_USERS:?}" 2>/dev/null || die "MR_REVIEW_USERS not set — e.g. 'me=alice,Bob=bob,Carol=carol'"
+# Open a URL in the Windows browser (WSL-aware), reusing open-url if present.
+_open() {
+  local u="$1"
+  [[ "$u" =~ ^https?://[^[:space:]\'\"]+$ ]] || return 0
+  if   command -v open-url       >/dev/null 2>&1; then open-url "$u" >/dev/null 2>&1
+  elif command -v powershell.exe >/dev/null 2>&1; then powershell.exe -NoProfile -Command "Start-Process '$u'" >/dev/null 2>&1
+  elif command -v wslview        >/dev/null 2>&1; then wslview "$u" >/dev/null 2>&1
+  elif command -v xdg-open       >/dev/null 2>&1; then xdg-open "$u" >/dev/null 2>&1
+  fi
+}
 
-GLAB="$(command -v glab 2>/dev/null || echo glab)"
-command -v "$GLAB" >/dev/null 2>&1 || die "glab not found on PATH"
-
-# Detect terminal width (tmux popup may not set $COLUMNS).
-if [[ -z "${COLUMNS:-}" ]]; then
-  COLUMNS=$(tput cols 2>/dev/null || echo 120)
+# ── config bootstrap from local (untracked) files; mirrors the gl-* scripts ──
+# GITLAB_* from ~/.secrets.json, MR_REVIEW_* from ~/.work.json. Both live in
+# $HOME and are never committed to the dotfiles repo.
+if [[ -z "${GITLAB_HOST:-}" || -z "${GITLAB_TOKEN:-}" ]] && [[ -f ~/.secrets.json ]] && command -v jq >/dev/null 2>&1; then
+  eval "$(jq -r '.gitlab // {} | to_entries[] | "export GITLAB_\(.key | ascii_upcase)=\(.value | @sh)"' ~/.secrets.json 2>/dev/null)" || true
+fi
+if [[ -f ~/.work.json ]] && command -v jq >/dev/null 2>&1; then
+  : "${MR_REVIEW_GROUP:=$(jq -r '.mr_review.group // empty' ~/.work.json 2>/dev/null)}"
+  : "${MR_REVIEW_USERS:=$(jq -r '.mr_review.users // empty' ~/.work.json 2>/dev/null)}"
+  export MR_REVIEW_GROUP MR_REVIEW_USERS
 fi
 
-# Parse "label1=user1,label2=user2,..." into two parallel arrays and JSON dumps.
-declare -a LABELS=() USERS=() PAYLOADS=()
-IFS=',' read -ra _pairs <<< "$MR_REVIEW_USERS"
-for pair in "${_pairs[@]}"; do
-  label="${pair%%=*}"
-  user="${pair#*=}"
-  [[ -z "$label" || -z "$user" || "$label" == "$pair" ]] && die "bad MR_REVIEW_USERS entry: '$pair' (expected label=username)"
-  LABELS+=("$label")
-  USERS+=("$user")
-  PAYLOADS+=("$("$GLAB" api "/groups/${MR_REVIEW_GROUP}/merge_requests?reviewer_username=${user}&state=opened&wip=no&per_page=100" 2>&1)")
-done
+# ── fetch GitLab → write cache JSON (pure stdlib; no glab/mise dependency) ────
+do_refresh() {
+  : "${GITLAB_HOST:?GITLAB_HOST not set}"
+  : "${GITLAB_TOKEN:?GITLAB_TOKEN not set}"
+  : "${MR_REVIEW_GROUP:?MR_REVIEW_GROUP not set}"
+  : "${MR_REVIEW_USERS:?MR_REVIEW_USERS not set}"
+  GITLAB_HOST="$GITLAB_HOST" GITLAB_TOKEN="$GITLAB_TOKEN" \
+  MR_REVIEW_GROUP="$MR_REVIEW_GROUP" MR_REVIEW_USERS="$MR_REVIEW_USERS" \
+  CACHE_FILE="$CACHE_FILE" python3 - <<'PYFETCH'
+import os, json, tempfile, urllib.request, urllib.parse
+import concurrent.futures, datetime as dt
 
-# Marshal labels + payloads to Python via NUL-delimited env entries.
-SECTIONS_JSON=$(python3 -c '
-import sys, json
-labels = sys.argv[1].split("\x1f")
-users  = sys.argv[2].split("\x1f")
-blobs  = sys.argv[3].split("\x1f")
-print(json.dumps(list(zip(labels, users, blobs))))
-' "$(IFS=$'\x1f'; echo "${LABELS[*]}")" "$(IFS=$'\x1f'; echo "${USERS[*]}")" "$(IFS=$'\x1f'; echo "${PAYLOADS[*]}")")
+HOST  = os.environ['GITLAB_HOST']
+TOKEN = os.environ['GITLAB_TOKEN']
+GROUP = urllib.parse.quote(os.environ['MR_REVIEW_GROUP'], safe='')
+USERS = os.environ['MR_REVIEW_USERS']
+CACHE = os.environ['CACHE_FILE']
+BASE  = f'http://{HOST}/api/v4'
 
-SECTIONS_JSON="$SECTIONS_JSON" WIDTH="$COLUMNS" GLAB_BIN="$GLAB" python3 - <<'PY'
-import os, re, json, subprocess, concurrent.futures, datetime as dt
+def api(path):
+    req = urllib.request.Request(BASE + path, headers={'PRIVATE-TOKEN': TOKEN})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.load(r)
 
-WIDTH = max(60, int(os.environ.get('WIDTH', 120)))
-GLAB  = os.environ.get('GLAB_BIN', 'glab')
+pairs = []
+for p in USERS.split(','):
+    if '=' in p:
+        label, user = p.split('=', 1)
+        label, user = label.strip(), user.strip()
+        if label and user:
+            pairs.append((label, user))
 
-raw = json.loads(os.environ['SECTIONS_JSON'])
-sections = [(label, blob) for label, _user, blob in raw]
-LABEL_TO_USER = {label: user for label, user, _ in raw}
+def fetch_user(pair):
+    label, user = pair
+    try:
+        q = urllib.parse.quote(user)
+        mrs = api(f'/groups/{GROUP}/merge_requests?reviewer_username={q}&state=opened&wip=no&per_page=100')
+        return label, user, (mrs if isinstance(mrs, list) else []), None
+    except Exception as e:
+        return label, user, None, str(e)[:200]
 
-# ─── ANSI helpers ──────────────────────────────────────────────────
+with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+    fetched = list(ex.map(fetch_user, pairs))
+
+def reviewer_state(pid, iid, user):
+    try:
+        for r in api(f'/projects/{pid}/merge_requests/{iid}/reviewers'):
+            if r['user']['username'] == user:
+                return r.get('state', 'unknown')
+    except Exception:
+        pass
+    return 'unknown'
+
+jobs = [(label, user, mr['project_id'], mr['iid'])
+        for label, user, mrs, err in fetched if mrs for mr in mrs]
+state = {}
+if jobs:
+    def do(j):
+        label, user, pid, iid = j
+        return (label, iid), reviewer_state(pid, iid, user)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
+        for k, v in ex.map(do, jobs):
+            state[k] = v
+
+KEEP = {'unreviewed', 'unknown'}   # "review requested"; keep unknown rather than hide
+columns = []
+for label, user, mrs, err in fetched:
+    if err is not None:
+        columns.append({'label': label, 'user': user, 'error': err, 'mrs': []})
+        continue
+    kept = [{
+        'iid': mr['iid'],
+        'references_full': mr['references']['full'],
+        'web_url': mr.get('web_url', ''),
+        'created_at': mr['created_at'],
+        'title': mr['title'],
+        'detailed_merge_status': mr.get('detailed_merge_status', ''),
+        'has_conflicts': mr.get('has_conflicts', False),
+    } for mr in (mrs or []) if state.get((label, mr['iid']), 'unknown') in KEEP]
+    columns.append({'label': label, 'user': user, 'error': None, 'mrs': kept})
+
+out = {'generated_at': dt.datetime.now(dt.timezone.utc).isoformat(), 'columns': columns}
+os.makedirs(os.path.dirname(CACHE), exist_ok=True)
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(CACHE))
+with os.fdopen(fd, 'w') as f:
+    json.dump(out, f)
+os.replace(tmp, CACHE)   # atomic; readers never see a half-written cache
+PYFETCH
+}
+
+# ── render / measure the cache (MODE=render draws; MODE=size prints "W H") ────
+render_py() {
+  CACHE_FILE="$CACHE_FILE" MAP_FILE="$MAP_FILE" WIDTH="${WIDTH:-120}" \
+  MODE="${1:-render}" GITLAB_HOST="${GITLAB_HOST:-}" python3 - <<'PY'
+import os, re, json, sys, string, datetime as dt
+
+MODE  = os.environ.get('MODE', 'render')
+WIDTH = max(40, int(os.environ.get('WIDTH', 120)))
+CACHE = os.environ['CACHE_FILE']
+MAP_FILE = os.environ.get('MAP_FILE', '')
+HOST  = os.environ.get('GITLAB_HOST', '')
+
+try:
+    with open(CACHE) as f:
+        blob = json.load(f)
+except Exception:
+    blob = {'generated_at': None, 'columns': []}
+
+cols = blob.get('columns', [])
+# parsed: list of (label, mrs|None, err) — None data means "errored column".
+parsed = [(c.get('label', '?'),
+           (None if c.get('error') else c.get('mrs', [])),
+           c.get('error'))
+          for c in cols]
+
+# ─── ANSI / OSC8 helpers ───────────────────────────────────────────
 R   = '\033[0m'
 B   = '\033[1m'
 D   = '\033[2m'
@@ -68,30 +191,25 @@ RED = '\033[31m'; BRED = '\033[1;31m'
 WHT = '\033[37m'; BWHT = '\033[1;37m'
 
 ANSI = re.compile(r'\033\[[0-9;]*m')
+OSC8 = re.compile(r'\033\]8;;.*?\033\\')      # hyperlink open/close — zero visible width
 WIDE = {'✅', '⏳'}                 # treat as 2 cells
 ZW   = {'️'}                  # variation selector, 0 cells
 
 def vlen(s):
-    """Visible width, ignoring ANSI and counting common wide glyphs."""
+    s = OSC8.sub('', s)
     s = ANSI.sub('', s)
     n = 0
     for c in s:
         if c in ZW:
             continue
-        if c in WIDE or c == '⚠':
-            n += 2
-        else:
-            n += 1
+        n += 2 if (c in WIDE or c == '⚠') else 1
     return n
 
 def vpad(s, target):
     cur = vlen(s)
-    if cur >= target:
-        return s
-    return s + ' ' * (target - cur)
+    return s if cur >= target else s + ' ' * (target - cur)
 
-def vtrunc(s, target):
-    """Truncate a *plain* (no ANSI) string to visible width, adding … if cut."""
+def vtrunc(s, target):       # s is plain text (no ANSI/OSC8)
     if vlen(s) <= target:
         return s
     out, n = [], 0
@@ -104,61 +222,35 @@ def vtrunc(s, target):
         out.append(c); n += w
     return ''.join(out) + '…'
 
-# ─── data ──────────────────────────────────────────────────────────
-def parse(blob):
+def hlink(url, text):
+    return f'\033]8;;{url}\033\\{text}\033]8;;\033\\' if url else text
+
+def mr_url(mr):
+    u = mr.get('web_url')
+    if u:
+        return u
+    ref = mr.get('references_full', '')
+    if '!' in ref and HOST:
+        path, iid = ref.rsplit('!', 1)
+        return f'http://{HOST}/{path}/-/merge_requests/{iid}'
+    return ''
+
+now = dt.datetime.now(dt.timezone.utc)
+
+def ago(iso):
+    if not iso:
+        return 'never'
     try:
-        data = json.loads(blob)
-        if isinstance(data, list):
-            return data, None
+        t = dt.datetime.fromisoformat(iso)
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=dt.timezone.utc)
+        s = (now - t).total_seconds()
     except Exception:
-        pass
-    return None, (blob or 'empty response')[:200]
-
-parsed = [(label, *parse(b)) for label, b in sections]
-
-# ─── filter to "Review requested" only (per-reviewer state == unreviewed) ──
-SUB_ENV = dict(os.environ)  # inherit GITLAB_HOST etc. set by caller
-
-def reviewer_state(project_id, iid, target):
-    try:
-        out = subprocess.run(
-            [GLAB, 'api', f'/projects/{project_id}/merge_requests/{iid}/reviewers'],
-            capture_output=True, text=True, timeout=10, env=SUB_ENV,
-        )
-        data = json.loads(out.stdout)
-        for r in data:
-            if r['user']['username'] == target:
-                return r.get('state', 'unknown')
-    except Exception:
-        pass
-    return 'unknown'
-
-jobs = []
-for label, data, _ in parsed:
-    if not data: continue
-    target = LABEL_TO_USER.get(label)
-    if not target: continue
-    for mr in data:
-        jobs.append((label, mr['iid'], mr['project_id'], target))
-
-states = {}
-if jobs:
-    def _do(j):
-        label, iid, pid, target = j
-        return (label, iid), reviewer_state(pid, iid, target)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as exe:
-        for k, v in exe.map(_do, jobs):
-            states[k] = v
-
-# Filter to "Review requested": keep state=='unreviewed', also keep 'unknown'
-# (lookup failed → don't silently hide the MR; show it rather than drop it).
-KEEP_STATES = {'unreviewed', 'unknown'}
-parsed = [
-    (label,
-     [mr for mr in (data or []) if states.get((label, mr['iid']), 'unknown') in KEEP_STATES] if data is not None else None,
-     err)
-    for label, data, err in parsed
-]
+        return '?'
+    if s < 60:    return f'{int(s)}s ago'
+    if s < 3600:  return f'{int(s // 60)}m ago'
+    if s < 86400: return f'{int(s // 3600)}h ago'
+    return f'{int(s // 86400)}d ago'
 
 def classify(mr):
     s = mr.get('detailed_merge_status', '')
@@ -168,8 +260,6 @@ def classify(mr):
         return 'mergeable'
     return 'pending'
 
-now = dt.datetime.now(dt.timezone.utc)
-
 def age_fmt(days):
     if days <= 0:   return 'today', GRN
     if days == 1:   return '1d',    GRN
@@ -177,10 +267,53 @@ def age_fmt(days):
     if days < 30:   return f'{days}d', YEL
     return f'{days // 30}mo', RED
 
+def card_parts(mr):
+    iid  = mr['iid']
+    proj = mr.get('references_full', '').rsplit('!', 1)[0]
+    if proj.startswith('platform-engineering/'):
+        proj = proj[len('platform-engineering/'):]
+    proj_tag = '' if proj == 'configs' else f'[{proj.split("/")[-1]}] '
+    created = dt.datetime.fromisoformat(mr['created_at'])
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=dt.timezone.utc)
+    age_s, age_c = age_fmt((now - created).days)
+    cls = classify(mr)
+    if   cls == 'conflict':  icon = f'{RED}⚠️{R} '
+    elif cls == 'mergeable': icon = f'{GRN}✅{R}'
+    else:                    icon = f'{YEL}⏳{R}'
+    head_v = 3 + 1 + (1 + len(str(iid))) + 1 + len(age_s)   # icon sp !iid sp age
+    body = f'{proj_tag}{mr["title"]}'
+    return iid, age_s, age_c, icon, head_v, body
+
+GAP      = 2
+HOTKEY_W = 4                  # "[x] " prefix on every card
+COLS     = max(1, len(parsed))
+# Hotkeys for opening MRs — exclude keys the loop reserves (q quit, r refresh).
+ALPHABET = [c for c in (string.ascii_lowercase + string.ascii_uppercase) if c not in set('qQrR')]
+
+# ─── size mode: natural interior width/height to fit content snugly ─────────
+if MODE == 'size':
+    maxN = 0
+    colw = len('✓ all clear')
+    for label, data, err in parsed:
+        mrs = data or []
+        maxN = max(maxN, len(mrs))
+        colw = max(colw, 2 + vlen(label))                       # "▎ <label>"
+        colw = max(colw, len('fetch error') if err else len(f'{len(mrs)} pending'))
+        for mr in mrs:
+            _, _, _, _, head_v, body = card_parts(mr)
+            colw = max(colw, HOTKEY_W + head_v + 1 + vlen(body)) # untruncated card
+    colw = min(colw, 54)                                        # don't go ultra-wide
+    iw = max(48, COLS * colw + GAP * (COLS - 1))                # 48 = min for header
+    ih = 10 + maxN                                              # box+blanks+hdr+cards+footer
+    print(iw, ih)
+    raise SystemExit(0)
+
 # ─── header tallies ────────────────────────────────────────────────
 total = n_ok = n_warn = n_wait = 0
 for _, data, _ in parsed:
-    if not data: continue
+    if not data:
+        continue
     total += len(data)
     for mr in data:
         c = classify(mr)
@@ -190,7 +323,7 @@ for _, data, _ in parsed:
 
 # ─── header box ────────────────────────────────────────────────────
 title = 'MR Review Dashboard'
-ts    = dt.datetime.now().strftime('%Y-%m-%d %H:%M')
+ts    = f'updated {ago(blob.get("generated_at"))}'
 inner = WIDTH - 2
 
 print(f'{BYEL}╭{"─" * inner}╮{R}')
@@ -199,103 +332,178 @@ right = f'{D}{ts}{R}  '
 pad   = max(1, inner - 2 - len(title) - len(ts) - 2)
 print(f'{BYEL}│{R}{left}{" " * pad}{right}{BYEL}│{R}')
 
-chips = []
-chips.append(f'{D}{total} pending{R}')
+chips = [f'{D}{total} pending{R}']
 if n_ok:   chips.append(f'{GRN}✅ {n_ok}{R}')
 if n_warn: chips.append(f'{RED}⚠️  {n_warn}{R}')
 if n_wait: chips.append(f'{YEL}⏳ {n_wait}{R}')
 chips_str = '   '.join(chips)
-chips_v = vlen(chips_str)
-pad2 = max(1, inner - 2 - chips_v - 2)
+pad2 = max(1, inner - 2 - vlen(chips_str) - 2)
 print(f'{BYEL}│{R}  {chips_str}{" " * pad2}  {BYEL}│{R}')
 print(f'{BYEL}╰{"─" * inner}╯{R}')
 
-# ─── three-column layout ───────────────────────────────────────────
-GAP  = 2                              # spaces between columns
-COLS = 3
+FOOTER_TEXT = f'  {D}[a-z] open · ctrl+click · r refresh · esc/q close{R}'
+
+if not parsed:
+    try:
+        open(MAP_FILE, 'w').close()
+    except Exception:
+        pass
+    sys.stdout.write(f'\n  {D}no data yet — refreshing in the background, reopen shortly{R}')
+    sys.stdout.write(f'\n\n  {D}r refresh · esc/q close{R}')
+    sys.stdout.flush()
+    raise SystemExit(0)
+
+# ─── columns (assign hotkeys + write the letter→URL map) ────────────
 COL_W = (WIDTH - GAP * (COLS - 1)) // COLS
-INDENT = 5                            # body lines indent under MR #
-BODY_W = COL_W - INDENT - 1
 
 def section_header_lines(label, data, err):
-    """Return [line, line] visible-color header for a column."""
     if err is not None:
-        return [
-            f'{BRED}▎ {label}{R}',
-            f'{D}glab error{R}',
-        ]
+        return [f'{BRED}▎ {label}{R}', f'{D}fetch error{R}']
     n = 0 if data is None else len(data)
     if n == 0:
-        return [
-            f'{D}▎{R} {BWHT}{label}{R}',
-            f'{GRN}✓ all clear{R}',
-        ]
-    return [
-        f'{BCYN}▎{R} {BWHT}{label}{R}',
-        f'{YEL}{n} pending{R}',
-    ]
+        return [f'{D}▎{R} {BWHT}{label}{R}', f'{GRN}✓ all clear{R}']
+    return [f'{BCYN}▎{R} {BWHT}{label}{R}', f'{YEL}{n} pending{R}']
 
-def card_lines(mr):
-    """Return ONE compact line per MR: icon !iid age [proj] title."""
-    iid    = mr['iid']
-    proj   = mr['references']['full'].rsplit('!', 1)[0]
-    if proj.startswith('platform-engineering/'):
-        proj = proj[len('platform-engineering/'):]
-    # only show project prefix when it's NOT the default 'configs' repo
-    proj_tag = '' if proj == 'configs' else f'[{proj.split("/")[-1]}] '
-
-    created = dt.datetime.fromisoformat(mr['created_at'])
-    if created.tzinfo is None:
-        created = created.replace(tzinfo=dt.timezone.utc)
-    age = (now - created).days
-    age_s, age_c = age_fmt(age)
-
-    cls = classify(mr)
-    if   cls == 'conflict':  icon = f'{RED}⚠️{R} '
-    elif cls == 'mergeable': icon = f'{GRN}✅{R}'
-    else:                    icon = f'{YEL}⏳{R}'
-
-    # head visible width: icon(2) + sp + !iid + sp + age
-    head_v = 3 + 1 + (1 + len(str(iid))) + 1 + len(age_s)
-    rest_w = max(8, COL_W - head_v - 1)
-    body = f'{proj_tag}{mr["title"]}'
+def card_lines(mr, hotkey):
+    iid, age_s, age_c, icon, head_v, body = card_parts(mr)
+    rest_w = max(8, COL_W - HOTKEY_W - head_v - 1)
     body_v = vtrunc(body, rest_w)
+    inner_txt = f'{icon} {BYEL}!{iid}{R} {age_c}{age_s}{R} {WHT}{body_v}{R}'
+    inner_txt = hlink(mr_url(mr), inner_txt)
+    tag = f'{D}[{hotkey}]{R} ' if hotkey else ' ' * HOTKEY_W
+    return [f'{tag}{inner_txt}']
 
-    return [f'{icon} {BYEL}!{iid}{R} {age_c}{age_s}{R} {WHT}{body_v}{R}']
-
-# build per-column content as list-of-lines
 columns = []
+hk_i = 0
+maplines = []
 for label, data, err in parsed:
-    col = []
-    col.extend(section_header_lines(label, data, err))
+    col = section_header_lines(label, data, err)
     col.append('')
-    if data:
-        for mr in data:
-            col.extend(card_lines(mr))
+    for mr in (data or []):
+        letter = ALPHABET[hk_i] if hk_i < len(ALPHABET) else ''
+        hk_i += 1
+        if letter:
+            u = mr_url(mr)
+            if u:
+                maplines.append(f'{letter}\t{mr["iid"]}\t{u}')
+        col.extend(card_lines(mr, letter))
     columns.append(col)
+
+try:
+    with open(MAP_FILE, 'w') as f:
+        f.write('\n'.join(maplines) + ('\n' if maplines else ''))
+except Exception:
+    pass
 
 max_lines = max(len(c) for c in columns)
 print()
 for i in range(max_lines):
-    parts = []
-    for col in columns:
-        line = col[i] if i < len(col) else ''
-        parts.append(vpad(line, COL_W))
+    parts = [vpad(col[i] if i < len(col) else '', COL_W) for col in columns]
     print((' ' * GAP).join(parts).rstrip())
 
-print(f'\n  {D}press q, space, or esc to close{R}')
+sys.stdout.write('\n' + FOOTER_TEXT)   # footer on the last row, no trailing newline → no scroll
+sys.stdout.flush()
 PY
+}
 
-# Keep popup open until user presses q or Esc.
-# tmux popup does not natively dismiss on q/Esc — the running process gets the
-# keystrokes, so we read /dev/tty ourselves. SIGHUP/INT/TERM also exit cleanly.
-trap 'exit 0' HUP INT TERM
-if [[ -r /dev/tty ]]; then
-  exec </dev/tty
+# ── open a tmux popup sized to fit the cached content ────────────────────────
+do_popup() {
+  [[ -f "$CACHE_FILE" ]] || do_refresh 2>/dev/null || true
+  local dims iw ih cw ch w h
+  dims="$(render_py size 2>/dev/null)"
+  iw="${dims%% *}"; ih="${dims##* }"
+  [[ "$iw" =~ ^[0-9]+$ ]] || iw=120
+  [[ "$ih" =~ ^[0-9]+$ ]] || ih=20
+  cw="$(tmux list-clients -F '#{client_width}'  2>/dev/null | sort -rn | head -1)"; [[ "$cw" =~ ^[0-9]+$ ]] || cw=120
+  ch="$(tmux list-clients -F '#{client_height}' 2>/dev/null | sort -rn | head -1)"; [[ "$ch" =~ ^[0-9]+$ ]] || ch=40
+  w=$(( iw + 2 )); h=$(( ih + 2 ))            # +2 for the popup border (interior = w-2 × h-2)
+  (( w > cw - 2 )) && w=$(( cw - 2 ))
+  (( h > ch - 2 )) && h=$(( ch - 2 ))
+  (( w < 40 )) && w=40
+  (( h < 6  )) && h=6
+  tmux display-popup -E -w "$w" -h "$h" "$0"
+}
+
+case "${1:-}" in
+  --refresh)
+    do_refresh
+    exit $?
+    ;;
+  --daemon)
+    exec 9>"$LOCK_FILE" || exit 0
+    flock -n 9 || exit 0          # another daemon already holds it → this one exits
+    while :; do
+      do_refresh >>"$LOG_FILE" 2>&1 || echo "[$(date -Is)] refresh failed" >>"$LOG_FILE"
+      sleep "$INTERVAL"
+    done
+    ;;
+  --size)
+    render_py size
+    exit $?
+    ;;
+  --popup)
+    do_popup
+    exit $?
+    ;;
+esac
+
+# ── default: render mode + interactive key loop ──────────────────────────────
+: "${GITLAB_HOST:?}"     2>/dev/null || die "GITLAB_HOST not set — add gitlab.host to ~/.secrets.json"
+: "${GITLAB_TOKEN:?}"    2>/dev/null || die "GITLAB_TOKEN not set — add gitlab.token to ~/.secrets.json"
+: "${MR_REVIEW_GROUP:?}" 2>/dev/null || die "MR_REVIEW_GROUP not set — add mr_review.group to ~/.work.json"
+: "${MR_REVIEW_USERS:?}" 2>/dev/null || die "MR_REVIEW_USERS not set — add mr_review.users to ~/.work.json"
+
+# First-ever run: warm the cache once (slow only this time).
+[[ -f "$CACHE_FILE" ]] || do_refresh 2>/dev/null || true
+
+# Make sure the background refresher is running (flock keeps it a singleton).
+setsid bash "$0" --daemon </dev/null >/dev/null 2>&1 &
+disown 2>/dev/null || true
+
+# Detect terminal width (tmux popup may not set $COLUMNS).
+if [[ -z "${COLUMNS:-}" ]]; then
+  COLUMNS=$(tput cols 2>/dev/null || echo 120)
 fi
+
+declare -A LINK=() MRID=()
+LINES=$(tput lines 2>/dev/null || echo 24)
+C_D=$'\033[2m'; C_G=$'\033[32m'; C_C=$'\033[36m'; C_R=$'\033[0m'
+
+# Write a one-line message on the popup's bottom row (overwrites the footer hint).
+status() { printf '\033[%s;1H\033[2K%s' "$LINES" "$1"; }
+
+draw() {
+  printf '\033[2J\033[3J\033[H\033[?25l'        # clear screen + scrollback, home, hide cursor
+  WIDTH="$COLUMNS" render_py render
+  LINK=(); MRID=()
+  if [[ -f "$MAP_FILE" ]]; then
+    while IFS=$'\t' read -r _k _id _u; do
+      [[ -n "$_k" ]] && { LINK["$_k"]="$_u"; MRID["$_k"]="$_id"; }
+    done < "$MAP_FILE"
+  fi
+}
+
+draw
+
+# Keep popup open until the user quits. tmux popup does not natively dismiss on
+# q/Esc — the running process gets the keystrokes, so we read /dev/tty ourselves.
+trap 'printf "\033[?25h"' EXIT                  # always restore the cursor
+trap 'exit 0' HUP INT TERM
+[[ -r /dev/tty ]] && exec </dev/tty
 while IFS= read -rsn1 key 2>/dev/null; do
   case "$key" in
-    q|Q|' '|$'\x1b') exit 0 ;;
+    q|Q|$'\x1b')
+      exit 0 ;;
+    r|R)
+      status "  ${C_D}refreshing…${C_R}"
+      do_refresh >/dev/null 2>&1 || true
+      draw ;;
+    *)
+      u="${LINK[$key]:-}"
+      if [[ -n "$u" ]]; then
+        status "  ${C_G}→${C_R} opening ${C_C}!${MRID[$key]}${C_R} …    ${C_D}r refresh · esc/q close${C_R}"
+        _open "$u" & disown
+      fi ;;
   esac
 done
 # Fallback if read can't get a tty: just block.
