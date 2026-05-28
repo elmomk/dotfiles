@@ -134,7 +134,6 @@ return {
         "typescript",
         "vim",
         "yaml",
-        "kcl",
       },
     },
   },
