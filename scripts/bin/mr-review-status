@@ -89,6 +89,12 @@ def api(path):
     with urllib.request.urlopen(req, timeout=15) as r:
         return json.load(r)
 
+# Token owner == "me": used to pick whose approved MRs the dashboard surfaces.
+try:
+    ME_USER = api('/user').get('username')
+except Exception:
+    ME_USER = None
+
 pairs = []
 for p in USERS.split(','):
     if '=' in p:
@@ -130,12 +136,8 @@ if jobs:
             state[k] = v
 
 KEEP = {'unreviewed', 'unknown'}   # "review requested"; keep unknown rather than hide
-columns = []
-for label, user, mrs, err in fetched:
-    if err is not None:
-        columns.append({'label': label, 'user': user, 'error': err, 'mrs': []})
-        continue
-    kept = [{
+def card(mr):
+    return {
         'iid': mr['iid'],
         'references_full': mr['references']['full'],
         'web_url': mr.get('web_url', ''),
@@ -143,10 +145,43 @@ for label, user, mrs, err in fetched:
         'title': mr['title'],
         'detailed_merge_status': mr.get('detailed_merge_status', ''),
         'has_conflicts': mr.get('has_conflicts', False),
-    } for mr in (mrs or []) if state.get((label, mr['iid']), 'unknown') in KEEP]
+    }
+
+columns = []
+for label, user, mrs, err in fetched:
+    if err is not None:
+        columns.append({'label': label, 'user': user, 'error': err, 'mrs': []})
+        continue
+    kept = [card(mr) for mr in (mrs or [])
+            if state.get((label, mr['iid']), 'unknown') in KEEP]
     columns.append({'label': label, 'user': user, 'error': None, 'mrs': kept})
 
-out = {'generated_at': dt.datetime.now(dt.timezone.utc).isoformat(), 'columns': columns}
+# ── my own authored, open MRs that are approved → ready for *me* to merge ─────
+# Distinct from the reviewer columns above: this is MRs I opened, not ones I
+# review. The list endpoint ignores `approved=yes` on this GitLab, so check the
+# approvals endpoint per MR (its `approved` bool is authoritative).
+my_approved = []
+if ME_USER:
+    try:
+        mine = api(f'/groups/{GROUP}/merge_requests'
+                   f'?author_username={urllib.parse.quote(ME_USER)}'
+                   f'&state=opened&wip=no&per_page=100')
+        mine = mine if isinstance(mine, list) else []
+    except Exception:
+        mine = []
+    def is_approved(mr):
+        try:
+            a = api(f"/projects/{mr['project_id']}/merge_requests/{mr['iid']}/approvals")
+            return bool(a.get('approved'))
+        except Exception:
+            return False
+    if mine:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
+            flags = list(ex.map(is_approved, mine))
+        my_approved = [card(mr) for mr, ok in zip(mine, flags) if ok]
+
+out = {'generated_at': dt.datetime.now(dt.timezone.utc).isoformat(),
+       'me_user': ME_USER, 'my_approved': my_approved, 'columns': columns}
 os.makedirs(os.path.dirname(CACHE), exist_ok=True)
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(CACHE))
 with os.fdopen(fd, 'w') as f:
@@ -174,8 +209,18 @@ except Exception:
     blob = {'generated_at': None, 'columns': []}
 
 cols = blob.get('columns', [])
-# parsed: list of (label, mrs|None, err) — None data means "errored column".
+# parsed: list of (label, is_me, mrs|None, err) — None data means "errored
+# column". `is_me` marks my own column (token owner blob['me_user']); below it we
+# render MY_APPROVED — MRs I authored that are approved and waiting for me to
+# merge. Fall back to a label match if the cache predates me_user.
+ME_USER = blob.get('me_user')
+MY_APPROVED = blob.get('my_approved', [])
+def _is_me(c):
+    if ME_USER:
+        return c.get('user') == ME_USER
+    return c.get('label', '').strip().lower() in ('me',) or '(me)' in c.get('label', '').lower()
 parsed = [(c.get('label', '?'),
+           _is_me(c),
            (None if c.get('error') else c.get('mrs', [])),
            c.get('error'))
           for c in cols]
@@ -295,12 +340,15 @@ ALPHABET = [c for c in (string.ascii_lowercase + string.ascii_uppercase) if c no
 if MODE == 'size':
     maxN = 0
     colw = len('✓ all clear')
-    for label, data, err in parsed:
+    for label, is_me, data, err in parsed:
         mrs = data or []
-        maxN = max(maxN, len(mrs))
+        appr = MY_APPROVED if is_me else []
+        # me column is taller: pending cards + blank + "approved" hdr + approved.
+        col_lines = len(mrs) + ((2 + len(appr)) if appr else 0)
+        maxN = max(maxN, col_lines)
         colw = max(colw, 2 + vlen(label))                       # "▎ <label>"
         colw = max(colw, len('fetch error') if err else len(f'{len(mrs)} pending'))
-        for mr in mrs:
+        for mr in mrs + appr:
             _, _, _, _, head_v, body = card_parts(mr)
             colw = max(colw, HOTKEY_W + head_v + 1 + vlen(body)) # untruncated card
     colw = min(colw, 54)                                        # don't go ultra-wide
@@ -311,7 +359,8 @@ if MODE == 'size':
 
 # ─── header tallies ────────────────────────────────────────────────
 total = n_ok = n_warn = n_wait = 0
-for _, data, _ in parsed:
+n_merge = len(MY_APPROVED)
+for label, is_me, data, _ in parsed:
     if not data:
         continue
     total += len(data)
@@ -333,9 +382,10 @@ pad   = max(1, inner - 2 - len(title) - len(ts) - 2)
 print(f'{BYEL}│{R}{left}{" " * pad}{right}{BYEL}│{R}')
 
 chips = [f'{D}{total} pending{R}']
-if n_ok:   chips.append(f'{GRN}✅ {n_ok}{R}')
-if n_warn: chips.append(f'{RED}⚠️  {n_warn}{R}')
-if n_wait: chips.append(f'{YEL}⏳ {n_wait}{R}')
+if n_ok:    chips.append(f'{GRN}✅ {n_ok}{R}')
+if n_warn:  chips.append(f'{RED}⚠️  {n_warn}{R}')
+if n_wait:  chips.append(f'{YEL}⏳ {n_wait}{R}')
+if n_merge: chips.append(f'{BGRN}✅ {n_merge} to merge{R}')
 chips_str = '   '.join(chips)
 pad2 = max(1, inner - 2 - vlen(chips_str) - 2)
 print(f'{BYEL}│{R}  {chips_str}{" " * pad2}  {BYEL}│{R}')
@@ -376,17 +426,28 @@ def card_lines(mr, hotkey):
 columns = []
 hk_i = 0
 maplines = []
-for label, data, err in parsed:
+
+def emit_card(col, mr):
+    global hk_i
+    letter = ALPHABET[hk_i] if hk_i < len(ALPHABET) else ''
+    hk_i += 1
+    if letter:
+        u = mr_url(mr)
+        if u:
+            maplines.append(f'{letter}\t{mr["iid"]}\t{u}')
+    col.extend(card_lines(mr, letter))
+
+for label, is_me, data, err in parsed:
     col = section_header_lines(label, data, err)
     col.append('')
     for mr in (data or []):
-        letter = ALPHABET[hk_i] if hk_i < len(ALPHABET) else ''
-        hk_i += 1
-        if letter:
-            u = mr_url(mr)
-            if u:
-                maplines.append(f'{letter}\t{mr["iid"]}\t{u}')
-        col.extend(card_lines(mr, letter))
+        emit_card(col, mr)
+    # under my column: MRs I authored that are approved, waiting for me to merge.
+    if is_me and MY_APPROVED:
+        col.append('')
+        col.append(f'{BGRN}✅ approved — ready to merge{R}')
+        for mr in MY_APPROVED:
+            emit_card(col, mr)
     columns.append(col)
 
 try:
