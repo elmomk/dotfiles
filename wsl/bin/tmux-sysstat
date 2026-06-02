@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# Compact tmux status chips. Usage:
+#   tmux-sysstat left    -> "MR(Rev):<n>  MR(Approved):<m>  BAT:<%>"
+#   tmux-sysstat right   -> "W<cpu>%/<free>G  L<cpu>%/<free>G"
+#
+# Windows side (CPU/RAM/battery) shares one powershell.exe call, cached 4s.
+# Rev/Approved counts come from one GraphQL query (cached 60s): Rev matches the
+# GitLab dashboard "Review requested" tab (UNREVIEWED); Approved is open MRs *I
+# authored* that are approved — i.e. mine, ready for me to merge.
+
+WIN_CACHE=/tmp/.tmux-sysstat-win
+WIN_TTL=4
+WSL_PREV=/tmp/.tmux-sysstat-wsl-prev
+
+mode=${1:-right}
+
+# Color thresholds. Returns a tmux #[fg=...] directive based on `val`.
+#   color_for <val> <yellow_threshold> <red_threshold> <direction>
+#   direction = high_bad (cpu)    -> green<yellow<red
+#               low_bad  (bat/ram) -> red<yellow<green
+color_for() {
+  local val=$1 warn=$2 danger=$3 dir=$4
+  case "$dir" in
+    high_bad)
+      if   (( val >= danger )); then printf '#[fg=red,bold]'
+      elif (( val >= warn   )); then printf '#[fg=yellow]'
+      else                           printf '#[fg=green]'
+      fi
+      ;;
+    low_bad)
+      if   (( val <= danger )); then printf '#[fg=red,bold]'
+      elif (( val <= warn   )); then printf '#[fg=yellow]'
+      else                           printf '#[fg=green]'
+      fi
+      ;;
+  esac
+}
+RESET='#[default]'
+
+# --- Windows host snapshot (CPU%, free RAM GB, battery %) — cached 4s ---
+compute_win() {
+  if [[ -f $WIN_CACHE ]] && (( $(date +%s) - $(stat -c %Y "$WIN_CACHE") < WIN_TTL )); then
+    read -r wcpu wfree wbat < "$WIN_CACHE"
+  else
+    win=$(powershell.exe -NoProfile -Command '
+      $os  = Get-CimInstance Win32_OperatingSystem
+      $cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
+      $free = [math]::Round($os.FreePhysicalMemory/1048576, 1)
+      $bat = (Get-CimInstance Win32_Battery).EstimatedChargeRemaining
+      if ($null -eq $bat) { $bat = "-" }
+      "$cpu $free $bat"
+    ' 2>/dev/null | tr -d '\r\n')
+    read -r wcpu wfree wbat <<< "$win"
+    : "${wcpu:=?}" "${wfree:=?}" "${wbat:=-}"
+    echo "$wcpu $wfree $wbat" > "$WIN_CACHE"
+  fi
+}
+
+case "$mode" in
+  left)
+    # Reviews waiting for me — matches the GitLab dashboard
+    # /dashboard/merge_requests "Review requested" tab, which only shows MRs
+    # where my reviewState is UNREVIEWED. The REST `reviewer_username=` filter
+    # returns MRs in any review state (APPROVED, REQUESTED_CHANGES too), so we
+    # use GraphQL to get reviewState per reviewer.
+    REV_CACHE=/tmp/.tmux-sysstat-rev
+    REV_TTL=60
+    # GitLab host comes from ~/.secrets.json (.gitlab.host) — never hardcoded.
+    if [[ -z "${GITLAB_HOST:-}" && -f ~/.secrets.json ]] && command -v jq >/dev/null 2>&1; then
+      GITLAB_HOST=$(jq -r '.gitlab.host // empty' ~/.secrets.json 2>/dev/null)
+    fi
+    if [[ -f $REV_CACHE ]] && (( $(date +%s) - $(stat -c %Y "$REV_CACHE") < REV_TTL )); then
+      read -r rev appr < "$REV_CACHE"
+    else
+      counts=$(GITLAB_HOST="$GITLAB_HOST" glab api graphql -f query='
+        query {
+          currentUser {
+            username
+            reviewRequestedMergeRequests(state: opened) {
+              nodes {
+                reviewers {
+                  nodes {
+                    username
+                    mergeRequestInteraction { reviewState }
+                  }
+                }
+              }
+            }
+            authoredMergeRequests(state: opened) {
+              nodes { approved }
+            }
+          }
+        }' 2>/dev/null | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)['data']['currentUser']
+    me = data['username']
+    # Rev: open MRs awaiting my review (reviewState UNREVIEWED).
+    review = data['reviewRequestedMergeRequests']['nodes']
+    rev = sum(
+        1 for mr in review
+        for r in mr['reviewers']['nodes']
+        if r['username'] == me and r['mergeRequestInteraction']['reviewState'] == 'UNREVIEWED'
+    )
+    # Approved: open MRs *I authored* that are approved → ready for me to merge.
+    mine = data['authoredMergeRequests']['nodes']
+    appr = sum(1 for mr in mine if mr.get('approved'))
+    print(rev, appr)
+except Exception:
+    pass
+" 2>/dev/null)
+      read -r rev appr <<< "$counts"
+      if [[ $rev =~ ^[0-9]+$ && $appr =~ ^[0-9]+$ ]]; then
+        echo "$rev $appr" > "$REV_CACHE"
+      else
+        rev='?'; appr='?'   # don't cache failures — retry on next tick
+      fi
+    fi
+
+    compute_win
+
+    # MR(Rev): 0 → green, anything else (including "?") → red.
+    if [[ $rev == "0" ]]; then
+      rev_col='#[fg=green]'
+    else
+      rev_col='#[fg=red,bold]'
+    fi
+    out="${rev_col}MR(Rev):${rev}${RESET}"
+
+    # MR(Approved): MRs I've cleared, waiting to merge. >0 → cyan (go merge),
+    # 0 → green, "?" (fetch failed) → red.
+    if   [[ $appr == "?" ]]; then appr_col='#[fg=red,bold]'
+    elif [[ $appr == "0" ]]; then appr_col='#[fg=green]'
+    else                          appr_col='#[fg=cyan,bold]'
+    fi
+    out+="  ${appr_col}MR(Approved):${appr}${RESET}"
+
+    # BAT: <30 → red, else green.
+    if [[ -n $wbat && $wbat != "-" ]]; then
+      if (( wbat < 30 )); then bat_col='#[fg=red,bold]'
+      else                     bat_col='#[fg=green]'
+      fi
+      out+="  ${bat_col}BAT:${wbat}%${RESET}"
+    fi
+    printf '%s' "$out"
+    ;;
+
+  right|*)
+    compute_win
+
+    # --- WSL CPU% (cross-tick /proc/stat diff) ---
+    read -r _ u n s i io irq sirq st _ < /proc/stat
+    busy=$((u + n + s + irq + sirq + st))
+    total=$((busy + i + io))
+    lcpu=0
+    if [[ -f $WSL_PREV ]]; then
+      read -r pbusy ptotal < "$WSL_PREV"
+      db=$((busy - pbusy))
+      dt=$((total - ptotal))
+      (( dt > 0 )) && lcpu=$((db * 100 / dt))
+    fi
+    echo "$busy $total" > "$WSL_PREV"
+
+    # --- WSL free memory (GB) ---
+    lfree=$(awk '/MemAvailable/ {printf "%.1f", $2/1048576}' /proc/meminfo)
+
+    # CPU: <50 green, 50-79 yellow, >=80 red.
+    wcpu_col=$(color_for "${wcpu:-0}" 50 80 high_bad)
+    lcpu_col=$(color_for "${lcpu:-0}" 50 80 high_bad)
+
+    # Free RAM: <1G → red, else green (integer GB comparison).
+    wfree_int=${wfree%.*}
+    lfree_int=${lfree%.*}
+    if (( ${wfree_int:-0} < 1 )); then wfree_col='#[fg=red,bold]'; else wfree_col='#[fg=green]'; fi
+    if (( ${lfree_int:-0} < 1 )); then lfree_col='#[fg=red,bold]'; else lfree_col='#[fg=green]'; fi
+
+    printf '%sW%s%%%s/%s%sG%s  %sL%s%%%s/%s%sG%s' \
+      "$wcpu_col" "$wcpu" "$RESET" \
+      "$wfree_col" "$wfree" "$RESET" \
+      "$lcpu_col" "$lcpu" "$RESET" \
+      "$lfree_col" "$lfree" "$RESET"
+    ;;
+esac
