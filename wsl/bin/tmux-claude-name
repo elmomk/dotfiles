@@ -20,11 +20,15 @@ MAX_LEN=24
 PROMPT='You are labeling a tmux window that hosts a Claude Code coding session. Below is the visible terminal scrollback. Reply with ONLY a terse 1-3 word window label (max 24 chars) describing what this session is working on — e.g. "publish race fix", "pi-extensions docs". No quotes, no punctuation, no explanation. If you genuinely cannot tell, reply with the single word: shell'
 
 sanitize() {
-    # single line, strip wrapping quotes/backticks, trim, collapse spaces, cap length
-    sed -e 's/^[[:space:]]*//; s/[[:space:]]*$//' \
-        -e 's/^["'"'"'`]//; s/["'"'"'`]$//' \
-    | tr '\n' ' ' \
+    # The pane scrollback is UNTRUSTED input to the model, and the result becomes
+    # a tmux window name — which tmux expands as a format string in the status
+    # line. A name containing #(...) / #{...} would execute. So hard-restrict the
+    # output to a safe charset (drops #, $, backtick, parens, ; etc.), collapse
+    # to one line, and cap the length.
+    tr '\n' ' ' \
+    | tr -cd 'A-Za-z0-9 ._/-' \
     | tr -s ' ' \
+    | sed -e 's/^[[:space:]]*//; s/[[:space:]]*$//' \
     | cut -c1-"$MAX_LEN" \
     | sed -e 's/[[:space:]]*$//'
 }
@@ -36,8 +40,10 @@ name_window() {
 
     # Is this a Claude Code session pane? Match its statusline / banner markers.
     if printf '%s' "$scroll" | grep -qE 'auto mode|Claude Code v|\(1M context\)|ctx: [0-9]'; then
+        # --allowedTools '' disables all tools: the naming task needs none, and
+        # it removes any tool-execution path from injected pane content.
         name=$(printf '%s\n\n---\n%s\n' "$PROMPT" "$scroll" \
-            | timeout 90 "$CLAUDE_BIN" -p --model "$MODEL" 2>/dev/null | sanitize)
+            | timeout 90 "$CLAUDE_BIN" -p --model "$MODEL" --allowedTools '' 2>/dev/null | sanitize)
     fi
 
     # Fallback: directory basename (mirrors auto-name.sh)
