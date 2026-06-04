@@ -61,6 +61,26 @@ name_window() {
     printf '%s -> %s\n' "$w" "$name"
 }
 
+# --- activity indicator -------------------------------------------------------
+# Mirror "naming in progress" into a tmux user option (@cc_naming) so the status
+# bar can show it. Concurrent runs are counted via per-PID token files, so the
+# flag only clears once the last run finishes.
+LOCKDIR="${TMPDIR:-/tmp}/tmux-claude-name"
+mkdir -p "$LOCKDIR" 2>/dev/null
+TOKEN="$LOCKDIR/$$"
+
+refresh_flag() {
+    local n
+    n=$(find "$LOCKDIR" -type f 2>/dev/null | wc -l | tr -d ' ')
+    if [ "${n:-0}" -gt 0 ]; then tmux set -g @cc_naming "$n" 2>/dev/null
+    else tmux set -gu @cc_naming 2>/dev/null; fi
+    tmux refresh-client -S 2>/dev/null || true
+}
+cleanup() { rm -f "$TOKEN" 2>/dev/null; refresh_flag; }
+: > "$TOKEN"
+trap cleanup EXIT INT TERM
+refresh_flag
+
 if [ "${1:-}" = "-a" ]; then
     sess=$(tmux display-message -p '#{session_name}')
     while IFS= read -r idx; do
