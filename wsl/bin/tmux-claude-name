@@ -16,8 +16,9 @@ CLAUDE_BIN="$(command -v claude || echo "$HOME/.local/bin/claude")"
 MODEL="${TMUX_CLAUDE_NAME_MODEL:-haiku}"
 SCROLL_LINES="${TMUX_CLAUDE_NAME_LINES:-160}"
 MAX_LEN=24
+MAX_WORDS=3
 
-PROMPT='You are labeling a tmux window that hosts a Claude Code coding session. Below is the visible terminal scrollback. Reply with ONLY a terse 1-3 word window label (max 24 chars) describing what this session is working on — e.g. "publish race fix", "pi-extensions docs". No quotes, no punctuation, no explanation. If you genuinely cannot tell, reply with the single word: shell'
+PROMPT='You are labeling a tmux window that hosts a Claude Code coding session. Below is the visible terminal scrollback. Reply with ONLY a terse window label of AT MOST 3 words (max 24 chars) describing what this session is working on — e.g. "publish race fix", "pi-extensions docs". No quotes, no punctuation, no explanation. If you genuinely cannot tell, reply with the single word: shell'
 
 sanitize() {
     # The pane scrollback is UNTRUSTED input to the model, and the result becomes
@@ -29,6 +30,7 @@ sanitize() {
     | tr -cd 'A-Za-z0-9 ._/-' \
     | tr -s ' ' \
     | sed -e 's/^[[:space:]]*//; s/[[:space:]]*$//' \
+    | cut -d' ' -f1-"$MAX_WORDS" \
     | cut -c1-"$MAX_LEN" \
     | sed -e 's/[[:space:]]*$//'
 }
