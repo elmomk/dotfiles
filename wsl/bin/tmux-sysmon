@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# Live sysmon for tmux popup. Host + WSL CPU/RAM, top processes.
+# Refreshes ~2s. Press q (or Esc) to exit.
+#
+# Latency tricks:
+#   1. Skeleton draws immediately with `…` placeholders.
+#   2. powershell.exe runs in the background, concurrent with the WSL
+#      /proc/stat 1s sample — total ~1s instead of ~2s sequential.
+#   3. Windows readout is cached for 2s, so most ticks skip powershell.
+
+trap 'tput cnorm 2>/dev/null; exit' INT TERM EXIT
+tput civis 2>/dev/null
+
+bold=$(tput bold) dim=$(tput dim) reset=$(tput sgr0)
+
+WIN_CACHE=/tmp/.tmux-sysmon-win
+WIN_TTL=2
+
+# Placeholders so the first frame renders before any data arrives.
+wcpu='…' wfree='…' wtotal='…'
+lcpu='…' lfree='…' ltotal='…'
+
+draw() {
+  clear
+  printf '  %sWindows host%s\n' "$bold" "$reset"
+  printf '    CPU  %3s%%   Mem  %5s / %5s GB free\n\n' "$wcpu" "$wfree" "$wtotal"
+  printf '  %sWSL%s\n' "$bold" "$reset"
+  printf '    CPU  %3s%%   Mem  %5s / %5s GB free\n\n' "$lcpu" "$lfree" "$ltotal"
+  printf '  %sTop WSL processes%s\n' "$bold" "$reset"
+  ps -eo pid,pcpu,pmem,comm --sort=-pcpu --no-headers | head -8 |
+    awk '{printf "    %-7s %5s%% %5s%% %s\n", $1, $2, $3, $4}'
+  printf '\n  %sq to quit  ·  refresh ~2s%s' "$dim" "$reset"
+}
+
+while :; do
+  # 1) Paint skeleton (or last known values) instantly.
+  draw
+
+  # 2) Windows host: cache hit or fire powershell in the background.
+  win_pid=
+  win_tmp=
+  if [[ -f $WIN_CACHE ]] && (( $(date +%s) - $(stat -c %Y "$WIN_CACHE") < WIN_TTL )); then
+    read -r wcpu wfree wtotal < "$WIN_CACHE"
+  else
+    win_tmp=$(mktemp)
+    (
+      powershell.exe -NoProfile -Command '
+        $os = Get-CimInstance Win32_OperatingSystem
+        $cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
+        $free = [math]::Round($os.FreePhysicalMemory/1048576, 1)
+        $total = [math]::Round($os.TotalVisibleMemorySize/1048576, 1)
+        "$cpu $free $total"
+      ' 2>/dev/null | tr -d '\r\n' > "$win_tmp"
+    ) &
+    win_pid=$!
+  fi
+
+  # 3) WSL CPU% (1s /proc/stat diff) — runs CONCURRENTLY with powershell.
+  read -r _ u1 n1 s1 i1 io1 irq1 sirq1 st1 _ < /proc/stat
+  sleep 1
+  read -r _ u2 n2 s2 i2 io2 irq2 sirq2 st2 _ < /proc/stat
+  busy=$(( (u2+n2+s2+irq2+sirq2+st2) - (u1+n1+s1+irq1+sirq1+st1) ))
+  idle=$(( (i2+io2) - (i1+io1) ))
+  ttl=$((busy + idle))
+  (( ttl > 0 )) && lcpu=$(( busy * 100 / ttl )) || lcpu=0
+
+  # WSL memory (GB, one decimal).
+  read -r lfree ltotal < <(awk '/^MemTotal:/ {t=$2} /^MemAvailable:/ {a=$2} END {printf "%.1f %.1f", a/1048576, t/1048576}' /proc/meminfo)
+
+  # 4) Join the powershell job (already done by now if it took <1s).
+  if [[ -n $win_pid ]]; then
+    wait "$win_pid" 2>/dev/null
+    win_data=$(< "$win_tmp")
+    rm -f "$win_tmp"
+    if [[ -n $win_data ]]; then
+      read -r wcpu wfree wtotal <<< "$win_data"
+      echo "$wcpu $wfree $wtotal" > "$WIN_CACHE"
+    fi
+  fi
+
+  # 5) Redraw with fresh numbers, then idle 1s waiting for a keypress.
+  draw
+  read -t 1 -s -n 1 key 2>/dev/null && [[ $key == q ]] && break
+done
