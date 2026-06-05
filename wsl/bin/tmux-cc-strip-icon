@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Strip the claude/pi icon prefix from tmux_cc_attention format options and
+# restart the daemon so it re-reads the updated formats.
+set -u
+
+icon='#{?#{==:#{pane_current_command},claude},✶ ,#{?#{==:#{pane_current_command},pi},π ,}}'
+
+for o in active active-cur attention attention-cur stopped stopped-cur; do
+  v=$(tmux show-option -gqv "@claude-fmt-$o") || continue
+  v="${v//"$icon"/}"
+  # Strip the literal '-' from stopped formats if present
+  if [[ "$o" == stopped* ]]; then
+    v="${v//- /}"
+  fi
+  tmux set-option -g "@claude-fmt-$o" "$v"
+done
+
+pkill -f 'claude-state serve' 2>/dev/null || true
+~/.tmux/plugins/tmux_cc_attention/bin/claude-state serve </dev/null >/dev/null 2>&1 &
+disown 2>/dev/null || true

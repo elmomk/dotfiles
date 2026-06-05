@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Side-effect script invoked from tmux status-format every status-interval.
+# Paints the status bar red when host uptime > 9h AND clock is past 18:00 —
+# a "go home" nudge for an overrun workday. Restores the catppuccin-mocha
+# baseline otherwise. Emits no output.
+
+NORMAL_STYLE='bg=#1e1e2e,fg=#cdd6f4'
+ALERT_STYLE='bg=red,fg=white,bold'
+
+uptime_secs=$(awk '{print int($1)}' /proc/uptime)
+hour=$(date +%-H)
+
+if (( uptime_secs > 9*3600 )) && (( hour >= 18 )); then
+  style=$ALERT_STYLE
+else
+  style=$NORMAL_STYLE
+fi
+
+current=$(tmux show-options -gv status-style 2>/dev/null)
+if [[ $current != "$style" ]]; then
+  tmux set-option -g status-style "$style" >/dev/null 2>&1
+fi
