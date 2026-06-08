@@ -16,3 +16,33 @@ mimeinfo.cache
 .gitconfig-work
 projects*
 tg-wrapper
+fleet-check
+
+# ── work / internal infra — belongs in the internal shared-dotfiles, NOT this public repo ──
+# These hardcode GCP/GKE topology, the internal GitLab host, cluster names, etc.
+/wsl/bin/dev-server
+/wsl/bin/drift-check
+/wsl/bin/gather_ips.sh
+/wsl/bin/get-kubeconfig*
+/wsl/bin/get-aws-secrets
+/wsl/bin/list-ecr
+/wsl/bin/asg-*
+/wsl/bin/stack_*
+/wsl/bin/capacity_check
+/wsl/bin/pre_check_gar
+/wsl/bin/kcl-*
+/wsl/bin/nomos-check
+/wsl/bin/fleet-check-install
+/wsl/bin/gl-*
+/scripts/bin/gl-*
+/scripts/bin/nomos-check
+/scripts/bin/kcl-migration-check
+/scripts/bin/fleet-check-install
+/claude/.claude/commands/k8s-cluster.md
+/claude/.claude/commands/fleet-check.md
+/claude/.claude/commands/harbor.md
+/claude/.claude/commands/gitlab-debug.md
+/claude/.claude/commands/issue-watch-engineer.md
+/claude/.claude/commands/mr-watch.md
+/claude/.claude/commands/create-mr.md
+/claude/.claude/commands/review-mr.md
