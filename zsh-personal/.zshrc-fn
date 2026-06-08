@@ -1,3 +1,19 @@
+alias mr-watch='claude --allow-dangerously-skip-permissions "Run gl-mr-watch (always show table), then gl-mr-poll. If gl-mr-poll exits 1, no further action — table was already shown. If gl-mr-poll exits 0 (actionable MRs): IMMEDIATELY fire gl-notify with the count + IIDs + first URL (notify-on-pending, before drafts finish), then launch a background Agent subagent per MR to DRAFT-ONLY: run /review-mr <IID> and write the review body to /tmp/mr-review-<IID>.md. DO NOT post. DO NOT call gl-mr comment. DO NOT call gl-mr-watch mark. When all draft agents finish, surface each draft inline in the conversation and ASK the user to approve/edit/skip before posting. Only after explicit user approval per MR: GL_MR_ALLOW_POST=1 gl-mr comment <IID> - <project> with the (possibly edited) body, then gl-mr-watch mark <IID> <verdict>, then gl-notify confirming the post. Auto-DRAFT all NEW and UPDATED MRs without asking; auto-POST is forbidden. Skip any MR whose author is in the blacklist array from ~/.mr-review-state.json. Stale MRs (>1 week) filtered by gl-mr-poll. State: ~/.mr-review-state.json. Review DB: ~/.mr-reviews.json. This is a one-shot manual trigger — no CronCreate, no auto-poll."'
+alias issue-engineer='claude --allow-dangerously-skip-permissions "Run gl-issue-watch (always show table), then set up a CronCreate with '"'"'*/5 * * * *'"'"'. Each tick: run gl-issue-watch (show table), then gl-issue-poll. If gl-issue-poll exits 0 (actionable issues), launch a background Agent subagent per issue (with isolation: worktree) to: read the full issue via glab issue view <IID>, ALWAYS enter /plan mode first to design the implementation approach then auto-accept the plan, create a worktree branch feat/issue-<IID>-<slug>, implement the changes following CONVENTIONS.md, commit with resolves #<IID>, push the branch, create MR via gl-mr create master with Closes #<IID> in body, add momoyang as reviewer via glab mr update <MR_IID> --reviewer momoyang, leave a note on the original issue referencing the MR via glab issue note <IID> -m '"'"'Automated implementation submitted: MR !<MR_IID> — please review.'"'"', record via gl-issue-watch mark <IID> mr_created <MR_IID>, notify via gl-notify. If gl-issue-poll exits 1, no further action — table was already shown. Auto-implement all NEW issues without asking. Skip any issue whose author is in the blacklist array from ~/.issue-engineer-state.json. If issue description is too vague, mark as skipped. State: ~/.issue-engineer-state.json. glab path: /home/momoyang/.local/share/mise/installs/asdf-mise-plugins-mise-glab/1.91.0/bin/glab."'
+alias t-claude="tmx claude --teammate-mode tmux"
+tmx() {
+  # Get the name of the current working directory
+  local session_name=$(basename "$PWD")
+
+  # 1. Create a new detached session with the directory name
+  # 2. Send the command (all arguments passed to the function)
+  # 3. 'C-m' is the "Enter" key
+  # 4. Attach to the newly created session
+  tmux new-session -d -s "$session_name" && \
+  tmux send-keys -t "$session_name" "$*" C-m && \
+  tmux attach-session -t "$session_name"
+}
+
 worktree-clean() {
 git worktree list --porcelain | grep '^worktree ' | cut -d ' ' -f 2 | xargs -I {} sh -c 'MAIN=$(git rev-parse --show-toplevel); if [ "{}" != "$MAIN" ]; then cd {}; if [ -z "$(git status --porcelain)" ]; then echo "🧹 Removing: {}"; git worktree remove "{}"; else echo "❌ DIRTY: {}"; fi; fi'
 }
@@ -14,6 +30,77 @@ decrypt() {
 encrypt(){
     cd $(git rev-parse --show-toplevel) || return 1
     git secret hide -vmF
+    cd -
+}
+
+# Encrypt with diff + explicit confirmation (recommended over `encrypt`).
+# Decrypts current ciphertext via `git secret cat`, diffs against working-tree
+# plaintext, prints summary + diffs, asks before re-encrypting. Catches the
+# cross-contamination class of mistakes before push.
+encrypt-confirm() {
+    cd $(git rev-parse --show-toplevel) || return 1
+    bash scripts/git-secret-hide-confirm.sh "$@"
+    cd -
+}
+
+# ── Bitwarden session secrets (interactive: unlock once per login) ───────────
+#   bwu : unlock the vault and load this session's shell tokens.
+#   Source of truth = Bitwarden cloud (zero-knowledge — nothing authoritative on
+#   disk). Two Secure Notes hold the JSON blobs: `secrets-json` (→ ~/.secrets.json)
+#   and `work-json` (→ ~/.work.json). bwu always exports tokens into the shell
+#   (GITLAB_*, JIRA_API_TOKEN, INFRACOST_API_KEY).
+#   On-disk fallback is opt-in BY FILE EXISTENCE: a ~/.secrets.json / ~/.work.json
+#   that already exists is re-synced 0600 from the vault for non-interactive jobs
+#   (gl-mr-watch, gl-issue-watch, mr-review-status, cron) that can't read shell
+#   env vars; if a file is absent it is NOT created (100% Bitwarden on that box).
+#   Opt a box in:  touch ~/.secrets.json && bwu   — opt out:  rm ~/.secrets.json
+_bw_cache_sync() {   # <json-string> <dest-path> → echoes a status word
+  # NB: locals are underscore-prefixed to avoid colliding with the caller's
+  # `json` under zsh dynamic scoping (a same-named local silently mangles it).
+  local _j="$1" _path="$2" _tmp
+  [[ -f $_path ]] || { print -r -- "skipped"; return 0; }
+  [[ -n $_j ]]    || { print -r -- "FAILED(empty-note;kept-old)"; return 1; }
+  if ! print -r -- "$_j" | jq -e . >/dev/null 2>&1; then
+    print -r -- "FAILED(invalid-note;kept-old)"; return 1
+  fi
+  _tmp="$(mktemp)"; ( umask 077; print -r -- "$_j" > "$_tmp" )
+  if chmod 600 "$_tmp" && mv -f "$_tmp" "$_path"; then print -r -- "refreshed"
+  else rm -f "$_tmp"; print -r -- "FAILED(write)"; fi
+}
+bwu() {
+  local s json wjson sc wc
+  s="$(bw unlock --raw)" || return 1
+  export BW_SESSION="$s"
+
+  json="$(bw get notes secrets-json 2>/dev/null)"
+  if [[ -z $json ]] || ! print -r -- "$json" | jq -e . >/dev/null 2>&1; then
+    print -P "%F{yellow}✓%f vault unlocked — Secure Note 'secrets-json' missing or not valid JSON"
+    return 1
+  fi
+
+  # Export env from the secrets blob (reuses the gl-* scripts' GITLAB_* convention).
+  eval "$(print -r -- "$json" | jq -r '.gitlab // {} | to_entries[] | "export GITLAB_\(.key|ascii_upcase)=\(.value|@sh)"')"
+  export JIRA_API_TOKEN="$(print -r -- "$json" | jq -r '.jira.api_token // empty')"
+  export INFRACOST_API_KEY="$(print -r -- "$json" | jq -r '.infra_cost_api_token.token // empty')"
+
+  wjson="$(bw get notes work-json 2>/dev/null)"
+
+  # Re-sync the opt-in on-disk caches (no-op where the file is absent).
+  sc="$(_bw_cache_sync "$json"  "$HOME/.secrets.json")"
+  wc="$(_bw_cache_sync "$wjson" "$HOME/.work.json")"
+
+  if [[ -n $GITLAB_TOKEN ]]; then
+    print -P "%F{green}✓%f vault unlocked — tokens loaded; cache: secrets=$sc work=$wc"
+  else
+    print -P "%F{yellow}✓%f vault unlocked — .gitlab.token empty in note; cache: secrets=$sc work=$wc"
+  fi
+}
+
+# Install local git pre-commit hooks: vault plaintext guard + mapping.cfg
+# collision lint. One-shot install per worktree.
+install-hooks() {
+    cd $(git rev-parse --show-toplevel) || return 1
+    just install-hooks
     cd -
 }
 
@@ -300,4 +387,14 @@ aks(){
 
 k8sversions() {
   for kind in `kubectl api-resources | tail +2 | awk '{ print $1 }'`; do kubectl explain $kind; done | grep -e "KIND:" -e "VERSION:"
+}
+
+winstat() {
+  powershell.exe -NoProfile -Command '
+    Get-CimInstance Win32_OperatingSystem |
+      Select-Object `
+        @{N="CPU%";   E={(Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average}}, `
+        @{N="FreeMB"; E={[math]::Round($_.FreePhysicalMemory/1024)}}, `
+        @{N="TotalMB";E={[math]::Round($_.TotalVisibleMemorySize/1024)}}
+  '
 }
