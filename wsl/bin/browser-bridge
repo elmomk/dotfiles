@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# browser-bridge — open URLs sent from a remote host in the LOCAL browser.
+#
+# Run this on the machine that HAS the browser (e.g. your WSL laptop). It listens
+# on a loopback port; each line it receives is treated as a URL and opened via
+# `open-url`. Pair it with, on the remote dev-server:
+#   - SSH:  RemoteForward 127.0.0.1:8765 127.0.0.1:8765
+#           (or `gcloud compute ssh … -- -R 127.0.0.1:8765:127.0.0.1:8765`)
+#   - open-url, which sends URLs to 127.0.0.1:8765 when it's on a remote box.
+#
+# So: dev-server `open-url URL` → loopback:8765 → (reverse tunnel) → laptop:8765
+#     → browser-bridge → open-url → Windows browser.
+#
+# Usage:
+#   browser-bridge            # start the listener (singleton)
+#   browser-bridge --handle   # internal: open one URL read from stdin
+set -u
+
+PORT="${BROWSER_BRIDGE_PORT:-8765}"
+LOCK="${XDG_RUNTIME_DIR:-/tmp}/browser-bridge.$PORT.lock"
+
+log() { printf '[browser-bridge] %s\n' "$*" >&2; }
+
+# Read one URL from stdin, sanity-check it, open it locally. Only http(s) and no
+# shell metacharacters — this input arrives over a socket, so never eval it.
+handle() {
+  local url
+  IFS= read -r url || return 0
+  url="${url%$'\r'}"
+  if [[ "$url" =~ ^https?://[^[:space:]\'\"\`\$\;\|\&\<\>]+$ ]]; then
+    log "open $url"
+    open-url "$url" >/dev/null 2>&1 || log "open-url failed: $url"
+  else
+    log "ignored (not a clean URL): $url"
+  fi
+}
+
+if [[ "${1:-}" == --handle ]]; then
+  handle
+  exit 0
+fi
+
+# Singleton: a second invocation just exits rather than fighting for the port.
+exec 9>"$LOCK" 2>/dev/null || true
+if command -v flock >/dev/null 2>&1; then
+  flock -n 9 || { log "already running (port $PORT)"; exit 0; }
+fi
+
+self="$(readlink -f "${BASH_SOURCE[0]:-$0}")"
+log "listening on 127.0.0.1:$PORT"
+
+if command -v socat >/dev/null 2>&1; then
+  exec socat "TCP-LISTEN:$PORT,bind=127.0.0.1,reuseaddr,fork" "SYSTEM:$self --handle"
+elif command -v ncat >/dev/null 2>&1; then
+  while :; do ncat -l 127.0.0.1 "$PORT" --recv-only | "$self" --handle; done
+else
+  log "need 'socat' or 'ncat' (nmap-ncat) installed on this machine"
+  exit 1
+fi
