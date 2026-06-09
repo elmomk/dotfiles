@@ -1,0 +1,134 @@
+#!/bin/bash
+# dev-server — connect to the GCE dev box, starting it first if needed.
+#
+#   dev-server            connect (auto-start if stopped, wait until RUNNING)
+#   dev-server ssh        same as above
+#   dev-server start      start the VM, don't connect
+#   dev-server stop       shut the VM down
+#   dev-server status     print the current VM status
+#
+# Any extra args after the subcommand are passed through to `gcloud compute ssh`,
+# e.g.  dev-server ssh -- -L 8080:localhost:8080
+set -euo pipefail
+
+# Target lives in the vault, not in this script — so the file carries no work values.
+# bwu hydrates ~/.work.json (0600) from the `work-json` Bitwarden Secure Note, which
+# must contain a "dev_server" block, e.g.:
+#   "dev_server": { "zone": "...", "instance": "...", "project": "..." }
+# Env vars (DEV_SERVER_{ZONE,INSTANCE,PROJECT}) override for ad-hoc use.
+WORK_JSON="${WORK_JSON:-$HOME/.work.json}"
+_wj() { [[ -f "$WORK_JSON" ]] && jq -r "$1 // empty" "$WORK_JSON" 2>/dev/null || true; }
+ZONE="${DEV_SERVER_ZONE:-$(_wj '.dev_server.zone')}"
+INSTANCE="${DEV_SERVER_INSTANCE:-$(_wj '.dev_server.instance')}"
+PROJECT="${DEV_SERVER_PROJECT:-$(_wj '.dev_server.project')}"
+if [[ -z "$ZONE" || -z "$INSTANCE" || -z "$PROJECT" ]]; then
+  echo "dev-server: missing target config. Add a \"dev_server\" block (zone/instance/project)" >&2
+  echo "  to the work-json Bitwarden note and run bwu, or set DEV_SERVER_{ZONE,INSTANCE,PROJECT}." >&2
+  exit 1
+fi
+
+GCLOUD_COMMON=(--zone "$ZONE" --project "$PROJECT")
+
+# Auto-tunnel added to every interactive connect (override the port via env):
+#   -R 8765  carries open-url triggers from the dev-server back to the laptop's
+#            browser-bridge, so dashboard/MR letter-keys open in the local browser.
+# The teach-me/daily zensical server runs LOCALLY on the laptop — its content
+# (~/teach-me/library) and the uv toolchain live here, not on the dev box. So
+# ensure_serve starts it here on ${SERVE_PORT}; we deliberately do NOT -L that port
+# to the dev box (it runs no server there — the forward would only shadow the local
+# port and spam "connect failed: Connection refused").
+BRIDGE_PORT="${BROWSER_BRIDGE_PORT:-8765}"
+SERVE_PORT="${TEACHME_PORT:-8042}"
+SSH_FORWARDS=(
+  --ssh-flag="-R 127.0.0.1:${BRIDGE_PORT}:127.0.0.1:${BRIDGE_PORT}"
+)
+
+status() {
+  gcloud compute instances describe "$INSTANCE" "${GCLOUD_COMMON[@]}" \
+    --format="value(status)" 2>/dev/null
+}
+
+start_if_needed() {
+  local s
+  s="$(status || true)"
+  if [[ "$s" == "RUNNING" ]]; then
+    echo "==> $INSTANCE is already RUNNING"
+    return 0
+  fi
+  echo "==> $INSTANCE is ${s:-UNKNOWN}; starting..."
+  gcloud compute instances start "$INSTANCE" "${GCLOUD_COMMON[@]}"
+  # `instances start` already blocks until the instance is RUNNING.
+}
+
+ensure_bridge() {
+  # Start the laptop-side browser-bridge listener (flock singleton, so calling it
+  # on every connect is a no-op when it's already up). Without it, the -R
+  # ${BRIDGE_PORT} reverse tunnel below has nothing to deliver open-url triggers to.
+  if ! command -v browser-bridge >/dev/null 2>&1; then
+    echo "==> browser-bridge not on PATH; skipping (open-url from the dev box won't open here)" >&2
+    return 0
+  fi
+  BROWSER_BRIDGE_PORT="$BRIDGE_PORT" nohup browser-bridge >/dev/null 2>&1 &
+  disown 2>/dev/null || true
+  echo "==> browser-bridge ensured on 127.0.0.1:${BRIDGE_PORT} (laptop)"
+}
+
+ensure_serve() {
+  # Start the laptop-side teach-me/daily zensical server. Idempotent: serve_library.sh
+  # probes the port first and no-ops if a server is already up (live-reload picks up new
+  # pages), otherwise it runs `zensical serve` — which we background so it survives. The
+  # library content and uv toolchain live here on the laptop, so the server runs here.
+  local tm
+  for tm in "$HOME/.claude/skills/teach-me" "$HOME/work/git/configs/.agents/skills/teach-me"; do
+    if [[ -f "$tm/scripts/serve_library.sh" ]]; then
+      nohup bash "$tm/scripts/serve_library.sh" "$SERVE_PORT" >/dev/null 2>&1 &
+      disown 2>/dev/null || true
+      echo "==> teach-me library server ensured on 127.0.0.1:${SERVE_PORT} (laptop)"
+      return 0
+    fi
+  done
+  echo "==> teach-me skill not found; skipping zensical server (http://127.0.0.1:${SERVE_PORT}/ won't load)" >&2
+}
+
+connect() {
+  start_if_needed
+  ensure_bridge
+  ensure_serve
+  echo "==> connecting via SSH (IAP tunnel)..."
+  # `instances start` returns at RUNNING, but sshd may still be booting, so the
+  # IAP tunnel can briefly fail with "4003: failed to connect to backend".
+  # Retry with backoff until the guest's port 22 is reachable.
+  local attempts=12 delay=5 i
+  for ((i = 1; i <= attempts; i++)); do
+    if gcloud compute ssh "$INSTANCE" "${GCLOUD_COMMON[@]}" --tunnel-through-iap "${SSH_FORWARDS[@]}" "$@"; then
+      return 0
+    fi
+    local rc=$?
+    # 255 is the ssh/tunnel transport failure we want to ride out; anything else
+    # (e.g. a non-zero exit from the remote command itself) is real — surface it.
+    if [[ $rc -ne 255 || $i -eq $attempts ]]; then
+      return $rc
+    fi
+    echo "==> SSH not ready yet (attempt $i/$attempts); retrying in ${delay}s..." >&2
+    sleep "$delay"
+  done
+}
+
+cmd="${1:-ssh}"
+[[ $# -gt 0 ]] && shift || true
+
+case "$cmd" in
+  ssh|connect|"")  connect "$@" ;;
+  start)           start_if_needed ;;
+  stop|down|halt)
+    echo "==> stopping $INSTANCE..."
+    gcloud compute instances stop "$INSTANCE" "${GCLOUD_COMMON[@]}"
+    ;;
+  status|stat)
+    echo "$INSTANCE: $(status || echo UNKNOWN)"
+    ;;
+  *)
+    echo "usage: dev-server [ssh|start|stop|status] [-- ssh-args...]" >&2
+    exit 2
+    ;;
+esac
