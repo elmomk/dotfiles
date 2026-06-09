@@ -20,7 +20,6 @@ fleet-check
 
 # ── work / internal infra — belongs in the internal shared-dotfiles, NOT this public repo ──
 # These hardcode GCP/GKE topology, the internal GitLab host, cluster names, etc.
-/wsl/bin/dev-server
 /wsl/bin/drift-check
 /wsl/bin/gather_ips.sh
 /wsl/bin/get-kubeconfig*
