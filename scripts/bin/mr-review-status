@@ -5,7 +5,6 @@
 #
 # In the popup:
 #   [a]…[z] / [A]…  press the letter beside an MR to open it in the browser
-#   ctrl+click      open an MR's link directly (OSC 8 hyperlink)
 #   r               force an instant refresh + redraw
 #   q / space / esc close
 #
@@ -53,17 +52,10 @@ _open() {
   fi
 }
 
-# ── config bootstrap from local (untracked) files; mirrors the gl-* scripts ──
-# GITLAB_* from ~/.secrets.json, MR_REVIEW_* from ~/.work.json. Both live in
-# $HOME and are never committed to the dotfiles repo.
-if [[ -z "${GITLAB_HOST:-}" || -z "${GITLAB_TOKEN:-}" ]] && [[ -f ~/.secrets.json ]] && command -v jq >/dev/null 2>&1; then
-  eval "$(jq -r '.gitlab // {} | to_entries[] | "export GITLAB_\(.key | ascii_upcase)=\(.value | @sh)"' ~/.secrets.json 2>/dev/null)" || true
-fi
-if [[ -f ~/.work.json ]] && command -v jq >/dev/null 2>&1; then
-  : "${MR_REVIEW_GROUP:=$(jq -r '.mr_review.group // empty' ~/.work.json 2>/dev/null)}"
-  : "${MR_REVIEW_USERS:=$(jq -r '.mr_review.users // empty' ~/.work.json 2>/dev/null)}"
-  export MR_REVIEW_GROUP MR_REVIEW_USERS
-fi
+# ── config bootstrap: env → kernel keyring (bwu) → legacy files; see gl-* ─────
+# GITLAB_* and MR_REVIEW_* come from the kernel keyring populated once per boot
+# by `bwu` (kernel memory only, nothing on disk), or from the environment.
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$0}")")/gl-load-creds"
 
 # ── fetch GitLab → write cache JSON (pure stdlib; no glab/mise dependency) ────
 do_refresh() {
@@ -267,9 +259,6 @@ def vtrunc(s, target):       # s is plain text (no ANSI/OSC8)
         out.append(c); n += w
     return ''.join(out) + '…'
 
-def hlink(url, text):
-    return f'\033]8;;{url}\033\\{text}\033]8;;\033\\' if url else text
-
 def mr_url(mr):
     u = mr.get('web_url')
     if u:
@@ -391,7 +380,7 @@ pad2 = max(1, inner - 2 - vlen(chips_str) - 2)
 print(f'{BYEL}│{R}  {chips_str}{" " * pad2}  {BYEL}│{R}')
 print(f'{BYEL}╰{"─" * inner}╯{R}')
 
-FOOTER_TEXT = f'  {D}[a-z] open · ctrl+click · r refresh · esc/q close{R}'
+FOOTER_TEXT = f'  {D}[a-z] open · r refresh · esc/q close{R}'
 
 if not parsed:
     try:
@@ -419,7 +408,6 @@ def card_lines(mr, hotkey):
     rest_w = max(8, COL_W - HOTKEY_W - head_v - 1)
     body_v = vtrunc(body, rest_w)
     inner_txt = f'{icon} {BYEL}!{iid}{R} {age_c}{age_s}{R} {WHT}{body_v}{R}'
-    inner_txt = hlink(mr_url(mr), inner_txt)
     tag = f'{D}[{hotkey}]{R} ' if hotkey else ' ' * HOTKEY_W
     return [f'{tag}{inner_txt}']
 
