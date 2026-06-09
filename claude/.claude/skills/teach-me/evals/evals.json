@@ -1,0 +1,29 @@
+{
+  "skill_name": "teach-me",
+  "evals": [
+    {
+      "id": 0,
+      "name": "in-chat-probes",
+      "prompt": "what's the actual difference between a kubernetes liveness probe and a readiness probe? I always mix them up",
+      "expected_output": "A rich in-chat explanation (NOT a website) using the method: leads with the gist, grounds what each probe IS before contrasting, includes a decision/comparison table and a concrete worked example (e.g. a pod that's alive but not ready), explains the why (what k8s does on each failure), closes with a one-line mental model.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 1,
+      "name": "site-oauth-pkce",
+      "prompt": "make me a little documentation site that explains the OAuth 2.0 authorization code flow with PKCE — I want a diagram of the flow and a worked example with real-ish values.",
+      "expected_output": "A built + served Zensical site under ~/teach-me/<slug>/ with multiple pages (overview + detail), at least one mermaid sequenceDiagram of the flow, a worked example with concrete values (code_verifier/code_challenge etc.), admonitions, an explicit nav in zensical.toml, a clean `zensical build`, and a served URL opened in the browser.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 2,
+      "name": "tier-judgment-raft",
+      "prompt": "teach me how the Raft consensus algorithm handles leader election and log replication",
+      "expected_output": "Tests tier judgment on a substantial, multi-part topic with no explicit 'site' keyword. Acceptable: either a Zensical site OR a clearly structured in-chat explanation — but it must apply the method (gist first, ground the terms like term/quorum/log index before the rules, a diagram or trace of an election, a worked log-replication example, why-first). A flat wall of prose is a failure.",
+      "files": [],
+      "assertions": []
+    }
+  ]
+}
