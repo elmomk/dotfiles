@@ -1,5 +1,5 @@
 alias mr-watch='claude --allow-dangerously-skip-permissions "Run gl-mr-watch (always show table), then gl-mr-poll. If gl-mr-poll exits 1, no further action — table was already shown. If gl-mr-poll exits 0 (actionable MRs): IMMEDIATELY fire gl-notify with the count + IIDs + first URL (notify-on-pending, before drafts finish), then launch a background Agent subagent per MR to DRAFT-ONLY: run /review-mr <IID> and write the review body to /tmp/mr-review-<IID>.md. DO NOT post. DO NOT call gl-mr comment. DO NOT call gl-mr-watch mark. When all draft agents finish, surface each draft inline in the conversation and ASK the user to approve/edit/skip before posting. Only after explicit user approval per MR: GL_MR_ALLOW_POST=1 gl-mr comment <IID> - <project> with the (possibly edited) body, then gl-mr-watch mark <IID> <verdict>, then gl-notify confirming the post. Auto-DRAFT all NEW and UPDATED MRs without asking; auto-POST is forbidden. Skip any MR whose author is in the blacklist array from ~/.mr-review-state.json. Stale MRs (>1 week) filtered by gl-mr-poll. State: ~/.mr-review-state.json. Review DB: ~/.mr-reviews.json. This is a one-shot manual trigger — no CronCreate, no auto-poll."'
-alias issue-engineer='claude --allow-dangerously-skip-permissions "Run gl-issue-watch (always show table), then set up a CronCreate with '"'"'*/5 * * * *'"'"'. Each tick: run gl-issue-watch (show table), then gl-issue-poll. If gl-issue-poll exits 0 (actionable issues), launch a background Agent subagent per issue (with isolation: worktree) to: read the full issue via glab issue view <IID>, ALWAYS enter /plan mode first to design the implementation approach then auto-accept the plan, create a worktree branch feat/issue-<IID>-<slug>, implement the changes following CONVENTIONS.md, commit with resolves #<IID>, push the branch, create MR via gl-mr create master with Closes #<IID> in body, add momoyang as reviewer via glab mr update <MR_IID> --reviewer momoyang, leave a note on the original issue referencing the MR via glab issue note <IID> -m '"'"'Automated implementation submitted: MR !<MR_IID> — please review.'"'"', record via gl-issue-watch mark <IID> mr_created <MR_IID>, notify via gl-notify. If gl-issue-poll exits 1, no further action — table was already shown. Auto-implement all NEW issues without asking. Skip any issue whose author is in the blacklist array from ~/.issue-engineer-state.json. If issue description is too vague, mark as skipped. State: ~/.issue-engineer-state.json. glab path: /home/momoyang/.local/share/mise/installs/asdf-mise-plugins-mise-glab/1.91.0/bin/glab."'
+alias issue-engineer='claude --allow-dangerously-skip-permissions "Run gl-issue-watch (always show table), then set up a CronCreate with '"'"'*/5 * * * *'"'"'. Each tick: run gl-issue-watch (show table), then gl-issue-poll. If gl-issue-poll exits 0 (actionable issues), launch a background Agent subagent per issue (with isolation: worktree) to: read the full issue via glab issue view <IID>, ALWAYS enter /plan mode first to design the implementation approach then auto-accept the plan, create a worktree branch feat/issue-<IID>-<slug>, implement the changes following CONVENTIONS.md, commit with resolves #<IID>, push the branch, create MR via gl-mr create master with Closes #<IID> in body, add momoyang as reviewer via glab mr update <MR_IID> --reviewer momoyang, leave a note on the original issue referencing the MR via glab issue note <IID> -m '"'"'Automated implementation submitted: MR !<MR_IID> — please review.'"'"', record via gl-issue-watch mark <IID> mr_created <MR_IID>, notify via gl-notify. If gl-issue-poll exits 1, no further action — table was already shown. Auto-implement all NEW issues without asking. Skip any issue whose author is in the blacklist array from ~/.issue-engineer-state.json. If issue description is too vague, mark as skipped. State: ~/.issue-engineer-state.json. glab path: glab."'
 alias t-claude="tmx claude --teammate-mode tmux"
 tmx() {
   # Get the name of the current working directory
@@ -67,8 +67,25 @@ _bw_cache_sync() {   # <json-string> <dest-path> → echoes a status word
   if chmod 600 "$_tmp" && mv -f "$_tmp" "$_path"; then print -r -- "refreshed"
   else rm -f "$_tmp"; print -r -- "FAILED(write)"; fi
 }
+# Store a secret in the kernel keyring (user keyring @u) so every session and
+# consumer of this UID can read it without re-unlocking the vault. The value is
+# piped via stdin (never in argv), lives in kernel memory only (nothing on disk),
+# and is wiped on reboot. Perms 0x3f3f0000 = possessor+user full, group/other none.
+_bw_kr_put() {  # <key-name> <value>
+  command -v keyctl >/dev/null 2>&1 || return 0
+  [[ -n $2 ]] || return 0
+  local _id
+  _id="$(print -rn -- "$2" | keyctl padd user "$1" @u 2>/dev/null)" || return 0
+  keyctl setperm "$_id" 0x3f3f0000 >/dev/null 2>&1
+}
+# Read a `user` key from the user keyring; print payload, empty on miss.
+_bw_kr_get() {  # <key-name>
+  command -v keyctl >/dev/null 2>&1 || return 0
+  local _id; _id="$(keyctl search @u user "$1" 2>/dev/null)" || return 0
+  keyctl print "$_id" 2>/dev/null || return 0
+}
 bwu() {
-  local s json wjson sc wc
+  local s json wjson sc wc mrg mru
   s="$(bw unlock --raw)" || return 1
   export BW_SESSION="$s"
 
@@ -84,17 +101,54 @@ bwu() {
   export INFRACOST_API_KEY="$(print -r -- "$json" | jq -r '.infra_cost_api_token.token // empty')"
 
   wjson="$(bw get notes work-json 2>/dev/null)"
+  mrg="$(print -r -- "$wjson" | jq -r '.mr_review.group // empty' 2>/dev/null)"
+  mru="$(print -r -- "$wjson" | jq -r '.mr_review.users // empty' 2>/dev/null)"
+
+  # Primary store: kernel keyring (@u) — read by every session/consumer of this
+  # UID via gl-load-creds, in kernel memory only, wiped on reboot.
+  _bw_kr_put gl:host         "$GITLAB_HOST"
+  _bw_kr_put gl:token        "$GITLAB_TOKEN"
+  _bw_kr_put mr:group        "$mrg"
+  _bw_kr_put mr:users        "$mru"
+  _bw_kr_put jira:token      "$JIRA_API_TOKEN"
+  _bw_kr_put infracost:token "$INFRACOST_API_KEY"
+  # Full secrets blob (compact JSON) for generic consumers like ~/work/.envrc,
+  # which export every scalar rather than a fixed set of keys.
+  _bw_kr_put secrets:json    "$(print -r -- "$json" | jq -c . 2>/dev/null)"
 
   # Re-sync the opt-in on-disk caches (no-op where the file is absent).
   sc="$(_bw_cache_sync "$json"  "$HOME/.secrets.json")"
   wc="$(_bw_cache_sync "$wjson" "$HOME/.work.json")"
 
-  if [[ -n $GITLAB_TOKEN ]]; then
-    print -P "%F{green}✓%f vault unlocked — tokens loaded; cache: secrets=$sc work=$wc"
-  else
-    print -P "%F{yellow}✓%f vault unlocked — .gitlab.token empty in note; cache: secrets=$sc work=$wc"
+  # Point glab at the internal instance over http (matching the gl-* scripts'
+  # http://$GITLAB_HOST). Protocol only — the token stays in the keyring/env, so
+  # nothing secret is written to glab's on-disk config. No hardcoded host.
+  if command -v glab >/dev/null 2>&1 && [[ -n $GITLAB_HOST ]]; then
+    glab config set api_protocol http --host "$GITLAB_HOST" >/dev/null 2>&1
+    glab config set api_host "$GITLAB_HOST" --host "$GITLAB_HOST" >/dev/null 2>&1
   fi
+
+  local kr; command -v keyctl >/dev/null 2>&1 && kr="keyring" || kr="keyring(no keyctl)"
+  if [[ -n $GITLAB_TOKEN ]]; then
+    print -P "%F{green}✓%f vault unlocked — tokens loaded → $kr; file cache: secrets=$sc work=$wc"
+  else
+    print -P "%F{yellow}✓%f vault unlocked — .gitlab.token empty in note; file cache: secrets=$sc work=$wc"
+  fi
+  bw_keyring_hydrate   # make this shell match a freshly-spawned one
 }
+
+# Hydrate this shell's env from the kernel keyring populated by `bwu`. Runs at
+# shell init (below) so every new pane/session after a single `bwu` per boot has
+# the tokens, with zero plaintext at rest. Env already set (direnv) is kept.
+# Key names are the shared contract with `bwu` / `gl-load-creds`.
+bw_keyring_hydrate() {
+  command -v keyctl >/dev/null 2>&1 || return 0
+  : "${GITLAB_HOST:=$(_bw_kr_get gl:host)}";             [[ -n $GITLAB_HOST ]]        && export GITLAB_HOST
+  : "${GITLAB_TOKEN:=$(_bw_kr_get gl:token)}";           [[ -n $GITLAB_TOKEN ]]       && export GITLAB_TOKEN
+  : "${JIRA_API_TOKEN:=$(_bw_kr_get jira:token)}";       [[ -n $JIRA_API_TOKEN ]]     && export JIRA_API_TOKEN
+  : "${INFRACOST_API_KEY:=$(_bw_kr_get infracost:token)}"; [[ -n $INFRACOST_API_KEY ]] && export INFRACOST_API_KEY
+}
+bw_keyring_hydrate
 
 # Install local git pre-commit hooks: vault plaintext guard + mapping.cfg
 # collision lint. One-shot install per worktree.

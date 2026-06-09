@@ -14,6 +14,11 @@ WSL_PREV=/tmp/.tmux-sysstat-wsl-prev
 
 mode=${1:-right}
 
+# Under WSL there's a Windows host (W chip) alongside the Linux side (L chip).
+# On the dev-server there's no Windows host, so skip the powershell.exe probe
+# and the W/BAT chips entirely — only the local CPU/mem is meaningful.
+is_wsl() { grep -qi microsoft /proc/version 2>/dev/null; }
+
 # Color thresholds. Returns a tmux #[fg=...] directive based on `val`.
 #   color_for <val> <yellow_threshold> <red_threshold> <direction>
 #   direction = high_bad (cpu)    -> green<yellow<red
@@ -39,6 +44,7 @@ RESET='#[default]'
 
 # --- Windows host snapshot (CPU%, free RAM GB, battery %) — cached 4s ---
 compute_win() {
+  is_wsl || return 0   # no Windows host on the dev-server — leave wcpu/wfree/wbat unset
   if [[ -f $WIN_CACHE ]] && (( $(date +%s) - $(stat -c %Y "$WIN_CACHE") < WIN_TTL )); then
     read -r wcpu wfree wbat < "$WIN_CACHE"
   else
@@ -65,10 +71,8 @@ case "$mode" in
     # use GraphQL to get reviewState per reviewer.
     REV_CACHE=/tmp/.tmux-sysstat-rev
     REV_TTL=60
-    # GitLab host comes from ~/.secrets.json (.gitlab.host) — never hardcoded.
-    if [[ -z "${GITLAB_HOST:-}" && -f ~/.secrets.json ]] && command -v jq >/dev/null 2>&1; then
-      GITLAB_HOST=$(jq -r '.gitlab.host // empty' ~/.secrets.json 2>/dev/null)
-    fi
+    # GITLAB_HOST/TOKEN from env → kernel keyring (bwu) → legacy files.
+    source "$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$0}")")/gl-load-creds"
     if [[ -f $REV_CACHE ]] && (( $(date +%s) - $(stat -c %Y "$REV_CACHE") < REV_TTL )); then
       read -r rev appr < "$REV_CACHE"
     else
@@ -174,10 +178,17 @@ except Exception:
     if (( ${wfree_int:-0} < 1 )); then wfree_col='#[fg=red,bold]'; else wfree_col='#[fg=green]'; fi
     if (( ${lfree_int:-0} < 1 )); then lfree_col='#[fg=red,bold]'; else lfree_col='#[fg=green]'; fi
 
-    printf '%sW%s%%%s/%s%sG%s  %sL%s%%%s/%s%sG%s' \
-      "$wcpu_col" "$wcpu" "$RESET" \
-      "$wfree_col" "$wfree" "$RESET" \
-      "$lcpu_col" "$lcpu" "$RESET" \
-      "$lfree_col" "$lfree" "$RESET"
+    if is_wsl; then
+      printf '%sW%s%%%s/%s%sG%s  %sL%s%%%s/%s%sG%s' \
+        "$wcpu_col" "$wcpu" "$RESET" \
+        "$wfree_col" "$wfree" "$RESET" \
+        "$lcpu_col" "$lcpu" "$RESET" \
+        "$lfree_col" "$lfree" "$RESET"
+    else
+      # Dev-server: only the local machine's CPU/mem (no Windows host to contrast).
+      printf '%s%s%%%s/%s%sG%s' \
+        "$lcpu_col" "$lcpu" "$RESET" \
+        "$lfree_col" "$lfree" "$RESET"
+    fi
     ;;
 esac
