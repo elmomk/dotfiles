@@ -19,7 +19,54 @@ set -u
 PORT="${BROWSER_BRIDGE_PORT:-8765}"
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/browser-bridge.$PORT.lock"
 
+# Sync-on-view: when an incoming URL points at the LOCAL teach-me/daily zensical
+# server, first pull the dev-server's freshly-built docs into the local library
+# so the page is present before the browser loads it. The server is laptop-only;
+# the dev box is a contributor. Additive (--update, no --delete): the dev box
+# only adds/refreshes files, never removes or clobbers a newer local copy — safe
+# when both machines author docs. Target = the same dev_server config the
+# `dev-server` wrapper uses (env or the work-json cache); never the socket input.
+TEACHME_PORT="${TEACHME_PORT:-8042}"
+TEACHME_HOME="${TEACHME_HOME:-$HOME/teach-me}"
+WORK_JSON="${WORK_JSON:-$HOME/.work.json}"
+
 log() { printf '[browser-bridge] %s\n' "$*" >&2; }
+
+_wj() { [[ -f "$WORK_JSON" ]] && jq -r "$1 // empty" "$WORK_JSON" 2>/dev/null || true; }
+
+# Pull the dev-server's teach-me docs into the local library (one-way, additive).
+# Best-effort: any failure logs and returns 0 so the browser still opens. Paths
+# are hardcoded; the only inputs are the dev_server target from env/work-json.
+sync_teach_me() {
+  command -v rsync >/dev/null 2>&1 && command -v gcloud >/dev/null 2>&1 || return 0
+  command -v gcloud-rsh >/dev/null 2>&1 || { log "teach-me sync skipped (gcloud-rsh not on PATH)"; return 0; }
+  local zone inst proj
+  zone="${DEV_SERVER_ZONE:-$(_wj '.dev_server.zone')}"
+  inst="${DEV_SERVER_INSTANCE:-$(_wj '.dev_server.instance')}"
+  proj="${DEV_SERVER_PROJECT:-$(_wj '.dev_server.project')}"
+  [[ -n "$zone" && -n "$inst" && -n "$proj" ]] || { log "teach-me sync skipped (no dev_server target)"; return 0; }
+  mkdir -p "$TEACHME_HOME/library/docs"
+  log "syncing teach-me docs from $inst …"
+  if timeout 90 rsync -az --update --exclude='.git' \
+       -e "gcloud-rsh $zone $proj" \
+       "$inst:teach-me/library/docs/" "$TEACHME_HOME/library/docs/" >/dev/null 2>&1; then
+    log "teach-me docs synced"
+    # We sync docs/ only, not the per-machine zensical.toml — so regenerate the
+    # Daily nav from the now-present docs/daily/*.md, else synced dates build but
+    # don't appear in the nav. Best-effort; the script honors $TEACHME_HOME and
+    # no-ops if the daily markers aren't in the library's zensical.toml.
+    local nav
+    for nav in "$HOME/.claude/skills/daily/scripts/sync_daily_nav.py" \
+               "$HOME/work/git/configs/.agents/skills/daily/scripts/sync_daily_nav.py"; do
+      [[ -f "$nav" ]] && command -v python3 >/dev/null 2>&1 || continue
+      TEACHME_HOME="$TEACHME_HOME" python3 "$nav" >/dev/null 2>&1 \
+        && log "daily nav regenerated" || log "daily nav regen skipped"
+      break
+    done
+  else
+    log "teach-me sync failed/timed out (opening anyway)"
+  fi
+}
 
 # Read one URL from stdin, sanity-check it, open it locally. Only http(s) and no
 # shell metacharacters — this input arrives over a socket, so never eval it.
@@ -28,6 +75,10 @@ handle() {
   IFS= read -r url || return 0
   url="${url%$'\r'}"
   if [[ "$url" =~ ^https?://[^[:space:]\'\"\`\$\;\|\&\<\>]+$ ]]; then
+    # If it's the local teach-me/daily server, pull dev-server docs first.
+    if [[ "$url" =~ ^https?://(127\.0\.0\.1|localhost):${TEACHME_PORT}([/?#]|$) ]]; then
+      sync_teach_me
+    fi
     log "open $url"
     open-url "$url" >/dev/null 2>&1 || log "open-url failed: $url"
   else
