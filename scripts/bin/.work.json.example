@@ -1,0 +1,15 @@
+{
+  "scm": {
+    "projects": {
+      "infra": "my-team/infrastructure",
+      "app": "my-team/application"
+    }
+  },
+  "registry": {
+    "environments": {
+      "dev": {"host": "registry-dev.internal", "creds": "path/to/dev/creds.json"},
+      "prod": {"host": "registry-prod.internal", "creds": "path/to/prod/creds.json"}
+    },
+    "default": "dev"
+  }
+}
