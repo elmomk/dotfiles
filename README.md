@@ -3,13 +3,15 @@
 Personal configuration for my Linux machines, deployed with GNU stow.
 Each top-level directory is a stow package mirroring `$HOME`.
 
-## Machines
+## Machines & branches
 
-| Machine | What gets stowed |
-|---------|------------------|
-| **WSL2 (daily driver)** | `zsh-personal starship tmux gitconfig wsl claude` — `install.sh` defaults |
-| **Arch desktop (legacy)** | GUI packages: `hyprland i3 alacritty dunst sxhkdrc leftwm regolith2_i3 udev` |
-| **work dev-server** | not this repo — see *Two-repo setup* below |
+Each machine has its own long-lived branch — **they are never merged**:
+
+| Machine | Branch | What gets stowed |
+|---------|--------|------------------|
+| **WSL2 (work laptop)** | `feat/momo` (this one) | `zsh-personal starship tmux gitconfig wsl claude` — `install.sh` defaults |
+| **Arch desktop** | `main` | its own line (QuickShell/AGS shell, own claude package); GUI packages here are old snapshots |
+| **work dev-server** | not this repo | see *Two-repo setup* below |
 
 ## Install
 
