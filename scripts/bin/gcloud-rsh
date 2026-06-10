@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# gcloud-rsh — rsync remote-shell shim that tunnels through gcloud IAP.
+#
+# rsync invokes its remote shell as:  <rsh> <host> <remote-command...>
+# but `gcloud compute ssh` runs a remote command only via --command=, not as
+# trailing positional args. This shim bridges the two, so rsync can run over an
+# IAP tunnel with gcloud handling auth / OS-Login / key propagation — no SSH key
+# or username juggling, and no standing -L forward:
+#
+#   rsync -e "gcloud-rsh <zone> <project>" <instance>:src/ dst/
+#
+# rsync calls:  gcloud-rsh <zone> <project> <instance> <rsync --server …>
+set -euo pipefail
+zone="$1"; project="$2"; host="$3"; shift 3
+# --quiet suppresses gcloud's interactive prompts/chatter so it can't corrupt the
+# rsync protocol stream on stdout; the remote rsync command goes via --command.
+exec gcloud compute ssh "$host" \
+  --zone "$zone" --project "$project" --tunnel-through-iap --quiet \
+  --command="$*"

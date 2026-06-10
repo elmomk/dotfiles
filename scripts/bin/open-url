@@ -1,0 +1,35 @@
+#!/bin/bash
+# open-url — Open a URL in the default browser (WSL-aware)
+#
+# Usage: open-url <url>
+#
+# On a headless remote box (e.g. the dev-server over SSH) there's no local
+# browser. If a `browser-bridge` listener is reachable on the loopback port
+# (reverse-forwarded from the laptop via SSH `RemoteForward`), hand the URL to
+# it so it opens on the laptop. Port overridable via BROWSER_BRIDGE_PORT.
+
+set -euo pipefail
+
+if [ $# -eq 0 ]; then
+    echo "Usage: open-url <url>" >&2
+    exit 1
+fi
+
+URL="$1"
+BRIDGE_PORT="${BROWSER_BRIDGE_PORT:-8765}"
+
+if command -v wslview &>/dev/null; then
+    wslview "$URL"
+elif [ -x /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe ]; then
+    powershell.exe -Command "Start-Process '$URL'" &>/dev/null
+elif [[ "${OSTYPE:-}" == darwin* ]] && command -v open &>/dev/null; then
+    open "$URL"
+elif [ -n "${SSH_CONNECTION:-}" ] && { exec 3<>"/dev/tcp/127.0.0.1/$BRIDGE_PORT"; } 2>/dev/null; then
+    printf '%s\n' "$URL" >&3
+    exec 3>&-
+elif command -v xdg-open &>/dev/null; then
+    xdg-open "$URL"
+else
+    echo "No browser opener found. URL: $URL" >&2
+    exit 1
+fi
