@@ -76,6 +76,43 @@ if command -v go &>/dev/null; then
   go clean -modcache
 fi
 
+# Terragrunt cache + node_modules in ~/work (often the biggest offenders)
+if [ -d "$WORK_DIR" ]; then
+  read -p "Delete '.terragrunt-cache' dirs in $WORK_DIR? [y/N] " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Deleting '.terragrunt-cache' directories (re-inits on next run)..."
+    find "$WORK_DIR" -name ".terragrunt-cache" -type d -prune -exec rm -rf {} + 2>/dev/null
+    echo -e "${GREEN}Terragrunt cache cleaned.${NC}"
+  fi
+
+  read -p "Delete 'node_modules' dirs in $WORK_DIR? [y/N] " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Deleting 'node_modules' directories (npm/yarn install to restore)..."
+    find "$WORK_DIR" -name "node_modules" -type d -prune -exec rm -rf {} + 2>/dev/null
+    echo -e "${GREEN}node_modules cleaned.${NC}"
+  fi
+fi
+
+# Terraform plugin cache
+if [ -d "$HOME/.terraform.d" ]; then
+  read -p "Delete Terraform plugin cache (~/.terraform.d)? [y/N] " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    rm -rf "$HOME/.terraform.d"
+    echo -e "${GREEN}Terraform plugin cache cleaned.${NC}"
+  fi
+fi
+
+# Browser / tool caches
+read -p "Delete browser+tool caches (playwright, puppeteer, trivy, uv)? [y/N] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  rm -rf "$HOME/.cache/ms-playwright" "$HOME/.cache/puppeteer" "$HOME/.cache/trivy" "$HOME/.cache/uv"
+  echo -e "${GREEN}Browser/tool caches cleaned.${NC}"
+fi
+
 # --- 5. System Maintenance (Safe) ---
 echo -e "\n${YELLOW}[*] System Maintenance...${NC}"
 # Empty Trash
