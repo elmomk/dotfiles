@@ -23,6 +23,19 @@ worktree-check() {
 }
 decrypt() {
     cd $(git rev-parse --show-toplevel) || return 1
+    # If `gpg-deploy --ephemeral` set up a tmpfs keyring, reveal through it.
+    local eph="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gnupg-ephemeral"
+    [[ -d $eph ]] && export GNUPGHOME="$eph"
+    # Self-heal on a fresh box (e.g. dev-server): if git-secret or any secret key
+    # is missing, run the `gpg-deploy` bootstrap first (no-op once set up). It
+    # installs git-secret and imports the deploy key from the Bitwarden
+    # 'gpg-deploy-key' note. The key passphrase is prompted interactively at
+    # reveal — by design it is NOT in the vault.
+    if command -v gpg-deploy >/dev/null 2>&1 \
+       && { ! command -v git-secret >/dev/null 2>&1 || [[ -z "$(gpg --list-secret-keys 2>/dev/null)" ]]; }; then
+        gpg-deploy || { cd -; return 1; }
+    fi
+    export GPG_TTY=$(tty)   # pinentry needs the controlling terminal
     git secret reveal -vfF
     cd -
 }
