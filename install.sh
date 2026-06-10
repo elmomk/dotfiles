@@ -40,11 +40,15 @@ fi
 # ── 5. neovim (recent — Ubuntu apt's 0.9.x is too old for LazyVim) ────────────
 if [[ ! -x "$HOME/.local/bin/nvim" ]]; then
   echo "==> neovim"
+  case "$(uname -m)" in
+    aarch64|arm64) NVIM_PKG=nvim-linux-arm64 ;;
+    *)             NVIM_PKG=nvim-linux-x86_64 ;;
+  esac
   tmp="$(mktemp -d)"
-  curl -fsSL -o "$tmp/nvim.tgz" https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-  rm -rf "$HOME/.local/nvim-linux-x86_64"
+  curl -fsSL -o "$tmp/nvim.tgz" "https://github.com/neovim/neovim/releases/latest/download/${NVIM_PKG}.tar.gz"
+  rm -rf "$HOME/.local/$NVIM_PKG"
   tar -C "$HOME/.local" -xzf "$tmp/nvim.tgz"
-  ln -sfn "$HOME/.local/nvim-linux-x86_64/bin/nvim" "$HOME/.local/bin/nvim"
+  ln -sfn "$HOME/.local/$NVIM_PKG/bin/nvim" "$HOME/.local/bin/nvim"
   rm -rf "$tmp"
 fi
 
@@ -68,6 +72,16 @@ command -v fdfind >/dev/null 2>&1 && ln -sfn "$(command -v fdfind)" "$HOME/.loca
 #   GUI packages (i3 hyprland alacritty dunst sxhkdrc leftwm regolith2_i3 …) and
 #   editor configs (lazyvim mo-vim) are opt-in: pass them via PKGS.
 PKGS="${PKGS:-zsh-personal starship tmux gitconfig wsl}"
+# stow aborts on real-file conflicts; back up any non-symlink occupant of a
+# claude-package target first (settings.json is machine-local and not stowed).
+if [[ " $PKGS " == *" claude "* ]]; then
+  for f in CLAUDE.md statusline-command.sh commands skills; do
+    if [[ -e "$HOME/.claude/$f" && ! -L "$HOME/.claude/$f" ]]; then
+      echo "==> backing up ~/.claude/$f -> $f.pre-stow"
+      mv "$HOME/.claude/$f" "$HOME/.claude/$f.pre-stow"
+    fi
+  done
+fi
 echo "==> stow (from $STOW_DIR): $PKGS"
 stow -d "$STOW_DIR" -t "$HOME" $PKGS
 
