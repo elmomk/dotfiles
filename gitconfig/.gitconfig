@@ -14,9 +14,19 @@
     diffFilter = delta --color-only
 
 [delta]
-    navigate = true    # use n and N to move between diff sections
-    light = false      # set to true if you're in a terminal w/ a light background color (e.g. the default macOS terminal)
-    side-by-side = true
+    navigate = true
+    light = false
+    side-by-side = false
+    line-numbers = true
+    syntax-theme = TwoDark
+    file-style = bold yellow ul
+    file-decoration-style = yellow ol
+    hunk-header-decoration-style = blue box ul
+    minus-style = syntax "#3a1d2e"
+    minus-emph-style = syntax "#6b2e43"
+    plus-style = syntax "#1d3a2e"
+    plus-emph-style = syntax "#2e6b43"
+    map-styles = bold purple => syntax "#330f29", bold cyan => syntax "#0d3531"
 
 [merge]
     conflictstyle = diff3

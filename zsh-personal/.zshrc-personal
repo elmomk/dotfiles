@@ -17,3 +17,23 @@ alias jstart='jellystart; sleep 90; jellyps; jellydocker start traefik'
 alias fixjelly='sudo rmdir /var/lib/libvirt/images && sudo ln -s /data/libvirt/images /var/lib/libvirt/'
 
 alias fixaudio='systemctl --user restart pipewire pipewire-pulse'
+
+# tmux pane title (window name is handled by tmux automatic-rename-format)
+if [[ -n "$TMUX" ]]; then
+  _tmux_pane_title() { print -n "\e]2;$1\e\\" }
+
+  # Pane title = cwd basename at prompt, or command name when running something.
+  # No "claude:"/"pi:" prefix — the plugin icon (✶/π) already marks those.
+  _tmux_precmd() { _tmux_pane_title "${PWD:t}" }
+  _tmux_preexec() {
+    local cmd="${1%% *}"
+    case "$cmd" in
+      claude|pi) _tmux_pane_title "${PWD:t}" ;;
+      *)         _tmux_pane_title "$cmd" ;;
+    esac
+  }
+
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd  _tmux_precmd
+  add-zsh-hook preexec _tmux_preexec
+fi

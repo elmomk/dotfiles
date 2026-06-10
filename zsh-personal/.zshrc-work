@@ -72,6 +72,8 @@ alias v="nvim"
 alias doco="docker-compose"
 alias nvim="editor"
 
+alias glp="git log -p"
+
 # fzf git
 alias fzf-git-branch='git branch --sort=-committerdate | fzf --header "checkout recent branch" --preview "git diff --color=always {1}" | xargs git checkout'
 
