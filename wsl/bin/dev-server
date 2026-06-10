@@ -74,10 +74,12 @@ ensure_bridge() {
 }
 
 ensure_serve() {
-  # Start the laptop-side teach-me/daily zensical server. Idempotent: serve_library.sh
-  # probes the port first and no-ops if a server is already up (live-reload picks up new
-  # pages), otherwise it runs `zensical serve` — which we background so it survives. The
-  # library content and uv toolchain live here on the laptop, so the server runs here.
+  # Start the laptop-side teach-me/daily library server. Idempotent: serve_library.sh
+  # probes the port first and no-ops if the server is already up; otherwise it starts a
+  # detached no-cache static server over site/ (browser-bridge rebuilds site/ after each
+  # sync-on-view, so what it serves is always the latest sync). It also replaces a stale
+  # pre-rework `zensical serve` it finds holding the port. The library content and uv
+  # toolchain live here on the laptop, so the server runs here.
   local tm
   for tm in "$HOME/.claude/skills/teach-me" "$HOME/work/git/configs/.agents/skills/teach-me"; do
     if [[ -f "$tm/scripts/serve_library.sh" ]]; then

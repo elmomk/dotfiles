@@ -101,14 +101,23 @@ Workflow:
    add a row linking the section to the landing table in `docs/index.md`.
 4. **Build.** `cd ~/teach-me/library && uv run zensical build` — fast; it flags broken
    links and missing pages. Fix until it reports "No issues found".
-5. **Serve** the library with the Bash tool's `run_in_background` so it survives the turn:
-   `bash scripts/serve_library.sh 8042`. The script **checks first** — if a server is
-   already serving the library on that port it no-ops (live-reload picks up your new
-   section), otherwise it starts `zensical serve` for you. **Run only one server**, and
-   never `pkill -f "zensical serve"` (the pattern matches the killer's own command line and
-   takes down the server you just started).
+5. **Serve**: `bash scripts/serve_library.sh 8042` — a normal foreground command; the
+   server detaches into its own session and survives the Claude session (no
+   `run_in_background`). The script **checks first** — if the library server already
+   answers on that port it no-ops. It serves `site/` straight from disk with
+   `Cache-Control: no-cache`, so whatever step 4 built is exactly what the browser gets
+   on its next (re)load — tell the user to refresh any tab they already had open.
+   **Run only one server**, and never `pkill` by name pattern — the script replaces a
+   stale server by exact PID itself when needed.
 6. **Open** `bash scripts/open_site.sh 8042 tutorials/<topic-slug>/` to deep-link straight to
    the new section. Then tell the user the URL and the section's page list.
+
+   Note (headless dev box): the page the user sees is served by the **laptop**, not this
+   box — port 8042 is deliberately not forwarded. open_site.sh routes the URL through the
+   laptop's browser-bridge, whose *sync-on-view* pulls this box's `docs/`, merges the
+   tutorials nav from this box's `zensical.toml` (sync_topics_nav.py), regenerates the
+   daily nav, and rebuilds the laptop's library before the browser loads. So always open
+   via open_site.sh — that's what triggers the sync.
 
 ### Default section structure
 

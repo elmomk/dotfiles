@@ -138,16 +138,15 @@ cd ~/teach-me/library && uv run zensical build    # fix until "Build successful"
 
 ## Step 6 — serve (ONE server)
 
-Serve the library with the Bash tool's `run_in_background` so it survives the turn:
-
 ```bash
-bash "$TM/scripts/serve_library.sh" 8042
+bash "$TM/scripts/serve_library.sh" 8042   # normal foreground command — the server detaches
 ```
 
-The script **checks the port first**: if a server is already serving the library it no-ops
-(live-reload picks up the new page), otherwise it starts `zensical serve`. **Run only one
-server**, and never `pkill -f "zensical serve"` (the pattern matches the killer's own command
-line and kills the server you just started).
+The script **checks the port first**: if the library server is already up it no-ops,
+otherwise it starts a detached no-cache static server over `site/` that survives the
+Claude session (no `run_in_background` needed). It serves what step 5 built, straight from
+disk — an already-open browser tab just needs a refresh. **Run only one server**, and never
+`pkill` by name pattern — the script replaces a stale server by exact PID itself.
 
 ## Step 7 — open + report
 
@@ -157,6 +156,11 @@ bash "$TM/scripts/open_site.sh" 8042 daily/<DATE>/
 
 Tell the user the URL `http://127.0.0.1:8042/daily/<DATE>/` and a one-line summary of what
 the page now contains (e.g. "morning: plan for today + Friday recap reused").
+
+Note (headless dev box): the user's browser talks to the **laptop's** server — 8042 is not
+forwarded. open_site.sh goes through the laptop's browser-bridge, whose *sync-on-view*
+pulls this box's `docs/`, regenerates both nav blocks, and rebuilds the laptop library
+before opening. Always open via open_site.sh; that's what triggers the sync.
 
 ## Examples
 
