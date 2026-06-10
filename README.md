@@ -1,54 +1,50 @@
-# My dotfiles
+# dotfiles
 
-This repository contains my configuration files for Linux (Arch + Hyprland).
+Personal configuration for my Linux machines, deployed with GNU stow.
+Each top-level directory is a stow package mirroring `$HOME`.
 
-## Packages
+## Machines
 
-| Package | Description |
-|---------|-------------|
-| `hyprland` | Hyprland WM config, QuickShell desktop shell (bar, launcher, dashboard, notifications, OSD, sidebar, session, Claude panel), hypridle, hyprlock |
-| `alacritty` | Terminal emulator |
-| `fish` | Fish shell config |
-| `tmux` | Terminal multiplexer |
-| `nvim` | Neovim editor |
-| `git` | Git configuration |
-| `udev` | Custom udev rules |
+| Machine | What gets stowed |
+|---------|------------------|
+| **WSL2 (daily driver)** | `zsh-personal starship tmux gitconfig wsl claude` — `install.sh` defaults |
+| **Arch desktop (legacy)** | GUI packages: `hyprland i3 alacritty dunst sxhkdrc leftwm regolith2_i3 udev` |
+| **work dev-server** | not this repo — see *Two-repo setup* below |
 
-## QuickShell Desktop Shell
-
-A unified Material 3 desktop shell replacing waybar, swaync, walker, and wlogout. Features:
-
-- **Bar**: Workspaces, active window, system tray, clock, status icons (audio, network, bluetooth, battery, fcitx, Claude)
-- **Launcher**: App search, calculator, clipboard history, color schemes, wallpapers, Claude quick-ask
-- **Dashboard**: Calendar, media controls, weather, system resources
-- **Sidebar**: Notification center
-- **OSD**: Volume/brightness overlay
-- **Session**: Power menu (shutdown, reboot, hibernate, lock)
-- **Claude Panel**: Integrated Claude Code chat
-- **Control Center**: Full settings UI for appearance, audio, networking, bluetooth
-
-## Requirements
-
-- git (to clone this repository)
-- stow (to deploy the configuration files)
-- $HOME/.config directory used as XDG_HOME_CONFIG
-
-## How to use
-
-Clone this repository into your home directory.
-
-Go into `$HOME/.dotfiles` and use `stow` to deploy the config files you want to.
+## Install
 
 ```bash
-cd $HOME/.dotfiles
-stow <package name>
+git clone git@github.com:elmomk/dotfiles.git ~/dotfiles
+cd ~/dotfiles && ./install.sh          # tooling + default packages
+PKGS="zsh-personal tmux" ./install.sh  # or pick packages explicitly
 ```
 
-This will create required symbolic links so that your configuration files are taken into account the next time you start your tools.
+`install.sh` is idempotent: apt basics, mise/starship/neovim/bitwarden-cli
+binaries, command shims, then stow. GUI and editor packages (`lazyvim`,
+`mo-vim`) are opt-in via `PKGS`.
 
-To delete the symbolic links.
+## Notable packages
 
-```bash
-cd $HOME/.dotfiles
-stow -D <package name>
-```
+| Package | Contents |
+|---------|----------|
+| `zsh-personal` | `~/.zshenv` + `~/.zshrc-{personal,work,fn,zinit}` modules; your `~/.zshrc` sources `~/.zshrc-personal` |
+| `wsl` | `~/bin` toolbox, mise config, systemd user units (wsl-monitor), `~/work/.envrc` |
+| `scripts` | portable tools in `scripts/bin` (tmux popups, gl-* GitLab helpers, open-url); `wsl/bin` symlinks into it |
+| `claude` | Claude Code: `CLAUDE.md`, commands, skills, statusline. `settings.json` is machine-local — seeded from `settings.template.json`, never stowed (Claude writes into it) |
+| `tmux`, `starship`, `gitconfig` | what it says on the tin |
+
+## Two-repo setup
+
+This public repo is the source of truth for personal config. Work/internal
+tooling (cluster scripts, internal GitLab helpers, work Claude commands) is
+**deliberately gitignored here** — its durable home is the company-internal
+`shared-dotfiles` repo, which also carries the dev-server setup (its own stow
+tree + installer). A manifest-driven `sync.sh` / `reverse-sync.sh` pair in that
+repo mirrors the shareable subset both ways.
+
+## Secrets
+
+None in this repo. Bitwarden is the source of truth; `bwu` (in `.zshrc-fn`)
+loads tokens per session and refreshes the `~/.secrets.json` / `~/.work.json`
+caches. See `scripts/bin/.secrets.json.example` / `.work.json.example` for the
+expected shape.
