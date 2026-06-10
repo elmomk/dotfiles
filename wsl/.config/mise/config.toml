@@ -1,4 +1,9 @@
+[settings]
+disable_tools = ["claude"]
+
 [tools]
+"aqua:mfontanini/presenterm" = "latest"
+"asdf:mise-plugins/mise-glab" = "latest"
 awscli = { version = "2.32.8", symlink_bins = "true" }
 chezmoi = "2.67.1"
 delta = "0.18.2"
@@ -8,8 +13,14 @@ jq = "1.8.1"
 kcl = "latest"
 krew = "0.4.5"
 node = "25.2.1"
+"npm:typescript" = "latest"
+"npm:typescript-language-server" = "latest"
 opencode = "latest"
+pandoc = "latest"
 rg = "15.1.0"
+rust = "1.93"
 terramate = "0.15.1"
 tree-sitter = "0.26.1"
-trivy = "0.67.2"
+trivy = "0.71.0"
+typst = "latest"
+"ubi:charmbracelet/crush" = "latest"
