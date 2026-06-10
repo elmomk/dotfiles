@@ -19,18 +19,19 @@ bash <skill>/scripts/add_topic.sh <topic-slug> "Topic Title" "One-line descripti
 # 3. Build (fast, ~0.3-0.8s; reports broken links/refs).
 cd ~/teach-me/library && uv run zensical build
 
-# 4. Serve — ONE server for the whole library, via the Bash tool with run_in_background.
-#    serve_library.sh checks the port first: if a server is already up it no-ops (live-reload
-#    picks up the new section), otherwise it starts one. Don't start a second by hand.
+# 4. Serve — ONE server for the whole library; a normal foreground command (the server
+#    detaches and survives the session). serve_library.sh checks the port first: if the
+#    library server is already up it no-ops — it serves site/ from disk with no-cache
+#    headers, so the latest build is always what a (re)load gets. Don't start a second.
 bash <skill>/scripts/serve_library.sh 8042
 
 # 5. Open (WSL/mac/linux aware) — deep-link straight to the new section.
 bash <skill>/scripts/open_site.sh 8042 tutorials/<topic-slug>/   # → …/tutorials/<topic-slug>/
 ```
 
-`zensical serve` rebuilds on file change, so you can edit pages while it runs. Never
-`pkill -f "zensical serve"` to "clean up" — the pattern matches the killing command's own
-line and kills the server you just started; stop a specific server by its task/PID instead.
+The server has no watcher — content changes go live by running `zensical build` (step 3);
+the server picks the new files up from disk. Never `pkill` by name pattern to "clean up" —
+stop a specific server by its PID (serve_library.sh handles replacing a stale one itself).
 
 ## Config: `zensical.toml`
 

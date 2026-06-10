@@ -19,13 +19,17 @@ set -u
 PORT="${BROWSER_BRIDGE_PORT:-8765}"
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/browser-bridge.$PORT.lock"
 
-# Sync-on-view: when an incoming URL points at the LOCAL teach-me/daily zensical
-# server, first pull the dev-server's freshly-built docs into the local library
-# so the page is present before the browser loads it. The server is laptop-only;
+# Sync-on-view: when an incoming URL points at the LOCAL teach-me/daily server,
+# first pull the dev-server's freshly-authored docs into the local library so
+# the page is present before the browser loads it. The server is laptop-only;
 # the dev box is a contributor. Additive (--update, no --delete): the dev box
 # only adds/refreshes files, never removes or clobbers a newer local copy — safe
-# when both machines author docs. Target = the same dev_server config the
-# `dev-server` wrapper uses (env or the work-json cache); never the socket input.
+# when both machines author docs. Topic nav blocks live in the per-machine
+# zensical.toml (not under docs/), so the dev toml is pulled aside and its
+# tutorials block merged in — without this, dev-box topics never reach the left
+# nav. Both nav blocks regenerated, then the site is rebuilt, because the server
+# serves site/ from disk. Target = the same dev_server config the `dev-server`
+# wrapper uses (env or the work-json cache); never the socket input.
 TEACHME_PORT="${TEACHME_PORT:-8042}"
 TEACHME_HOME="${TEACHME_HOME:-$HOME/teach-me}"
 WORK_JSON="${WORK_JSON:-$HOME/.work.json}"
@@ -51,10 +55,25 @@ sync_teach_me() {
        -e "gcloud-rsh $zone $proj" \
        "$inst:teach-me/library/docs/" "$TEACHME_HOME/library/docs/" >/dev/null 2>&1; then
     log "teach-me docs synced"
-    # We sync docs/ only, not the per-machine zensical.toml — so regenerate the
-    # Daily nav from the now-present docs/daily/*.md, else synced dates build but
-    # don't appear in the nav. Best-effort; the script honors $TEACHME_HOME and
-    # no-ops if the daily markers aren't in the library's zensical.toml.
+    # Topic nav blocks live in the dev box's zensical.toml, not under docs/ —
+    # pull that toml aside and merge its tutorials block into the local one
+    # (keyed by topic slug; local-only topics survive).
+    local mg
+    if timeout 30 rsync -az -e "gcloud-rsh $zone $proj" \
+         "$inst:teach-me/library/zensical.toml" "$TEACHME_HOME/library/.dev-zensical.toml" >/dev/null 2>&1; then
+      for mg in "$HOME/.claude/skills/teach-me/scripts/sync_topics_nav.py" \
+                "$HOME/work/git/configs/.agents/skills/teach-me/scripts/sync_topics_nav.py"; do
+        [[ -f "$mg" ]] && command -v python3 >/dev/null 2>&1 || continue
+        TEACHME_HOME="$TEACHME_HOME" python3 "$mg" "$TEACHME_HOME/library/.dev-zensical.toml" >/dev/null 2>&1 \
+          && log "topics nav merged" || log "topics nav merge skipped"
+        break
+      done
+    else
+      log "dev zensical.toml pull failed (topic nav may lag)"
+    fi
+    # Regenerate the Daily nav from the now-present docs/daily/*.md, else synced
+    # dates build but don't appear in the nav. Best-effort; the script honors
+    # $TEACHME_HOME and no-ops if the daily markers aren't in the local toml.
     local nav
     for nav in "$HOME/.claude/skills/daily/scripts/sync_daily_nav.py" \
                "$HOME/work/git/configs/.agents/skills/daily/scripts/sync_daily_nav.py"; do
@@ -63,6 +82,12 @@ sync_teach_me() {
         && log "daily nav regenerated" || log "daily nav regen skipped"
       break
     done
+    # The library server serves site/ straight from disk (no watcher), so build
+    # now — the new pages and nav must be in site/ before the browser loads.
+    if command -v uv >/dev/null 2>&1 && [[ -f "$TEACHME_HOME/library/zensical.toml" ]]; then
+      (cd "$TEACHME_HOME/library" && timeout 120 uv run zensical build >/dev/null 2>&1) \
+        && log "library rebuilt" || log "library build failed (pages may be stale)"
+    fi
   else
     log "teach-me sync failed/timed out (opening anyway)"
   fi
