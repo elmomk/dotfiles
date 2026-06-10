@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# gpg-deploy — make a fresh box (e.g. the dev-server) able to decrypt a
+# git-secret repo. Idempotent; safe to re-run.
+#
+# Steps:
+#   1. Ensure git-secret is installed (official jfrog apt repo — same source as
+#      the configs repo's drift-check / submarine Dockerfiles).
+#   2. Ensure the Bitwarden vault is unlocked (interactive `bw unlock` if locked;
+#      reuses an existing BW_SESSION from `bwu` when present).
+#   3. Fetch the armored deploy private key from the `gpg-deploy-key` Secure Note
+#      and import it into the local GPG keyring (gpg dedupes, so re-runs are no-ops).
+#
+# Two-factor BY DESIGN: vault = encrypted key, your head = passphrase. The
+# passphrase is deliberately NOT stored in the vault, so a vault compromise alone
+# cannot use the key. gpg / `git secret reveal` will pinentry-prompt for it at
+# decrypt time.
+#
+# Usage:   gpg-deploy [--ephemeral]   # run from inside the target git-secret repo
+#
+#   --ephemeral   Import into a tmpfs GNUPGHOME ($XDG_RUNTIME_DIR/gnupg-ephemeral)
+#                 instead of ~/.gnupg, so the secret key never persists to durable
+#                 storage and is wiped on reboot/logout. `decrypt` auto-detects this
+#                 home and reveals through it. Re-run after each boot.
+#
+# After it succeeds, run `decrypt` (git secret reveal) as usual.
+
+set -euo pipefail
+
+BW_NOTE="gpg-deploy-key"
+EPHEMERAL_GNUPGHOME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gnupg-ephemeral"
+
+red()   { printf '\033[31m%s\033[0m\n' "$*"; }
+green() { printf '\033[32m%s\033[0m\n' "$*"; }
+info()  { printf '  %s\n' "$*"; }
+
+# ── args ─────────────────────────────────────────────────────────────────────
+ephemeral=0
+for arg in "$@"; do
+  case "$arg" in
+    --ephemeral) ephemeral=1 ;;
+    -h|--help)   printf 'Usage: gpg-deploy [--ephemeral]\n  Install git-secret + import the Bitwarden gpg-deploy-key into GPG.\n  --ephemeral  Import into a tmpfs GNUPGHOME (wiped on reboot/logout).\n'; exit 0 ;;
+    *)           red "unknown argument: $arg (try --ephemeral)"; exit 2 ;;
+  esac
+done
+
+# Ephemeral keyring: point GNUPGHOME at tmpfs so the secret key lives only in
+# RAM-backed storage and vanishes on reboot/logout (gpg requires mode 0700).
+if [[ $ephemeral -eq 1 ]]; then
+  green "==> Ephemeral mode: GNUPGHOME=$EPHEMERAL_GNUPGHOME (tmpfs — wiped on reboot/logout)"
+  mkdir -p "$EPHEMERAL_GNUPGHOME"
+  chmod 700 "$EPHEMERAL_GNUPGHOME"
+  export GNUPGHOME="$EPHEMERAL_GNUPGHOME"
+fi
+
+# gpg-agent's pinentry needs the controlling terminal, or secret-key import and
+# passphrase prompts fail with "Inappropriate ioctl for device" on a headless
+# box. Set it (after GNUPGHOME, so the nudge targets the right agent).
+export GPG_TTY="$(tty 2>/dev/null || true)"
+gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1 || true
+
+# ── 1. git-secret ────────────────────────────────────────────────────────────
+install_git_secret() {
+  green "==> Installing git-secret (official apt repo)"
+  command -v curl >/dev/null 2>&1 || { red "curl not found — install it or run 'make install-git-secret'"; exit 1; }
+  command -v sudo >/dev/null 2>&1 || { red "sudo not found — run 'make install-git-secret' as root instead"; exit 1; }
+  echo "deb https://gitsecret.jfrog.io/artifactory/git-secret-deb git-secret main" \
+    | sudo tee /etc/apt/sources.list.d/git-secret.list >/dev/null
+  curl -fsSL 'https://gitsecret.jfrog.io/artifactory/api/security/keypair/public/repositories/git-secret-deb' \
+    | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/git-secret.gpg >/dev/null
+  sudo apt-get update -qq
+  sudo apt-get install -y git-secret
+}
+
+if command -v git-secret >/dev/null 2>&1; then
+  info "git-secret present: $(command -v git-secret)"
+else
+  install_git_secret
+fi
+
+# ── 2. Bitwarden vault ───────────────────────────────────────────────────────
+command -v bw  >/dev/null 2>&1 || { red "bw (Bitwarden CLI) not found — install it first"; exit 1; }
+command -v gpg >/dev/null 2>&1 || { red "gpg not found"; exit 1; }
+command -v jq  >/dev/null 2>&1 || { red "jq not found"; exit 1; }
+
+bw_status="$(bw status 2>/dev/null | jq -r '.status' 2>/dev/null || echo unknown)"
+case "$bw_status" in
+  unlocked)
+    info "vault already unlocked"
+    ;;
+  locked)
+    green "==> Unlocking Bitwarden vault"
+    BW_SESSION="$(bw unlock --raw)" && export BW_SESSION \
+      || { red "vault unlock failed"; exit 1; }
+    ;;
+  *)
+    red "Bitwarden not logged in (status: $bw_status) — run 'bw login' first"
+    exit 1
+    ;;
+esac
+
+# Pull the latest vault state — `bw unlock` does NOT sync, so a note created on
+# another machine (e.g. during Phase 1 on the laptop) is invisible until synced.
+green "==> Syncing vault"
+bw sync >/dev/null 2>&1 || info "sync failed (continuing with cached vault)"
+
+# ── 3. Import the deploy key ─────────────────────────────────────────────────
+green "==> Importing GPG deploy key from vault note '$BW_NOTE'"
+# Stream the armored key straight from the vault into gpg (never touches disk).
+# pipefail makes a missing/empty note fail the pipeline; gpg rejects non-key input.
+if ! import_out="$(bw get notes "$BW_NOTE" | gpg --import 2>&1)"; then
+  red "import failed — could not read note '$BW_NOTE' or it is not a valid PGP key"
+  printf '%s\n' "$import_out"
+  exit 1
+fi
+printf '%s\n' "$import_out" | sed 's/^/  /'
+
+# ── 4. Verify ────────────────────────────────────────────────────────────────
+green "==> Verifying"
+if [[ -z "$(gpg --list-secret-keys 2>/dev/null)" ]]; then
+  red "no secret key in the keyring after import — something went wrong"
+  exit 1
+fi
+
+# Cross-check that an imported secret key is authorized for THIS repo's vault
+# (only when run from inside a git-secret repo).
+if repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
+   && [[ -d "$repo_root/.gitsecret/keys" ]]; then
+  authorized="$(gpg --homedir "$repo_root/.gitsecret/keys" --no-default-keyring \
+                  --list-keys --with-colons 2>/dev/null | awk -F: '/^fpr:/{print $10}')"
+  matched=""
+  while IFS= read -r fpr; do
+    [[ -n "$fpr" ]] || continue
+    if grep -qx "$fpr" <<<"$authorized"; then matched="$fpr"; break; fi
+  done < <(gpg --list-secret-keys --with-colons 2>/dev/null | awk -F: '/^fpr:/{print $10}')
+
+  if [[ -n "$matched" ]]; then
+    uid="$(gpg --list-keys --with-colons "$matched" 2>/dev/null | awk -F: '/^uid:/{print $10; exit}')"
+    green "OK: imported key is authorized for this repo's vault"
+    info  "identity: ${uid:-$matched}"
+  else
+    red "WARNING: imported key is NOT in this repo's .gitsecret keyring."
+    info "It must be added by a maintainer (git secret tell) before reveal will work."
+  fi
+else
+  info "not inside a git-secret repo — skipped repo authorization check"
+fi
+
+green "Done. Run 'decrypt' (you'll be prompted once for the key passphrase)."
+[[ $ephemeral -eq 1 ]] && info "ephemeral: key lives in $GNUPGHOME and is gone on reboot/logout — re-run then."
