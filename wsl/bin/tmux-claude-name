@@ -18,6 +18,18 @@ SCROLL_LINES="${TMUX_CLAUDE_NAME_LINES:-160}"
 MAX_LEN=24
 MAX_WORDS=3
 
+# -a fan-out limit. Parallel `claude -p` cold-starts contend with each other
+# (startup/update locks) and all crawl toward the 90s timeout, so the WSL
+# laptop runs strictly serial; the dev-server takes 10.
+# Override with TMUX_CLAUDE_NAME_JOBS.
+if [ -n "${TMUX_CLAUDE_NAME_JOBS:-}" ]; then
+    JOBS="$TMUX_CLAUDE_NAME_JOBS"
+elif grep -qi microsoft /proc/version 2>/dev/null; then
+    JOBS=1
+else
+    JOBS=10
+fi
+
 PROMPT='You are labeling a tmux window that hosts a Claude Code coding session. Below is the visible terminal scrollback. Reply with ONLY a terse window label of AT MOST 3 words (max 24 chars) describing what this session is working on — e.g. "publish race fix", "pi-extensions docs". No quotes, no punctuation, no explanation. If you genuinely cannot tell, reply with the single word: shell'
 
 sanitize() {
@@ -63,11 +75,13 @@ name_window() {
 
 # --- activity indicator -------------------------------------------------------
 # Mirror "naming in progress" into a tmux user option (@cc_naming) so the status
-# bar can show it. Concurrent runs are counted via per-PID token files, so the
-# flag only clears once the last run finishes.
+# bar can show it. Every unit of work — a single run, or each window of an -a
+# run — holds its own token file, so the option live-counts the windows still
+# being named (N → … → 1 → cleared). Background children do NOT inherit the
+# parent's EXIT trap, so each child claims its token + trap itself.
 LOCKDIR="${TMPDIR:-/tmp}/tmux-claude-name"
 mkdir -p "$LOCKDIR" 2>/dev/null
-TOKEN="$LOCKDIR/$$"
+find "$LOCKDIR" -type f -mmin +5 -delete 2>/dev/null  # sweep tokens orphaned by SIGKILL
 
 refresh_flag() {
     local n
@@ -77,17 +91,18 @@ refresh_flag() {
     tmux refresh-client -S 2>/dev/null || true
 }
 cleanup() { rm -f "$TOKEN" 2>/dev/null; refresh_flag; }
-: > "$TOKEN"
-trap cleanup EXIT INT TERM
-refresh_flag
+claim()   { TOKEN="$LOCKDIR/$1"; : > "$TOKEN"; trap cleanup EXIT INT TERM; refresh_flag; }
 
 if [ "${1:-}" = "-a" ]; then
     sess=$(tmux display-message -p '#{session_name}')
     while IFS= read -r idx; do
-        name_window "${sess}:${idx}" &
+        # throttle: keep at most $JOBS windows naming at once
+        while [ "$(jobs -rp | wc -l)" -ge "$JOBS" ]; do wait -n 2>/dev/null || sleep 0.2; done
+        ( claim "$$-w$idx"; name_window "${sess}:${idx}" ) &
     done < <(tmux list-windows -t "$sess" -F '#{window_index}')
     wait
 else
+    claim "$$"
     target="${1:-$(tmux display-message -p '#{session_name}:#{window_index}')}"
     name_window "$target"
 fi
