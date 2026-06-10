@@ -45,3 +45,8 @@ fleet-check
 /claude/.claude/commands/mr-watch.md
 /claude/.claude/commands/create-mr.md
 /claude/.claude/commands/review-mr.md
+
+# machine-local: Claude Code writes model/permissions into it; seed from settings.template.json
+/claude/.claude/settings.json
+__pycache__/
+*.pyc
