@@ -98,7 +98,7 @@ Draft a well-structured Jira ticket from in-context discussion, confirm with the
 
 These are stable across sessions but verify on first use of a new session:
 
-- **cloudId:** `REDACTED-ATLASSIAN-CLOUDID` (REDACTED-ATLASSIAN-SITE)
+- **cloudId / site:** not stored here (tenant PI) — read from Bitwarden `work-json` `.atlassian` (`cloud_id` / `site`), surfaced by `bwu` into `~/.work.json` + the keyring. Or fetch live with the Atlassian MCP `getAccessibleAtlassianResources`.
 - **Default project:** `PE` (Platform Engineering) — only project the user has Jira access to
 - **Sprint custom field:** `customfield_10020`
 - **Available issue types (PE):** Epic, Story, Task, Bug, Subtask — Task is the workhorse default
