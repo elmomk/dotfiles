@@ -99,7 +99,7 @@ def fetch_user(pair):
     label, user = pair
     try:
         q = urllib.parse.quote(user)
-        mrs = api(f'/groups/{GROUP}/merge_requests?reviewer_username={q}&state=opened&wip=no&per_page=100')
+        mrs = api(f'/groups/{GROUP}/merge_requests?reviewer_username={q}&state=opened&per_page=100')
         return label, user, (mrs if isinstance(mrs, list) else []), None
     except Exception as e:
         return label, user, None, str(e)[:200]
@@ -148,32 +148,46 @@ for label, user, mrs, err in fetched:
             if state.get((label, mr['iid']), 'unknown') in KEEP]
     columns.append({'label': label, 'user': user, 'error': None, 'mrs': kept})
 
-# ── my own authored, open MRs that are approved → ready for *me* to merge ─────
-# Distinct from the reviewer columns above: this is MRs I opened, not ones I
-# review. The list endpoint ignores `approved=yes` on this GitLab, so check the
-# approvals endpoint per MR (its `approved` bool is authoritative).
-my_approved = []
+# ── my own authored, open MRs needing *my* attention ─────────────────────────
+# Distinct from the reviewer columns above: these are MRs I opened, not ones I
+# review. Two buckets:
+#   my_approved — approved, ready for me to merge. The list endpoint ignores
+#                 `approved=yes` on this GitLab, so the approvals endpoint's
+#                 `approved` bool is authoritative.
+#   my_changes  — a reviewer returned the MR requesting changes (a reviewer's
+#                 state is 'requested_changes') — the "Returned to you" set.
+my_approved, my_changes = [], []
 if ME_USER:
     try:
         mine = api(f'/groups/{GROUP}/merge_requests'
                    f'?author_username={urllib.parse.quote(ME_USER)}'
-                   f'&state=opened&wip=no&per_page=100')
+                   f'&state=opened&per_page=100')
         mine = mine if isinstance(mine, list) else []
     except Exception:
         mine = []
-    def is_approved(mr):
+    def classify_mine(mr):
+        pid, iid = mr['project_id'], mr['iid']
+        approved = changes = False
         try:
-            a = api(f"/projects/{mr['project_id']}/merge_requests/{mr['iid']}/approvals")
-            return bool(a.get('approved'))
+            approved = bool(api(f'/projects/{pid}/merge_requests/{iid}/approvals').get('approved'))
         except Exception:
-            return False
+            pass
+        try:
+            changes = any(r.get('state') == 'requested_changes'
+                          for r in api(f'/projects/{pid}/merge_requests/{iid}/reviewers'))
+        except Exception:
+            pass
+        return approved, changes
     if mine:
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
-            flags = list(ex.map(is_approved, mine))
-        my_approved = [card(mr) for mr, ok in zip(mine, flags) if ok]
+            flags = list(ex.map(classify_mine, mine))
+        # Changes-requested wins if both somehow hold — it's the actionable state.
+        my_changes  = [card(mr) for mr, (ap, ch) in zip(mine, flags) if ch]
+        my_approved = [card(mr) for mr, (ap, ch) in zip(mine, flags) if ap and not ch]
 
 out = {'generated_at': dt.datetime.now(dt.timezone.utc).isoformat(),
-       'me_user': ME_USER, 'my_approved': my_approved, 'columns': columns}
+       'me_user': ME_USER, 'my_approved': my_approved,
+       'my_changes': my_changes, 'columns': columns}
 os.makedirs(os.path.dirname(CACHE), exist_ok=True)
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(CACHE))
 with os.fdopen(fd, 'w') as f:
@@ -207,6 +221,7 @@ cols = blob.get('columns', [])
 # merge. Fall back to a label match if the cache predates me_user.
 ME_USER = blob.get('me_user')
 MY_APPROVED = blob.get('my_approved', [])
+MY_CHANGES = blob.get('my_changes', [])
 def _is_me(c):
     if ME_USER:
         return c.get('user') == ME_USER
@@ -332,12 +347,14 @@ if MODE == 'size':
     for label, is_me, data, err in parsed:
         mrs = data or []
         appr = MY_APPROVED if is_me else []
-        # me column is taller: pending cards + blank + "approved" hdr + approved.
-        col_lines = len(mrs) + ((2 + len(appr)) if appr else 0)
+        chg  = MY_CHANGES if is_me else []
+        # me column is taller: pending cards + (blank + hdr + cards) per extra section.
+        col_lines = (len(mrs) + ((2 + len(chg)) if chg else 0)
+                     + ((2 + len(appr)) if appr else 0))
         maxN = max(maxN, col_lines)
         colw = max(colw, 2 + vlen(label))                       # "▎ <label>"
         colw = max(colw, len('fetch error') if err else len(f'{len(mrs)} pending'))
-        for mr in mrs + appr:
+        for mr in mrs + chg + appr:
             _, _, _, _, head_v, body = card_parts(mr)
             colw = max(colw, HOTKEY_W + head_v + 1 + vlen(body)) # untruncated card
     colw = min(colw, 54)                                        # don't go ultra-wide
@@ -349,6 +366,7 @@ if MODE == 'size':
 # ─── header tallies ────────────────────────────────────────────────
 total = n_ok = n_warn = n_wait = 0
 n_merge = len(MY_APPROVED)
+n_chg = len(MY_CHANGES)
 for label, is_me, data, _ in parsed:
     if not data:
         continue
@@ -374,6 +392,7 @@ chips = [f'{D}{total} pending{R}']
 if n_ok:    chips.append(f'{GRN}✅ {n_ok}{R}')
 if n_warn:  chips.append(f'{RED}⚠️  {n_warn}{R}')
 if n_wait:  chips.append(f'{YEL}⏳ {n_wait}{R}')
+if n_chg:   chips.append(f'{BRED}✗ {n_chg} returned to me{R}')
 if n_merge: chips.append(f'{BGRN}✅ {n_merge} to merge{R}')
 chips_str = '   '.join(chips)
 pad2 = max(1, inner - 2 - vlen(chips_str) - 2)
@@ -430,7 +449,13 @@ for label, is_me, data, err in parsed:
     col.append('')
     for mr in (data or []):
         emit_card(col, mr)
-    # under my column: MRs I authored that are approved, waiting for me to merge.
+    # under my column: MRs I authored returned to me with changes requested
+    # (needs my fix), then ones approved and waiting for me to merge.
+    if is_me and MY_CHANGES:
+        col.append('')
+        col.append(f'{BRED}✗ changes requested — needs my fix{R}')
+        for mr in MY_CHANGES:
+            emit_card(col, mr)
     if is_me and MY_APPROVED:
         col.append('')
         col.append(f'{BGRN}✅ approved — ready to merge{R}')
