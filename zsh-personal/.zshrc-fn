@@ -99,12 +99,21 @@ _bw_kr_get() {  # <key-name>
 }
 bwu() {
   local s json wjson sc wc mrg mru acid asite
+  # A stale BW_SESSION already in the env makes a fresh `bw unlock` hand back an
+  # EMPTY session (with exit 0!), which then poisons every `bw get`. Clear it first.
+  unset BW_SESSION
   s="$(bw unlock --raw)" || return 1
+  if [[ -z $s ]]; then
+    print -P "%F{red}✗%f bw unlock returned an empty session (wrong password, or run \`bw lock\` and retry)"
+    return 1
+  fi
   export BW_SESSION="$s"
 
-  json="$(bw get notes secrets-json 2>/dev/null)"
+  # No 2>/dev/null here: if the read fails we want bw's real error, not a silent
+  # "missing" verdict that sends you hunting the wrong thing.
+  json="$(bw get notes secrets-json)"
   if [[ -z $json ]] || ! print -r -- "$json" | jq -e . >/dev/null 2>&1; then
-    print -P "%F{yellow}✓%f vault unlocked — Secure Note 'secrets-json' missing or not valid JSON"
+    print -P "%F{red}✗%f could not read Secure Note 'secrets-json' (empty or not valid JSON)"
     return 1
   fi
 
