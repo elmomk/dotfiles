@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # Compact tmux status chips. Usage:
-#   tmux-sysstat left    -> "MR(Rev):<n>  MR(Approved):<m>  BAT:<%>"
+#   tmux-sysstat left    -> "MR(Rev):<n>  MR(Approved):<m>  MR(Chg):<k>  BRIDGE:<up|down>  BAT:<%>"
 #   tmux-sysstat right   -> "W<cpu>%/<free>G  L<cpu>%/<free>G"
 #
 # Windows side (CPU/RAM/battery) shares one powershell.exe call, cached 4s.
-# Rev/Approved counts come from one GraphQL query (cached 60s): Rev matches the
-# GitLab dashboard "Review requested" tab (UNREVIEWED); Approved is open MRs *I
-# authored* that are approved — i.e. mine, ready for me to merge.
+# Rev/Approved/Chg counts come from one GraphQL query (cached 60s): Rev matches
+# the GitLab dashboard "Review requested" tab (UNREVIEWED); Approved is open MRs
+# *I authored* that are approved — mine, ready for me to merge; Chg is open MRs I
+# authored that a reviewer returned with changes requested (REQUESTED_CHANGES) —
+# the GitLab dashboard "Returned to you" set, mine to act on.
+# BRIDGE (dev-server only) probes the browser-bridge reverse tunnel that
+# open-url / the MR popup letter-keys depend on.
 
 WIN_CACHE=/tmp/.tmux-sysstat-win
 WIN_TTL=4
@@ -42,6 +46,21 @@ color_for() {
 }
 RESET='#[default]'
 
+# BRIDGE probe — health of the open-url path (dev-server → laptop browser).
+# One loopback port, two failure modes:
+#   refused        → no sshd RemoteForward listener (SSH session lacks the -R)
+#   instant EOF    → forward exists, but the laptop-side browser-bridge is dead
+#                    (sshd accepts the channel, fails to connect, closes it)
+#   open + silent  → healthy (read times out with the socket still open)
+bridge_state() {
+  local port="${BROWSER_BRIDGE_PORT:-8765}"
+  (
+    exec 3<>"/dev/tcp/127.0.0.1/$port"
+    IFS= read -r -t 0.3 -n 1 -u 3 _
+    (( $? > 128 ))
+  ) 2>/dev/null
+}
+
 # --- Windows host snapshot (CPU%, free RAM GB, battery %) — cached 4s ---
 compute_win() {
   is_wsl || return 0   # no Windows host on the dev-server — leave wcpu/wfree/wbat unset
@@ -74,7 +93,7 @@ case "$mode" in
     # GITLAB_HOST/TOKEN from env → kernel keyring (bwu) → legacy files.
     source "$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$0}")")/gl-load-creds"
     if [[ -f $REV_CACHE ]] && (( $(date +%s) - $(stat -c %Y "$REV_CACHE") < REV_TTL )); then
-      read -r rev appr < "$REV_CACHE"
+      read -r rev appr chg < "$REV_CACHE"
     else
       counts=$(GITLAB_HOST="$GITLAB_HOST" glab api graphql -f query='
         query {
@@ -91,7 +110,15 @@ case "$mode" in
               }
             }
             authoredMergeRequests(state: opened) {
-              nodes { approved }
+              nodes {
+                approved
+                reviewers {
+                  nodes {
+                    username
+                    mergeRequestInteraction { reviewState }
+                  }
+                }
+              }
             }
           }
         }' 2>/dev/null | python3 -c "
@@ -109,15 +136,21 @@ try:
     # Approved: open MRs *I authored* that are approved → ready for me to merge.
     mine = data['authoredMergeRequests']['nodes']
     appr = sum(1 for mr in mine if mr.get('approved'))
-    print(rev, appr)
+    # Chg: open MRs I authored that a reviewer returned with changes requested.
+    chg = sum(
+        1 for mr in mine
+        if any(r['mergeRequestInteraction']['reviewState'] == 'REQUESTED_CHANGES'
+               for r in mr['reviewers']['nodes'])
+    )
+    print(rev, appr, chg)
 except Exception:
     pass
 " 2>/dev/null)
-      read -r rev appr <<< "$counts"
-      if [[ $rev =~ ^[0-9]+$ && $appr =~ ^[0-9]+$ ]]; then
-        echo "$rev $appr" > "$REV_CACHE"
+      read -r rev appr chg <<< "$counts"
+      if [[ $rev =~ ^[0-9]+$ && $appr =~ ^[0-9]+$ && $chg =~ ^[0-9]+$ ]]; then
+        echo "$rev $appr $chg" > "$REV_CACHE"
       else
-        rev='?'; appr='?'   # don't cache failures — retry on next tick
+        rev='?'; appr='?'; chg='?'   # don't cache failures — retry on next tick
       fi
     fi
 
@@ -138,6 +171,21 @@ except Exception:
     else                          appr_col='#[fg=cyan,bold]'
     fi
     out+="  ${appr_col}MR(Approved):${appr}${RESET}"
+
+    # MR(Chg): MRs reviewers returned to me requesting changes. >0 → red (act),
+    # 0 → green, "?" (fetch failed) → red.
+    if   [[ $chg == "0" ]]; then chg_col='#[fg=green]'
+    else                         chg_col='#[fg=red,bold]'
+    fi
+    out+="  ${chg_col}MR(Chg):${chg}${RESET}"
+
+    # BRIDGE: only meaningful on the dev-server (on the laptop open-url goes
+    # straight to the Windows browser — no tunnel involved).
+    if ! is_wsl; then
+      if bridge_state; then out+="  #[fg=green]BRIDGE:up${RESET}"
+      else                  out+="  #[fg=red,bold]BRIDGE:down${RESET}"
+      fi
+    fi
 
     # BAT: <30 → red, else green.
     if [[ -n $wbat && $wbat != "-" ]]; then

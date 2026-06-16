@@ -29,6 +29,7 @@ fleet-check
 /wsl/bin/stack_*
 /wsl/bin/capacity_check
 /wsl/bin/pre_check_gar
+/wsl/bin/mr-board*
 /wsl/bin/kcl-*
 /wsl/bin/nomos-check
 /wsl/bin/fleet-check-install
@@ -45,6 +46,8 @@ fleet-check
 /claude/.claude/commands/mr-watch.md
 /claude/.claude/commands/create-mr.md
 /claude/.claude/commands/review-mr.md
+# mr-board skill references the internal Jira site + GitLab group/MR/ticket ids
+/claude/.claude/skills/mr-board/
 
 # machine-local: Claude Code writes model/permissions into it; seed from settings.template.json
 /claude/.claude/settings.json
