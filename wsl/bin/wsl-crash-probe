@@ -1,0 +1,119 @@
+#!/bin/bash
+
+# ==========================================
+# WSL CRASH PROBE
+# Investigates *why* the WSL VM gets torn down (usually first start of the day).
+# The crash is host-side: the Linux guest is healthy, then Windows kills the VM
+# (signature in the guest journal: "Operation canceled @p9io.cpp ... AcceptAsync").
+# This probe queries the WINDOWS side via powershell.exe for the real trigger.
+#
+# Usage: wsl-crash-probe [HOURS_BACK]   (default: 24)
+# ==========================================
+
+set -u
+
+HOURS="${1:-24}"
+PS="/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
+
+if [ ! -x "$PS" ]; then
+  echo "ERROR: powershell.exe not found at $PS (are we running under WSL?)" >&2
+  exit 1
+fi
+
+echo "--- WSL Crash Probe: last ${HOURS}h, run $(date) ---"
+
+# NOTE: unquoted heredoc -> bash expands $HOURS for us; every *PowerShell* '$'
+# is escaped as '\$' so it survives to powershell.exe untouched.
+"$PS" -NoProfile -Command "$(cat <<PSEOF
+# Force UTF-8 so non-English Windows locales don't arrive as mojibake in WSL.
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+\$OutputEncoding = [System.Text.Encoding]::UTF8
+\$ErrorActionPreference = 'SilentlyContinue'
+\$since = (Get-Date).AddHours(-$HOURS)
+
+function Short(\$m) {
+  if (-not \$m) { return '' }
+  \$m = (\$m -replace '\s+', ' ').Trim()
+  if (\$m.Length -gt 200) { return \$m.Substring(0,200) + '...' }
+  return \$m
+}
+
+Write-Output ''
+Write-Output '===== [1] Hyper-V / WSL utility-VM lifecycle ====='
+\$vmLogs = @(
+  'Microsoft-Windows-Hyper-V-Compute-Operational',
+  'Microsoft-Windows-Hyper-V-Worker-Admin'
+)
+# Noise: VmSwitch OID_GEN_STATISTICS (285) and NDK OID (148) spam every ~2s.
+\$noiseIds = 285,148,131334
+foreach (\$log in \$vmLogs) {
+  \$ev = Get-WinEvent -FilterHashtable @{ LogName = \$log; StartTime = \$since } |
+        Where-Object { \$noiseIds -notcontains \$_.Id }
+  if (\$ev) {
+    Write-Output "--- \$log ---"
+    \$ev | Sort-Object TimeCreated |
+      Select-Object -Last 20 TimeCreated, Id, LevelDisplayName,
+        @{ N='Message'; E={ Short \$_.Message } } |
+      Format-Table -Auto -Wrap
+  }
+}
+
+Write-Output ''
+Write-Output '===== [2] WSL service / LxssManager / 9P (System log) ====='
+Get-WinEvent -FilterHashtable @{ LogName = 'System'; StartTime = \$since } |
+  Where-Object { \$_.ProviderName -match 'Lxss|WSL|P9|vmcompute|HostCompute' } |
+  Sort-Object TimeCreated |
+  Select-Object -Last 25 TimeCreated, Id, ProviderName,
+    @{ N='Message'; E={ Short \$_.Message } } |
+  Format-Table -Auto -Wrap
+
+Write-Output ''
+Write-Output '===== [3] Power transitions: boot / sleep / resume / unexpected shutdown ====='
+# Provider-scoped so the generic Id=1 spam from other providers is excluded.
+# Kernel-Power: 42=sleep, 107=resume, 41=dirty reboot, 1=resume detail.
+# Kernel-General 12/13=boot/shutdown. EventLog 6005/6006=up/down, 6008=unexpected.
+Get-WinEvent -FilterHashtable @{ LogName = 'System'; StartTime = \$since } |
+  Where-Object {
+    (\$_.ProviderName -eq 'Microsoft-Windows-Kernel-Power') -or
+    (\$_.ProviderName -eq 'Microsoft-Windows-Power-Troubleshooter') -or
+    (\$_.ProviderName -eq 'Microsoft-Windows-Kernel-General' -and \$_.Id -in 12,13) -or
+    (\$_.ProviderName -eq 'Microsoft-Windows-Hyper-V-Hypervisor') -or
+    (\$_.ProviderName -eq 'EventLog' -and \$_.Id -in 6005,6006,6008)
+  } |
+  Sort-Object TimeCreated |
+  Select-Object TimeCreated, Id, ProviderName,
+    @{ N='Message'; E={ Short \$_.Message } } |
+  Format-Table -Auto -Wrap
+
+Write-Output ''
+Write-Output '===== [4] Scheduled tasks that could shut down / optimize WSL ====='
+Get-ScheduledTask |
+  Where-Object {
+    \$_.TaskName -match 'wsl|update|optimize|vhd|defrag' -or
+    \$_.TaskPath -match 'WSL|WindowsUpdate|Defrag'
+  } |
+  ForEach-Object {
+    \$info = \$_ | Get-ScheduledTaskInfo
+    \$trig = (\$_.Triggers | ForEach-Object { (\$_.CimClass.CimClassName -replace 'MSFT_TaskTrigger','') }) -join ','
+    [pscustomobject]@{
+      Task       = \$_.TaskName
+      State      = \$_.State
+      Triggers   = \$trig
+      LastRun    = \$info.LastRunTime
+      LastResult = ('0x{0:X}' -f \$info.LastTaskResult)
+      NextRun    = \$info.NextRunTime
+    }
+  } |
+  Sort-Object LastRun |
+  Format-Table -Auto -Wrap
+
+Write-Output ''
+Write-Output '===== [5] WSL config in effect ====='
+Get-Content "\$env:USERPROFILE\.wslconfig" -ErrorAction SilentlyContinue
+PSEOF
+)"
+
+echo ""
+echo "--- Probe finished ---"
+echo "Tip: correlate the timestamps above with the guest-side crash:"
+echo "     journalctl --list-boots | tail   (short boots = the morning kills)"
