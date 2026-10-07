@@ -19,10 +19,12 @@ set -u
 PORT="${BROWSER_BRIDGE_PORT:-8765}"
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/browser-bridge.$PORT.lock"
 
-# Sync-on-view: when an incoming URL points at the LOCAL teach-me/daily server,
-# first pull the dev-server's freshly-authored docs into the local library so
-# the page is present before the browser loads it. The server is laptop-only;
-# the dev box is a contributor. Additive (--update, no --delete): the dev box
+# Sync-on-view: when an incoming URL points at the canonical teach-me/daily
+# port, pull the dev-server's freshly-authored docs into the local library.
+# Port convention: 8042 (TEACHME_PORT, the trigger matched below) is the DEV
+# box's live server, reached via the ssh helper's -L 8042 forward — the
+# primary view. The local library is a warm STANDBY served on 8043; this sync
+# is what keeps it fresh. Additive (--update, no --delete): the dev box
 # only adds/refreshes files, never removes or clobbers a newer local copy — safe
 # when both machines author docs. Topic nav blocks live in the per-machine
 # zensical.toml (not under docs/), so the dev toml is pulled aside and its

@@ -1,23 +1,34 @@
 #!/usr/bin/env python3
 """cartoon.py — emit a date-rotating "cartoon of the day" block, fetched live.
 
-Rotates through 5 ORIGINAL webcomic sources (one per day, by date ordinal % 5) and
+THE PAGE IS READ AT WORK, BY COLLEAGUES, AND IS PUBLISHED TO A SHARED INTERNAL HUB.
+Every source here must be safe for that audience on *every* strip it has ever run —
+not merely usually. This script fetches whatever a feed published most recently and
+embeds it unreviewed, so a source's worst strip is the one that matters. When in doubt
+about a source, leave it out; see BANNED_HOSTS below.
+
+Rotates through 3 ORIGINAL webcomic sources (one per day, by date ordinal % 3) and
 fetches that source's *most recent* strip at runtime, so the image is hosted by the
 comic's own origin — not re-hosted by an aggregator. A date's first successful pick is
 cached (see CACHE_DIR), so repeated runs that day — e.g. a morning then an evening daily —
 render the identical strip even if the source publishes a new one in between. Output is
 delimited by <!-- cartoon:start --> / <!-- cartoon:end --> so the daily skill can replace it.
 
-Sources (all checked live):
+Sources (all checked live, all workplace-safe):
   - xkcd               JSON API   https://xkcd.com/info.0.json
   - turnoff.us         RSS        https://turnoff.us/feed.xml
   - Work Chronicles    RSS        https://workchronicles.com/feed/
-  - Poorly Drawn Lines RSS        https://poorlydrawnlines.com/feed/
-  - SMBC               RSS        https://www.smbc-comics.com/comic/rss
 
-Dropped: Dilbert (dilbert.com defunct), CommitStrip (no new strips since 2022),
-Sysadminotaur (Devolutions blog exposes only logos/marketing images, not the strip),
-MonkeyUser (comic image is JS-rendered — absent from both the static HTML and the feed).
+Removed for not-safe-for-work content (2026-07-22): SMBC (smbc-comics.com) — routinely
+runs sexual and crude strips, and one reached a published daily page; Poorly Drawn Lines
+(poorlydrawnlines.com) — same class of risk. Both are permanently barred by BANNED_HOSTS,
+which is enforced on the live pick AND on the per-date cache, so neither can return via a
+new provider, a fallthrough, or a stale cache entry.
+
+Also dropped, for being broken rather than unsafe: Dilbert (dilbert.com defunct),
+CommitStrip (no new strips since 2022), Sysadminotaur (Devolutions blog exposes only
+logos/marketing images, not the strip), MonkeyUser (comic image is JS-rendered — absent
+from both the static HTML and the feed).
 
 If the day's source can't be fetched, the next sources in rotation are tried, then a
 static fallback. Stdlib only. Usage: cartoon.py [YYYY-MM-DD]   (default: today)
@@ -61,6 +72,17 @@ _BAD_IMG = re.compile(
     r"(logo|/icons?/|avatar|gravatar|sprite|spacer|placeholder|headlineimagetemplate|\.svg(?:[?#]|$))",
     re.I,
 )
+
+# Hosts barred for not-safe-for-work content. This is a *permanent* bar, not a rotation
+# tweak: removing a provider function alone is not enough, because a stale per-date cache
+# entry or a future well-meaning re-add would bring the source straight back. Checked
+# against every candidate URL — image URL, page URL and credit — on the live pick, on the
+# cache read, and once more before the block is emitted.
+BANNED_HOSTS = ("smbc-comics.com", "poorlydrawnlines.com")
+
+
+def _is_banned(*urls):
+    return any(h in (u or "").lower() for u in urls for h in BANNED_HOSTS)
 
 
 def _first_image(block):
@@ -106,16 +128,8 @@ def src_workchronicles():
     return _rss_latest("https://workchronicles.com/feed/", "workchronicles.com")
 
 
-def src_poorlydrawnlines():
-    return _rss_latest("https://poorlydrawnlines.com/feed/", "poorlydrawnlines.com")
-
-
-def src_smbc():
-    return _rss_latest("https://www.smbc-comics.com/comic/rss", "smbc-comics.com")
-
-
-# Rotation order (index = date.toordinal() % 5).
-PROVIDERS = [src_xkcd, src_turnoff, src_workchronicles, src_poorlydrawnlines, src_smbc]
+# Rotation order (index = date.toordinal() % len(PROVIDERS)).
+PROVIDERS = [src_xkcd, src_turnoff, src_workchronicles]
 FALLBACK = ("xkcd #327: Exploits of a Mom",
             "https://imgs.xkcd.com/comics/exploits_of_a_mom.png",
             "https://xkcd.com/327/", "xkcd.com")
@@ -131,7 +145,9 @@ def _cache_get(date):
         with open(os.path.join(CACHE_DIR, f"{date.isoformat()}.json"), encoding="utf-8") as f:
             d = json.load(f)
         r = tuple(d[k] for k in _FIELDS)
-        if r[1] and not _BAD_IMG.search(r[1]):  # ignore an empty/stale-bad cached image
+        # Ignore an empty/stale-bad cached image, and never serve a cached pick from a
+        # banned host — a cache written before the ban must not outlive it.
+        if r[1] and not _BAD_IMG.search(r[1]) and not _is_banned(r[1], r[2], r[3]):
             return r
     except (OSError, ValueError, KeyError):
         pass  # missing/corrupt cache → just re-pick
@@ -157,6 +173,10 @@ def _select(date):
         try:
             r = prov()
             if r and r[1] and not _BAD_IMG.search(r[1]):  # reject logo/placeholder hits
+                if _is_banned(r[1], r[2], r[3]):
+                    print(f"[cartoon] {prov.__name__} returned a banned host — skipped",
+                          file=sys.stderr)
+                    continue
                 return r, False
         except Exception as e:  # noqa: BLE001 - best-effort, try next source
             print(f"[cartoon] {prov.__name__} failed: {e}", file=sys.stderr)
@@ -178,9 +198,11 @@ def pick(date):
 
 def block(date):
     title, img, page, credit = pick(date)
+    if _is_banned(img, page, credit):  # last line of defence before it reaches a page
+        title, img, page, credit = FALLBACK
     return (
         f"{START}\n"
-        "## 🗞️ Cartoon of the day\n\n"
+        "## :material-newspaper-variant-outline: Cartoon of the day\n\n"
         f"[![{title}]({img}){{ width=560 }}]({page})\n\n"
         f"*[{title}]({page}) — via {credit}*\n"
         f"{END}"

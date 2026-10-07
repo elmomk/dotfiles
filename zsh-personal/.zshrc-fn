@@ -1,5 +1,5 @@
-alias mr-watch='claude --allow-dangerously-skip-permissions "Run gl-mr-watch (always show table), then gl-mr-poll. If gl-mr-poll exits 1, no further action — table was already shown. If gl-mr-poll exits 0 (actionable MRs): IMMEDIATELY fire gl-notify with the count + IIDs + first URL (notify-on-pending, before drafts finish), then launch a background Agent subagent per MR to DRAFT-ONLY: run /review-mr <IID> and write the review body to /tmp/mr-review-<IID>.md. DO NOT post. DO NOT call gl-mr comment. DO NOT call gl-mr-watch mark. When all draft agents finish, surface each draft inline in the conversation and ASK the user to approve/edit/skip before posting. Only after explicit user approval per MR: GL_MR_ALLOW_POST=1 gl-mr comment <IID> - <project> with the (possibly edited) body, then gl-mr-watch mark <IID> <verdict>, then gl-notify confirming the post. Auto-DRAFT all NEW and UPDATED MRs without asking; auto-POST is forbidden. Skip any MR whose author is in the blacklist array from ~/.mr-review-state.json. Stale MRs (>1 week) filtered by gl-mr-poll. State: ~/.mr-review-state.json. Review DB: ~/.mr-reviews.json. This is a one-shot manual trigger — no CronCreate, no auto-poll."'
-alias issue-engineer='claude --allow-dangerously-skip-permissions "Run gl-issue-watch (always show table), then set up a CronCreate with '"'"'*/5 * * * *'"'"'. Each tick: run gl-issue-watch (show table), then gl-issue-poll. If gl-issue-poll exits 0 (actionable issues), launch a background Agent subagent per issue (with isolation: worktree) to: read the full issue via glab issue view <IID>, ALWAYS enter /plan mode first to design the implementation approach then auto-accept the plan, create a worktree branch feat/issue-<IID>-<slug>, implement the changes following CONVENTIONS.md, commit with resolves #<IID>, push the branch, create MR via gl-mr create master with Closes #<IID> in body, add user as reviewer via glab mr update <MR_IID> --reviewer user, leave a note on the original issue referencing the MR via glab issue note <IID> -m '"'"'Automated implementation submitted: MR !<MR_IID> — please review.'"'"', record via gl-issue-watch mark <IID> mr_created <MR_IID>, notify via gl-notify. If gl-issue-poll exits 1, no further action — table was already shown. Auto-implement all NEW issues without asking. Skip any issue whose author is in the blacklist array from ~/.issue-engineer-state.json. If issue description is too vague, mark as skipped. State: ~/.issue-engineer-state.json. glab path: glab."'
+alias mr-watch='claude --allow-dangerously-skip-permissions --permission-mode auto "Run gl-mr-watch (always show table), then gl-mr-poll. If gl-mr-poll exits 1, no further action — table was already shown. If gl-mr-poll exits 0 (actionable MRs): IMMEDIATELY fire gl-notify with the count + IIDs + first URL (notify-on-pending, before drafts finish), then launch a background Agent subagent per MR to DRAFT-ONLY: run /review-mr <IID> and write the review body to /tmp/mr-review-<IID>.md. DO NOT post. DO NOT call gl-mr comment. DO NOT call gl-mr-watch mark. When all draft agents finish, surface each draft inline in the conversation, then FIRST ask the user whether they want to view the MR(s) via /open (open the MR URLs with the open skill if yes), and only THEN ASK the user to approve/edit/skip before posting. Only after explicit user approval per MR: GL_MR_ALLOW_POST=1 gl-mr comment <IID> - <project> with the (possibly edited) body, then — when the verdict is APPROVE — GL_MR_ALLOW_POST=1 gl-mr approve <IID> <project> (REQUIRED: a posted comment alone does NOT change your GitLab reviewer state, so the MR keeps showing as awaiting-your-review on the dashboard; the formal approve adds you to approved_by and clears it), then gl-mr-watch mark <IID> <verdict> <project>, then gl-notify confirming the post. Auto-DRAFT all NEW and UPDATED MRs without asking; auto-POST is forbidden. Skip any MR whose author is in the blacklist array from ~/.mr-review-state.json. Stale MRs (>1 week) filtered by gl-mr-poll. State: ~/.mr-review-state.json. Review DB: ~/.mr-reviews.json (keyed <project>!<iid>). This is a one-shot manual trigger — no CronCreate, no auto-poll."'
+alias issue-engineer='claude --allow-dangerously-skip-permissions "Run gl-issue-watch (always show table), then set up a CronCreate with '"'"'*/5 * * * *'"'"'. Each tick: run gl-issue-watch (show table), then gl-issue-poll. If gl-issue-poll exits 0 (actionable issues), launch a background Agent subagent per issue (with isolation: worktree) to: read the full issue via glab issue view <IID>, ALWAYS enter /plan mode first to design the implementation approach then auto-accept the plan, create a worktree branch feat/issue-<IID>-<slug>, implement the changes following CONVENTIONS.md, commit with resolves #<IID>, push the branch, create MR via gl-mr create master with Closes #<IID> in body, add $USER as reviewer via glab mr update <MR_IID> --reviewer $USER, leave a note on the original issue referencing the MR via glab issue note <IID> -m '"'"'Automated implementation submitted: MR !<MR_IID> — please review.'"'"', record via gl-issue-watch mark <IID> mr_created <MR_IID>, notify via gl-notify. If gl-issue-poll exits 1, no further action — table was already shown. Auto-implement all NEW issues without asking. Skip any issue whose author is in the blacklist array from ~/.issue-engineer-state.json. If issue description is too vague, mark as skipped. State: ~/.issue-engineer-state.json. glab path: glab."'
 alias t-claude="tmx claude --teammate-mode tmux"
 tmx() {
   # Get the name of the current working directory
@@ -14,8 +14,65 @@ tmx() {
   tmux attach-session -t "$session_name"
 }
 
+# Remove worktrees that hold nothing worth keeping.
+#
+# A clean tree is NOT the same as a safe one. `git worktree remove` leaves the
+# branch ref behind, so removing a clean worktree that holds commits pushed
+# nowhere strands them: the work survives only as a ref nobody will look at.
+# Measured on shared-dotfiles 2026-08-11 — four clean worktrees held 13 commits
+# reachable from no remote, and the old porcelain-only test would have removed
+# every one of them.
+#
+# So there are two questions, and dirtiness is only the first:
+#   1. uncommitted work?      git status --porcelain
+#   2. committed but nowhere? git rev-list --count HEAD --not --remotes
+#
+# (2) is deliberately `--not --remotes` rather than `@{u}..HEAD`: the upstream
+# form errors on a branch with no upstream — the most dangerous case of all —
+# and reports commits that are already on some other remote ref as unpushed.
+#
+# Order matters: the dirty check runs first, so a `.KEEP` marker still pins a
+# worktree that other things symlink into.
+#
+# Pass --dry-run to see what would go without removing anything.
 worktree-clean() {
-git worktree list --porcelain | grep '^worktree ' | cut -d ' ' -f 2 | xargs -I {} sh -c 'MAIN=$(git rev-parse --show-toplevel); if [ "{}" != "$MAIN" ]; then cd {}; if [ -z "$(git status --porcelain)" ]; then echo "🧹 Removing: {}"; git worktree remove "{}"; else echo "❌ DIRTY: {}"; fi; fi'
+	local dry=0
+	[[ "${1:-}" == "--dry-run" || "${1:-}" == "-n" ]] && dry=1
+
+	# The main worktree is always the first entry. The old version asked
+	# `rev-parse --show-toplevel` from inside the loop, which answered with
+	# whatever worktree the caller happened to be standing in — so running it
+	# from a linked worktree skipped that one and targeted the real main tree.
+	local -a trees
+	trees=(${(f)"$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2}')"})
+	(( ${#trees} )) || { echo "not inside a git repository" >&2; return 1 }
+
+	local main=${trees[1]} w dirty held
+	for w in ${trees[2,-1]}; do
+		if [[ ! -d "$w" ]]; then
+			echo "⚠️  MISSING: $w"
+			continue
+		fi
+
+		dirty=$(git -C "$w" status --porcelain 2>/dev/null | wc -l)
+		if (( dirty > 0 )); then
+			echo "❌ DIRTY: $w ($dirty file(s))"
+			continue
+		fi
+
+		held=$(git -C "$w" rev-list --count HEAD --not --remotes 2>/dev/null || echo 0)
+		if (( held > 0 )); then
+			echo "🔒 HELD: $w ($held commit(s) on no remote)"
+			continue
+		fi
+
+		if (( dry )); then
+			echo "🧹 would remove: $w"
+		else
+			echo "🧹 Removing: $w"
+			git worktree remove "$w"
+		fi
+	done
 }
 
 worktree-check() {
@@ -84,18 +141,70 @@ _bw_cache_sync() {   # <json-string> <dest-path> → echoes a status word
 # consumer of this UID can read it without re-unlocking the vault. The value is
 # piped via stdin (never in argv), lives in kernel memory only (nothing on disk),
 # and is wiped on reboot. Perms 0x3f3f0000 = possessor+user full, group/other none.
-_bw_kr_put() {  # <key-name> <value>
+#
+# NAMING: no leading underscore, deliberately. Claude Code snapshots the shell's
+# functions for its Bash tool but filters `_*` (the zsh completion namespace) —
+# an underscore-named helper vanishes from tool shells while its callers
+# (bwu, bw_keyring_hydrate) survive, and hydration silently returns nothing.
+bw_kr_put() {  # <key-name> <value>
   command -v keyctl >/dev/null 2>&1 || return 0
   [[ -n $2 ]] || return 0
-  local _id
+  local _id _old
+  # Unlink any pre-existing key of this name first: a `keyctl padd` that merely
+  # *updates* an existing key can't re-perm one this shell doesn't possess, so
+  # recreating guarantees the setperm below at least RUNS against a fresh key.
+  # It does NOT guarantee it succeeds — from a possession-less shell (revoked
+  # session keyring: tmux/claude outliving their login under pam_keyinit
+  # `force revoke`) SETATTR is denied and the key stays user=VIEW-only. bwu
+  # verifies afterwards and repairs via the systemd user manager, which always
+  # possesses @u — see bw_kr_fix_perms.
+  _old="$(keyctl search @u user "$1" 2>/dev/null)" && keyctl unlink "$_old" @u >/dev/null 2>&1
   _id="$(print -rn -- "$2" | keyctl padd user "$1" @u 2>/dev/null)" || return 0
   keyctl setperm "$_id" 0x3f3f0000 >/dev/null 2>&1
 }
 # Read a `user` key from the user keyring; print payload, empty on miss.
-_bw_kr_get() {  # <key-name>
+# (Same no-underscore naming rule as bw_kr_put — snapshot survival.)
+bw_kr_get() {  # <key-name>
   command -v keyctl >/dev/null 2>&1 || return 0
   local _id; _id="$(keyctl search @u user "$1" 2>/dev/null)" || return 0
   keyctl print "$_id" 2>/dev/null || return 0
+}
+
+# Every key bwu maintains — single source for the write block, the perm verify,
+# and the repair sweep. Order-insensitive; absent keys are skipped everywhere.
+BW_KR_KEYS=(gl:host gl:token mr:group mr:users mr:group_saas mr:users_saas
+            jira:token infracost:token atlassian:cloud_id atlassian:site
+            secrets:json)
+
+# True when every PRESENT bwu key carries user-byte full perms (0x3f3f0000 →
+# describe shows `alswrvalswrv…`). A key at the kernel default `alswrv-----v…`
+# (user=VIEW-only) is readable ONLY by possessing processes — on this box that
+# means systemd --user units and nothing else, so every shell's hydration reads
+# empty while `keyctl search` still succeeds. `describe` needs only VIEW, so
+# this check works even from a possession-less shell.
+bw_kr_perms_ok() {
+  command -v keyctl >/dev/null 2>&1 || return 0
+  local _n _id _d
+  for _n in "${BW_KR_KEYS[@]}"; do
+    _id="$(keyctl search @u user "$_n" 2>/dev/null)" || continue
+    _d="$(keyctl describe "$_id" 2>/dev/null)" || continue
+    [[ $_d == *alswrvalswrv* ]] || return 1
+  done
+  return 0
+}
+
+# Re-perm every bwu key to 0x3f3f0000 from the one context that always
+# possesses @u: the systemd --user manager (its _uid_ses session keyring links
+# the user keyring; ours may be revoked — pam_keyinit `force revoke` kills each
+# login's session keyring at logout, and tmux/claude outlive theirs). Key NAMES
+# only on the command line, never payloads.
+bw_kr_fix_perms() {
+  command -v keyctl >/dev/null 2>&1 || return 0
+  command -v systemd-run >/dev/null 2>&1 || return 1
+  systemd-run --user --quiet --wait --collect /bin/sh -c '
+    for n in '"${BW_KR_KEYS[*]}"'; do
+      id=$(keyctl search @u user "$n" 2>/dev/null) && keyctl setperm "$id" 0x3f3f0000
+    done' 2>/dev/null
 }
 bwu() {
   local s json wjson sc wc mrg mru acid asite
@@ -104,7 +213,7 @@ bwu() {
   unset BW_SESSION
   s="$(bw unlock --raw)" || return 1
   if [[ -z $s ]]; then
-    print -P "%F{red}✗%f bw unlock returned an empty session (wrong password, or run \`bw lock\` and retry)"
+    print -P "%F{red}✗%f bw unlock returned an empty session (wrong password, or run 'bw lock' and retry)"
     return 1
   fi
   export BW_SESSION="$s"
@@ -125,6 +234,11 @@ bwu() {
   wjson="$(bw get notes work-json 2>/dev/null)"
   mrg="$(print -r -- "$wjson" | jq -r '.mr_review.group // empty' 2>/dev/null)"
   mru="$(print -r -- "$wjson" | jq -r '.mr_review.users // empty' 2>/dev/null)"
+  # Same two, for gitlab.com. Separate because a person's username differs between
+  # the instances — reusing the internal map would attribute MRs to whoever happens
+  # to hold that name on SaaS. Absent → the dashboards show only my own MRs there.
+  mrgs="$(print -r -- "$wjson" | jq -r '.mr_review.group_saas // empty' 2>/dev/null)"
+  mrus="$(print -r -- "$wjson" | jq -r '.mr_review.users_saas // empty' 2>/dev/null)"
   # Atlassian tenant identifiers (non-secret PI) — kept out of every repo; mr-board
   # reads them from here (env → keyring → ~/.work.json), never hardcoded.
   acid="$(print -r -- "$wjson" | jq -r '.atlassian.cloud_id // empty' 2>/dev/null)"
@@ -132,17 +246,19 @@ bwu() {
 
   # Primary store: kernel keyring (@u) — read by every session/consumer of this
   # UID via gl-load-creds, in kernel memory only, wiped on reboot.
-  _bw_kr_put gl:host         "$GITLAB_HOST"
-  _bw_kr_put gl:token        "$GITLAB_TOKEN"
-  _bw_kr_put mr:group        "$mrg"
-  _bw_kr_put mr:users        "$mru"
-  _bw_kr_put jira:token      "$JIRA_API_TOKEN"
-  _bw_kr_put infracost:token "$INFRACOST_API_KEY"
-  _bw_kr_put atlassian:cloud_id "$acid"
-  _bw_kr_put atlassian:site     "$asite"
+  bw_kr_put gl:host         "$GITLAB_HOST"
+  bw_kr_put gl:token        "$GITLAB_TOKEN"
+  bw_kr_put mr:group        "$mrg"
+  bw_kr_put mr:users        "$mru"
+  bw_kr_put mr:group_saas   "$mrgs"
+  bw_kr_put mr:users_saas   "$mrus"
+  bw_kr_put jira:token      "$JIRA_API_TOKEN"
+  bw_kr_put infracost:token "$INFRACOST_API_KEY"
+  bw_kr_put atlassian:cloud_id "$acid"
+  bw_kr_put atlassian:site     "$asite"
   # Full secrets blob (compact JSON) for generic consumers like ~/work/.envrc,
   # which export every scalar rather than a fixed set of keys.
-  _bw_kr_put secrets:json    "$(print -r -- "$json" | jq -c . 2>/dev/null)"
+  bw_kr_put secrets:json    "$(print -r -- "$json" | jq -c . 2>/dev/null)"
 
   # Re-sync the opt-in on-disk caches (no-op where the file is absent).
   sc="$(_bw_cache_sync "$json"  "$HOME/.secrets.json")"
@@ -168,6 +284,21 @@ bwu() {
     glab config set api_host "$GITLAB_HOST" --host "$GITLAB_HOST" >/dev/null 2>&1
   fi
 
+  # Second instance: wire glab to real SaaS gitlab.com from the vault's optional
+  # `gitlab_saas` block, so a single `bwu` authenticates both instances. Unlike
+  # the internal host (token via env/keyring), glab has no per-host token env, so
+  # the SaaS PAT is written to glab's config.yml (0600). Skips if the key absent.
+  if command -v glab >/dev/null 2>&1; then
+    local saas_host saas_tok
+    saas_host="$(print -r -- "$json" | jq -r '.gitlab_saas.host // empty')"
+    saas_tok="$(print -r -- "$json" | jq -r '.gitlab_saas.token // empty')"
+    if [[ -n $saas_host && -n $saas_tok ]]; then
+      glab config set api_protocol https  --host "$saas_host" >/dev/null 2>&1
+      glab config set api_host "$saas_host" --host "$saas_host" >/dev/null 2>&1
+      glab config set token "$saas_tok"     --host "$saas_host" >/dev/null 2>&1
+    fi
+  fi
+
   local kr; command -v keyctl >/dev/null 2>&1 && kr="keyring" || kr="keyring(no keyctl)"
   if [[ -n $GITLAB_TOKEN ]]; then
     print -P "%F{green}✓%f vault unlocked — tokens loaded → $kr; file cache: secrets=$sc work=$wc"
@@ -175,6 +306,28 @@ bwu() {
     print -P "%F{yellow}✓%f vault unlocked — .gitlab.token empty in note; file cache: secrets=$sc work=$wc"
   fi
   bw_keyring_hydrate   # make this shell match a freshly-spawned one
+  # Nudge mr-board to refresh its badge now rather than waiting up to 15 min for
+  # the timer, so the tmux bar drops its "(run bwu)" hint right after unlocking.
+  [[ -n $GITLAB_TOKEN ]] && systemctl --user start --no-block mr-board.service 2>/dev/null || true
+
+  # Perms self-heal. From a possession-less shell (revoked session keyring) the
+  # per-key setperm above was silently denied, leaving every key user=VIEW-only:
+  # `keyctl search @u` still succeeds everywhere, but every reader's follow-up
+  # `keyctl print` is denied, so other shells hydrate EMPTY while systemd units
+  # keep working — the classic "bwu didn't propagate" split. Verify, repair via
+  # the user manager (which always possesses @u), and say so if still broken.
+  if ! bw_kr_perms_ok; then
+    bw_kr_fix_perms
+    if bw_kr_perms_ok; then
+      print -P "%F{green}✓%f keyring perms repaired via systemd --user (this shell can't setperm — revoked session keyring)"
+    else
+      print -P "%F{red}✗%f keyring keys are user=VIEW-only and the systemd repair failed — other shells CANNOT read creds. Diagnose: creds-doctor; repair: creds-doctor --repair"
+    fi
+  fi
+  # direnv snapshots ~/work/.envrc by mtime; a pane that entered ~/work before
+  # this unlock keeps its empty snapshot forever. Bump mtime so its next prompt
+  # re-evaluates against the now-readable keyring.
+  command -v direnv >/dev/null 2>&1 && touch -c ~/work/.envrc 2>/dev/null || true
 }
 
 # Hydrate this shell's env from the kernel keyring populated by `bwu`. Runs at
@@ -183,12 +336,21 @@ bwu() {
 # Key names are the shared contract with `bwu` / `gl-load-creds`.
 bw_keyring_hydrate() {
   command -v keyctl >/dev/null 2>&1 || return 0
-  : "${GITLAB_HOST:=$(_bw_kr_get gl:host)}";             [[ -n $GITLAB_HOST ]]        && export GITLAB_HOST
-  : "${GITLAB_TOKEN:=$(_bw_kr_get gl:token)}";           [[ -n $GITLAB_TOKEN ]]       && export GITLAB_TOKEN
-  : "${JIRA_API_TOKEN:=$(_bw_kr_get jira:token)}";       [[ -n $JIRA_API_TOKEN ]]     && export JIRA_API_TOKEN
-  : "${INFRACOST_API_KEY:=$(_bw_kr_get infracost:token)}"; [[ -n $INFRACOST_API_KEY ]] && export INFRACOST_API_KEY
+  : "${GITLAB_HOST:=$(bw_kr_get gl:host)}";             [[ -n $GITLAB_HOST ]]        && export GITLAB_HOST
+  : "${GITLAB_TOKEN:=$(bw_kr_get gl:token)}";           [[ -n $GITLAB_TOKEN ]]       && export GITLAB_TOKEN
+  : "${JIRA_API_TOKEN:=$(bw_kr_get jira:token)}";       [[ -n $JIRA_API_TOKEN ]]     && export JIRA_API_TOKEN
+  : "${INFRACOST_API_KEY:=$(bw_kr_get infracost:token)}"; [[ -n $INFRACOST_API_KEY ]] && export INFRACOST_API_KEY
 }
 bw_keyring_hydrate
+
+# Top up an ALREADY-RUNNING shell at its next prompt after `bwu` ran in some
+# other pane. Hydrate only fills empty vars, so this never overrides direnv or
+# an explicit export, and the guard makes it a zero-cost no-op once populated.
+# Startup-only hydration is why panes opened before the unlock stayed empty.
+bw_keyring_hydrate_precmd() { [[ -n $GITLAB_TOKEN ]] || bw_keyring_hydrate }
+if [[ -o interactive ]] && (( ! ${precmd_functions[(I)bw_keyring_hydrate_precmd]} )); then
+  precmd_functions+=(bw_keyring_hydrate_precmd)
+fi
 
 # Install local git pre-commit hooks: vault plaintext guard + mapping.cfg
 # collision lint. One-shot install per worktree.
@@ -481,6 +643,31 @@ aks(){
 
 k8sversions() {
   for kind in `kubectl api-resources | tail +2 | awk '{ print $1 }'`; do kubectl explain $kind; done | grep -e "KIND:" -e "VERSION:"
+}
+
+# Interactive Claude Code with this box's defaults: auto permission mode and max
+# effort (max stays the interactive default until changed on purpose). The crew
+# no longer launches interactive sessions — `crew spawn` starts background ones
+# and `crew tick` supervises them — so no hook or teammate rides along here.
+#
+# A Claude Code subcommand passes through untouched: `claude attach|logs|stop|…`
+# take their own arguments, and the session flags below mean nothing to them.
+# So do -p/--print runs, whose callers pick their own flags, and help/version.
+# `command claude` still runs the bare binary.
+claude() {
+  case ${1-} in
+    agents | attach | auth | auto-mode | config | doctor | gateway | import | install | kill | logs | \
+    mcp | migrate-installer | plugin | plugins | project | respawn | rm | setup-token | stop | \
+    ultrareview | update | upgrade)
+      command claude "$@"; return ;;
+  esac
+  local a
+  for a in "$@"; do
+    case $a in
+      -p | --print | -h | --help | -v | --version) command claude "$@"; return ;;
+    esac
+  done
+  command claude --permission-mode auto --effort max "$@"
 }
 
 winstat() {

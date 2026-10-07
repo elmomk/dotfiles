@@ -2,16 +2,16 @@
 
 ```bash
 find ~ -maxdepth 2 -type l -lname "*dotfiles*"
-/home/user/.tmux.conf
-/home/user/.zshrc-work
-/home/user/.gitconfig
-/home/user/.zshrc-fn
-/home/user/.gitconfig-work
-/home/user/.config/nvim
-/home/user/.config/starship.toml
-/home/user/bin
-/home/user/.zshrc-zinit
-/home/user/.zshrc-personal
+~/.tmux.conf
+~/.zshrc-work
+~/.gitconfig
+~/.zshrc-fn
+~/.gitconfig-work
+~/.config/nvim
+~/.config/starship.toml
+~/bin
+~/.zshrc-zinit
+~/.zshrc-personal
 
 ```
 

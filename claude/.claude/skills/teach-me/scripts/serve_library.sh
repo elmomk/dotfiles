@@ -13,6 +13,11 @@
 #
 # Usage: serve_library.sh [port]   (default 8042)
 # Honors $TEACHME_HOME (default: ~/teach-me); the library lives at $TEACHME_HOME/library.
+#
+# Port convention: 8042 = the dev box's live server (the user's browser reaches it through
+# the ssh helper's -L 8042 forward); 8043 = the laptop's warm-standby copy. Never serve
+# 8042 on the laptop — it wins the bind race against the ssh forward (ssh only warns) and
+# the browser silently gets the stale local build instead of the live one.
 set -uo pipefail
 
 PORT="${1:-8042}"

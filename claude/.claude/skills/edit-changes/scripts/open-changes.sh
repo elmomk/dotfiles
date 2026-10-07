@@ -40,7 +40,7 @@ fi
 # but tmux split-window runs in a non-interactive shell where aliases don't load —
 # the command would exit immediately and the new pane would close before display.
 nvim_bin=""
-for candidate in /snap/bin/nvim /usr/local/bin/nvim /usr/bin/nvim; do
+for candidate in "$HOME/.local/bin/nvim" /snap/bin/nvim /usr/local/bin/nvim /usr/bin/nvim; do
     if [ -x "$candidate" ]; then
         nvim_bin="$candidate"
         break

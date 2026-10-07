@@ -6,6 +6,12 @@ argument-hint: "[brief topic, e.g. 'comprehensive parity test old → new']"
 
 # Jira Ticket
 
+> **Write the output normally — caveman does not apply here.** The ticket is read by
+> other people. Full sentences, articles and connectives intact, whatever length the
+> content needs. Caveman/compressed modes govern chat replies, not artifacts: if one is
+> active, keep it for the conversation around the work and write the ticket itself in
+> normal prose.
+
 Draft a well-structured Jira ticket from in-context discussion, confirm with the user, then create it in the current open sprint. Use this whenever the user says "write this as a jira ticket", "file a ticket for X", "log this in our current sprint", etc.
 
 ## Workflow

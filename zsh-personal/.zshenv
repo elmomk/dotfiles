@@ -5,7 +5,7 @@
 # a snapshot captured by a minimal-PATH shell). Append any missing standard dir so
 # tools like /usr/bin/git can never go "command not found". Order: existing PATH
 # first (mise/user dirs keep priority), system dirs appended only if absent.
-for _d in /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin /sbin /bin; do
+for _d in /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin /sbin /bin /snap/bin; do
   case ":$PATH:" in
     *":$_d:"*) ;;
     *) PATH="$PATH:$_d" ;;

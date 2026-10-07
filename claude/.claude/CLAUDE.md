@@ -6,11 +6,22 @@
 3. Surgical changes: don't "improve" adjacent code, comments, or formatting. Every changed line MUST trace to the user's request. Remove only imports/variables YOUR changes made unused.
 4. Goal-driven: transform tasks into verifiable goals. For multi-step tasks, state a plan with verify steps.
 5. When editing a file, ALWAYS `read` its imported dependencies first. Do not guess type signatures or interfaces.
+6. When working on code, ALWAYS use a worktree (via `/worktree`) before editing — never edit the shared main checkout directly. The main checkout is fragile across a session (branch can switch, HEAD can move, files come back "modified since read"); a worktree isolates the branch in its own working directory.
 </critical_rules>
 
 ## Commits
 
 Conventional commits, imperative mood: `feat(scope):`, `fix(scope):`, `refactor(scope):`, `chore(scope):`, `docs(scope):`
+
+## Rust MRs (idp/selfservice + sibling crates)
+
+Before pushing a branch with changed `.rs` files, verify locally in the affected crate(s):
+`cargo fmt --check && cargo check --tests && cargo test`. `cargo check` / `cargo test` do **not**
+cover formatting — CI's `*:test` job runs `cargo fmt --check` as its first step and fails the whole
+pipeline on any diff. That job is **manual on master pushes but auto on MR pipelines**, so master
+can carry a latent fmt violation (e.g. a direct-to-master hotfix) that only surfaces as a red
+pipeline on the *next* MR. If `fmt --check` flags a line you didn't touch, reflow it (`cargo fmt`)
+in the same MR with a `style(...)` commit — it unblocks your MR and the fmt gate for everyone after.
 
 ## Code review
 

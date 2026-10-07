@@ -29,18 +29,40 @@ fi
 
 GCLOUD_COMMON=(--zone "$ZONE" --project "$PROJECT")
 
-# Auto-tunnel added to every interactive connect (override the port via env):
-#   -R 8765  carries open-url triggers from the dev-server back to the laptop's
+# gcloud's user credentials expire (and some orgs force periodic reauth); the CLI
+# then aborts any command with "Please run: gcloud auth login to complete
+# reauthentication". Probe the active credential up front and, if it can't be
+# refreshed non-interactively, fall back to an interactive `gcloud auth login`
+# before we run the real command. Memoized so we probe at most once per run.
+_AUTH_OK=0
+ensure_auth() {
+  [[ "$_AUTH_OK" == 1 ]] && return 0
+  if gcloud auth print-access-token >/dev/null 2>&1; then
+    _AUTH_OK=1
+    return 0
+  fi
+  echo "==> gcloud reauthentication required; running 'gcloud auth login'..." >&2
+  gcloud auth login
+  _AUTH_OK=1
+}
+
+# Auto-tunnel added to every interactive connect (override the ports via env):
+#   -R 8765  carries open-url triggers from the dev box back to the laptop's
 #            browser-bridge, so dashboard/MR letter-keys open in the local browser.
-# The teach-me/daily zensical server runs LOCALLY on the laptop — its content
-# (~/teach-me/library) and the uv toolchain live here, not on the dev box. So
-# ensure_serve starts it here on ${SERVE_PORT}; we deliberately do NOT -L that port
-# to the dev box (it runs no server there — the forward would only shadow the local
-# port and spam "connect failed: Connection refused").
+#   -L 8042  maps 127.0.0.1:8042 on the laptop to the dev box's OWN live teach-me
+#            server (it builds via its in-repo .venv and serves site/ there). So
+#            8042 always means "the dev box, live" — it shows exactly what this box
+#            just built, and fails loudly (connection refused) when the tunnel's
+#            down, instead of silently serving stale docs.
+# ensure_serve keeps a warm-standby COPY of the library on the laptop at ${SERVE_PORT}
+# (8043) — fed by browser-bridge's sync-on-view rsync+rebuild — so the docs stay
+# openable on :8043 when you're offline or the VM is stopped.
 BRIDGE_PORT="${BROWSER_BRIDGE_PORT:-8765}"
-SERVE_PORT="${TEACHME_PORT:-8042}"
+LIVE_PORT="${TEACHME_PORT:-8042}"
+SERVE_PORT="${TEACHME_STANDBY_PORT:-8043}"
 SSH_FORWARDS=(
   --ssh-flag="-R 127.0.0.1:${BRIDGE_PORT}:127.0.0.1:${BRIDGE_PORT}"
+  --ssh-flag="-L 127.0.0.1:${LIVE_PORT}:127.0.0.1:${LIVE_PORT}"
 )
 
 status() {
@@ -50,6 +72,7 @@ status() {
 
 start_if_needed() {
   local s
+  ensure_auth
   s="$(status || true)"
   if [[ "$s" == "RUNNING" ]]; then
     echo "==> $INSTANCE is already RUNNING"
@@ -74,12 +97,12 @@ ensure_bridge() {
 }
 
 ensure_serve() {
-  # Start the laptop-side teach-me/daily library server. Idempotent: serve_library.sh
-  # probes the port first and no-ops if the server is already up; otherwise it starts a
-  # detached no-cache static server over site/ (browser-bridge rebuilds site/ after each
-  # sync-on-view, so what it serves is always the latest sync). It also replaces a stale
-  # pre-rework `zensical serve` it finds holding the port. The library content and uv
-  # toolchain live here on the laptop, so the server runs here.
+  # Start the laptop-side warm-standby teach-me/daily server (port ${SERVE_PORT}).
+  # Idempotent: serve_library.sh probes the port first and no-ops if the server is already
+  # up; otherwise it starts a detached no-cache static server over site/ (browser-bridge
+  # rebuilds site/ after each sync-on-view, so what it serves is always the latest sync).
+  # It also replaces a stale pre-rework `zensical serve` it finds holding the port. This is
+  # the offline/VM-stopped fallback for :8042 (which -L forwards to the dev box's live server).
   local tm
   for tm in "$HOME/.claude/skills/teach-me" "$HOME/work/git/configs/.agents/skills/teach-me"; do
     if [[ -f "$tm/scripts/serve_library.sh" ]]; then
@@ -92,10 +115,34 @@ ensure_serve() {
   echo "==> teach-me skill not found; skipping zensical server (http://127.0.0.1:${SERVE_PORT}/ won't load)" >&2
 }
 
+ensure_remote_serve() {
+  # Start the dev box's OWN teach-me server on ${LIVE_PORT} so the laptop's -L ${LIVE_PORT}
+  # forward always reaches a live server — that's the whole "8042 = dev box, live" contract,
+  # and nothing else supervises it. Symmetric with ensure_serve, but over a one-shot SSH
+  # command carrying NO forwards, so it can't collide with the interactive session's -L.
+  # serve_library.sh is idempotent (probes the port, no-ops if already up). Best-effort with
+  # a short retry to ride out a cold-booted sshd; if it still can't, :${LIVE_PORT} is
+  # connection-refused until the server comes up (loud, not stale — by design).
+  local i rc
+  local remote='for tm in "$HOME/.claude/skills/teach-me" "$HOME/work/git/configs/.agents/skills/teach-me"; do [ -f "$tm/scripts/serve_library.sh" ] && exec bash "$tm/scripts/serve_library.sh" '"$LIVE_PORT"'; done; echo "[teach-me] skill not found on dev box" >&2; exit 1'
+  for ((i = 1; i <= 2; i++)); do
+    rc=0
+    gcloud compute ssh "$INSTANCE" "${GCLOUD_COMMON[@]}" --tunnel-through-iap --quiet \
+      --command="$remote" >/dev/null 2>&1 || rc=$?
+    if [[ $rc -eq 0 ]]; then
+      echo "==> dev box teach-me server ensured on 127.0.0.1:${LIVE_PORT} (reached via -L)"
+      return 0
+    fi
+    sleep 4
+  done
+  echo "==> could not ensure dev box :${LIVE_PORT} yet (sshd booting?); it'll be refused until the server is up" >&2
+}
+
 connect() {
   start_if_needed
   ensure_bridge
   ensure_serve
+  ensure_remote_serve
   echo "==> connecting via SSH (IAP tunnel)..."
   # `instances start` returns at RUNNING, but sshd may still be booting, so the
   # IAP tunnel can briefly fail with "4003: failed to connect to backend".
@@ -124,10 +171,12 @@ case "$cmd" in
   ssh|connect|"")  connect "$@" ;;
   start)           start_if_needed ;;
   stop|down|halt)
+    ensure_auth
     echo "==> stopping $INSTANCE..."
     gcloud compute instances stop "$INSTANCE" "${GCLOUD_COMMON[@]}"
     ;;
   status|stat)
+    ensure_auth
     echo "$INSTANCE: $(status || echo UNKNOWN)"
     ;;
   *)

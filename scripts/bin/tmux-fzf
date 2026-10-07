@@ -1,13 +1,99 @@
 #!/usr/bin/env bash
+# tmux-fzf — pick a session, or type a name that does not exist and get it.
+#
+# Bound to prefix + S. It used to only switch: fzf listed the sessions and you
+# chose one, and creating a session was a different key with a different tool.
+# But "which session" and "a new session" are the same thought a moment apart —
+# you go looking for the topic, and the answer is that it does not exist yet.
+#
+# fzf --print-query is what makes that one gesture. It prints the typed query on
+# the first line and the selection, if any, on the second. So a match switches
+# and a miss creates, without the user choosing a mode up front.
+#
+# Deliberately NOT `set -e`: fzf exits 1 when nothing matched, which is the
+# create path and not an error.
+set -uo pipefail
 
-if [[ ! $(tmux list-sessions) ]]; then
-	tmux
+command -v fzf >/dev/null 2>&1 || { echo "fzf is not on PATH" >&2; exit 1; }
+
+# No sessions at all means nothing to pick from and nothing to preview.
+if [ -z "$(tmux list-sessions -F '#{session_name}' 2>/dev/null)" ]; then
+	tmux new-session
+	exit 0
 fi
 
-SESSION=$(tmux list-sessions | cut -d: -f1 | fzf --cycle --preview-window=right:65%:wrap --preview "tmux capture-pane -ep -t {}" --preview-label="Switch to selected session")
+# Enter switches, ctrl-o creates. The split is explicit on purpose: inferring
+# "create" from fzf finding no match is unpredictable, because fzf matches a
+# query that is a SUBSEQUENCE of a candidate. Measured — `ally` matches an
+# existing `alloy` (a,l,l,y all appear in order) while `alloy-v2` matches
+# nothing. So the same keystroke would switch or create depending on a rule
+# nobody can apply while typing. With --expect the answer is whichever key you
+# pressed, whether or not something matched.
+#
+# --print-query and --expect together print: query, then the key (blank line
+# for plain Enter), then the selection.
+out=$(tmux list-sessions -F '#{session_name}' \
+	| fzf --cycle --print-query --expect=ctrl-o \
+	      --header='enter switch · ctrl-o create typed name' \
+	      --preview-window=right:65%:wrap \
+	      --preview 'tmux capture-pane -ep -t {}' \
+	      --preview-label='Switch to selected session')
+rc=$?
 
-if ! env | grep -i tmux >/dev/null; then
-	tmux attach -t "$SESSION"
+# 130 is cancel (Esc / ctrl-c). Anything typed was abandoned on purpose.
+[ "$rc" -ne 130 ] || exit 0
+
+query=$(printf '%s\n' "$out" | sed -n 1p)
+key=$(printf '%s\n' "$out" | sed -n 2p)
+choice=$(printf '%s\n' "$out" | sed -n 3p)
+
+# ctrl-o means create, regardless of what the list was showing.
+if [ "$key" = ctrl-o ]; then
+	choice=
 else
-	tmux switch -t "$SESSION"
+	# Enter never creates. Without a selection there is nothing to do, and
+	# silently creating the query here is exactly the ambiguity this removes.
+	[ -n "$choice" ] || exit 0
 fi
+
+go_to() {
+	# Inside tmux there is a client to move; outside there is not, and
+	# switch-client would fail. The popup this is bound to is always inside,
+	# but the script is also useful from a plain shell.
+	if [ -n "${TMUX:-}" ]; then
+		tmux switch-client -t "=$1"
+	else
+		tmux attach-session -t "=$1"
+	fi
+}
+
+# A selection wins over the query: the user picked an existing session. Confirm
+# it still exists first — the list was captured before fzf opened, so a session
+# that ended while the picker was up would otherwise fail with tmux's bare
+# "can't find session" and a zero exit. Falling through to the query treats it
+# as what it now is: a name that does not exist.
+if [ -n "$choice" ] && tmux has-session -t "=$choice" 2>/dev/null; then
+	go_to "$choice"
+	exit 0
+fi
+
+[ -n "${query//[[:space:]]/}" ] || exit 0
+
+# tmux reads `.` and `:` as address separators (session:window.pane), so a
+# session containing either cannot afterwards be targeted by the name it was
+# given. `/` goes too — it is what the directory-based sessionizer produced
+# (`work/configs`), naming a session for where it was rather than what it is
+# for. Fold rather than refuse.
+name=$(printf '%s' "$query" | tr -c 'A-Za-z0-9_-' '_' | sed 's/__*/_/g; s/^_//; s/_*$//')
+[ -n "$name" ] || { echo "that name is empty once punctuation is folded" >&2; exit 1; }
+
+# fzf matches loosely, so a query can miss while the folded name still collides
+# with a real session — and `has-session -t` PREFIX-matches, which would switch
+# somewhere unasked. `=` forces an exact match.
+if tmux has-session -t "=$name" 2>/dev/null; then
+	go_to "$name"
+	exit 0
+fi
+
+tmux new-session -d -s "$name" -c "${PWD:-$HOME}"
+go_to "$name"

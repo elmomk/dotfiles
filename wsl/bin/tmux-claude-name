@@ -47,6 +47,24 @@ sanitize() {
     | sed -e 's/[[:space:]]*$//'
 }
 
+ask_claude() {
+    # One headless naming call. Echoes a sanitized label, or nothing if the run
+    # failed. `claude -p` reports failures as ordinary stdout prose ("Execution
+    # error", "Reached max turn", "API Error: ...") and can still exit 0 — those
+    # strings pass sanitize() untouched and would otherwise become the window
+    # name, so match them explicitly rather than trusting the exit status alone.
+    local scroll="$1" raw rc label
+    raw=$(printf '%s\n\n---\n%s\n' "$PROMPT" "$scroll" \
+        | timeout 90 "$CLAUDE_BIN" -p --model "$MODEL" --allowedTools '' 2>/dev/null)
+    rc=$?
+    [ "$rc" -eq 0 ] || return 0
+    label=$(printf '%s' "$raw" | sanitize)
+    printf '%s' "$label" | grep -qiE \
+        '^(execution error|api error|reached max|invalid api|credit balance|prompt is too long|request timed out)' \
+        && return 0
+    printf '%s' "$label"
+}
+
 name_window() {
     local w="$1" path cmd scroll name
     path=$(tmux display-message -t "$w" -p '#{pane_current_path}' 2>/dev/null)
@@ -56,20 +74,36 @@ name_window() {
     if printf '%s' "$scroll" | grep -qE 'auto mode|Claude Code v|\(1M context\)|ctx: [0-9]'; then
         # --allowedTools '' disables all tools: the naming task needs none, and
         # it removes any tool-execution path from injected pane content.
-        name=$(printf '%s\n\n---\n%s\n' "$PROMPT" "$scroll" \
-            | timeout 90 "$CLAUDE_BIN" -p --model "$MODEL" --allowedTools '' 2>/dev/null | sanitize)
+        # One retry: the failures are transient (cold start under -a fan-out,
+        # API blips), and the fallback below is only worth taking after both.
+        name=$(ask_claude "$scroll")
+        [ -z "$name" ] && name=$(ask_claude "$scroll")
     fi
 
-    # Fallback: directory basename (mirrors auto-name.sh)
+    # Fallback: directory basename (mirrors auto-name.sh). Track whether we got a
+    # real Claude-derived label vs. just the basename, so we only make REAL labels
+    # sticky. Stickying the generic basename freezes a window there with
+    # automatic-rename off — and a Claude session the model simply hadn't detected
+    # yet (cold start / timeout) would never recover its task title.
+    local got_label=1
     if [ -z "${name:-}" ] || [ "$name" = "shell" ]; then
+        got_label=0
         name=$(basename "$path" 2>/dev/null)
         [ "$path" = "$HOME" ] && name="~"
     fi
     [ -z "$name" ] && return 0
 
     tmux rename-window -t "$w" "$name"
-    tmux set-window-option -t "$w" automatic-rename off 2>/dev/null
-    tmux set-option -wt "$w" @auto-name off 2>/dev/null
+    if [ "$got_label" = 1 ]; then
+        # Real label: make it sticky so it survives later pane-title changes.
+        tmux set-window-option -t "$w" automatic-rename off 2>/dev/null
+        tmux set-option -wt "$w" @auto-name off 2>/dev/null
+    else
+        # Basename fallback only: leave automatic-rename ON (non-sticky) so the
+        # window keeps tracking pane_title and isn't frozen at a generic name.
+        tmux set-window-option -t "$w" automatic-rename on 2>/dev/null
+        tmux set-option -wu -t "$w" @auto-name 2>/dev/null
+    fi
     printf '%s -> %s\n' "$w" "$name"
 }
 

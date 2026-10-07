@@ -1,0 +1,6 @@
+{
+  "name": "plan-pane",
+  "version": "0.1.0",
+  "description": "A docked pane that follows a captain's findings-file plan: MR status, progress count, newest plan version, and what changed this session.",
+  "types": "./types/index.d.ts"
+}

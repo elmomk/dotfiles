@@ -1,0 +1,5 @@
+{
+  "name": "status-line",
+  "version": "0.1.0",
+  "description": "One pinned status line: today's points of the weekly limit, the week's usage percentage and the NAT ports this box holds toward the Claude API. Display only."
+}

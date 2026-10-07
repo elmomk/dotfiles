@@ -38,7 +38,7 @@ gl-mr commits <iid>     # Commit progression
 ---
 title: "Slide Title"
 sub_title: "One-line subtitle"
-author: user
+author: Your Name
 ---
 ```
 

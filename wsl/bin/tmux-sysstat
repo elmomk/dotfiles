@@ -2,6 +2,8 @@
 # Compact tmux status chips. Usage:
 #   tmux-sysstat left    -> "MR(Rev):<n>  MR(Approved):<m>  MR(Chg):<k>  BRIDGE:<up|down>  BAT:<%>"
 #   tmux-sysstat right   -> "W<cpu>%/<free>G  L<cpu>%/<free>G"
+#   tmux-sysstat disk    -> "/:<free>G  ~:<free>G"  (root + $HOME disk free)
+#   tmux-sysstat api     -> "API:<n>"  (NAT ports held toward the Claude API, counted by tmux-sysstat-api)
 #
 # Windows side (CPU/RAM/battery) shares one powershell.exe call, cached 4s.
 # Rev/Approved/Chg counts come from one GraphQL query (cached 60s): Rev matches
@@ -15,6 +17,12 @@
 WIN_CACHE=/tmp/.tmux-sysstat-win
 WIN_TTL=4
 WSL_PREV=/tmp/.tmux-sysstat-wsl-prev
+# MR counts (rev/appr/chg) — written by `tmux-sysstat --refresh-mr` from a systemd
+# --user timer that CAN read the @u keyring; the `left` render only *reads* this,
+# because a tmux status line runs in the tmux server's context, which can't read the
+# keyring. Persistent (~/.cache, not /tmp) so a reboot shows the last-good counts
+# until the timer repopulates.
+MR_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/tmux-sysstat/mr-counts"
 
 mode=${1:-right}
 
@@ -45,6 +53,32 @@ color_for() {
   esac
 }
 RESET='#[default]'
+
+# Disk chip — free GB on a mountpoint, colored by use%.
+#   disk_chip <mountpoint> <label>   -> "<label>:<avail>G"
+disk_chip() {
+  local mnt=$1 label=$2 use avail
+  read -r use avail < <(df -P -BG "$mnt" 2>/dev/null \
+    | awk 'NR==2 {u=$5; sub(/%/,"",u); a=$4; sub(/G/,"",a); print u, a}')
+  printf '%s%s:%sG%s' "$(color_for "${use:-0}" 80 90 high_bad)" "$label" "${avail:-?}" "$RESET"
+}
+
+# API chip — the NAT ports this box holds toward the Claude API, as tmux-sysstat-api counts
+# them from /proc/net/tcp: connections open now plus those closed in the last 120 s. That is
+# what Cloud NAT budgets (64 per destination) and what a socket count misses: on 2026-09-14
+# SYNs were dropped with 64 ports held while `ss` read 57. 50-59 yellow, >=60 red; "+" while
+# the watcher is under 120 s old and its count is a floor; API:? when the watcher is not
+# running or its file is over 15 s old, never a quieter number.
+API_STATE="${TMUX_SYSSTAT_API_STATE:-${XDG_RUNTIME_DIR:-/run/user/$UID}/tmux-sysstat/api-held}"
+api_chip() {
+  local at n _open warm
+  if [[ -f $API_STATE ]] && read -r at n _open warm < "$API_STATE" \
+      && [[ $at =~ ^[0-9]+$ && $n =~ ^[0-9]+$ ]] && (( $(date +%s) - at <= 15 )); then
+    printf '%sAPI:%s%s%s' "$(color_for "$n" 50 60 high_bad)" "$n" "$([[ $warm == 1 ]] || printf '+')" "$RESET"
+  else
+    printf '#[fg=yellow]API:?%s' "$RESET"
+  fi
+}
 
 # BRIDGE probe — health of the open-url path (dev-server → laptop browser).
 # One loopback port, two failure modes:
@@ -81,47 +115,36 @@ compute_win() {
   fi
 }
 
-case "$mode" in
-  left)
-    # Reviews waiting for me — matches the GitLab dashboard
-    # /dashboard/merge_requests "Review requested" tab, which only shows MRs
-    # where my reviewState is UNREVIEWED. The REST `reviewer_username=` filter
-    # returns MRs in any review state (APPROVED, REQUESTED_CHANGES too), so we
-    # use GraphQL to get reviewState per reviewer.
-    REV_CACHE=/tmp/.tmux-sysstat-rev
-    REV_TTL=60
-    # GITLAB_HOST/TOKEN from env → kernel keyring (bwu) → legacy files.
-    source "$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$0}")")/gl-load-creds"
-    if [[ -f $REV_CACHE ]] && (( $(date +%s) - $(stat -c %Y "$REV_CACHE") < REV_TTL )); then
-      read -r rev appr chg < "$REV_CACHE"
-    else
-      counts=$(GITLAB_HOST="$GITLAB_HOST" glab api graphql -f query='
-        query {
-          currentUser {
-            username
-            reviewRequestedMergeRequests(state: opened) {
-              nodes {
-                reviewers {
-                  nodes {
-                    username
-                    mergeRequestInteraction { reviewState }
-                  }
-                }
-              }
-            }
-            authoredMergeRequests(state: opened) {
-              nodes {
-                approved
-                reviewers {
-                  nodes {
-                    username
-                    mergeRequestInteraction { reviewState }
-                  }
-                }
-              }
-            }
+_MR_COUNT_QUERY='
+    query {
+      currentUser {
+        username
+        reviewRequestedMergeRequests(state: opened) {
+          nodes { reviewers { nodes { username mergeRequestInteraction { reviewState } } } }
+        }
+        authoredMergeRequests(state: opened) {
+          nodes {
+            approvedBy { nodes { username } }
+            reviewers { nodes { username mergeRequestInteraction { reviewState } } }
           }
-        }' 2>/dev/null | python3 -c "
+        }
+      }
+    }'
+
+# Fetch my three MR counts from ONE host in a single GraphQL currentUser query.
+# Echoes "rev appr chg" on success, nothing on failure. Needs gl-load-creds sourced
+# and glab on PATH. Shared by `left` (fallback) and --refresh-mr.
+#   _fetch_mr_counts <host_id>     host_id ∈ $GITLAB_HOSTS
+# The SaaS leg must scrub the internal GITLAB_TOKEN/HOST: they shadow glab's own
+# per-host token and turn the call into a 401.
+_fetch_mr_counts() {
+  local _hid="${1:-internal}"
+  if [[ "$_hid" == saas ]]; then
+    env -u GITLAB_TOKEN -u GITLAB_ACCESS_TOKEN -u OAUTH_TOKEN -u GITLAB_HOST \
+      glab api graphql --hostname "$GITLAB_SAAS_HOST" -f query="$_MR_COUNT_QUERY" 2>/dev/null
+  else
+    GITLAB_HOST="$GITLAB_HOST" glab api graphql -f query="$_MR_COUNT_QUERY" 2>/dev/null
+  fi | python3 -c "
 import json, sys
 try:
     data = json.load(sys.stdin)['data']['currentUser']
@@ -133,9 +156,13 @@ try:
         for r in mr['reviewers']['nodes']
         if r['username'] == me and r['mergeRequestInteraction']['reviewState'] == 'UNREVIEWED'
     )
-    # Approved: open MRs *I authored* that are approved → ready for me to merge.
+    # Approved: open MRs *I authored* that someone actually approved → ready for me
+    # to merge. Deliberately NOT the 'approved' boolean: that is true whenever the
+    # project requires 0 approvals, which is every project on gitlab.com — it would
+    # report all my open SaaS MRs as ready to merge. approvedBy is the real signal,
+    # and on the internal instance the two agree exactly.
     mine = data['authoredMergeRequests']['nodes']
-    appr = sum(1 for mr in mine if mr.get('approved'))
+    appr = sum(1 for mr in mine if (mr.get('approvedBy') or {}).get('nodes'))
     # Chg: open MRs I authored that a reviewer returned with changes requested.
     chg = sum(
         1 for mr in mine
@@ -145,14 +172,58 @@ try:
     print(rev, appr, chg)
 except Exception:
     pass
-" 2>/dev/null)
-      read -r rev appr chg <<< "$counts"
-      if [[ $rev =~ ^[0-9]+$ && $appr =~ ^[0-9]+$ && $chg =~ ^[0-9]+$ ]]; then
-        echo "$rev $appr $chg" > "$REV_CACHE"
-      else
-        rev='?'; appr='?'; chg='?'   # don't cache failures — retry on next tick
-      fi
+" 2>/dev/null
+}
+
+# Query every configured host, then sum. Each host's counts are cached in their own
+# component file ($MR_CACHE.<id>) and the *sum* of the enabled ones lands in
+# $MR_CACHE. Keeping components separate is what makes a half-outage honest: a host
+# that fails this round keeps its last-good numbers instead of silently subtracting
+# itself from the bar. Echoes "rev appr chg"; returns 1 when no host has any data.
+#
+# $MR_CACHE stays exactly three integers — `left` reads it with `read -r rev appr chg`,
+# so a fourth field would land inside chg. Per-host detail belongs in the components.
+_refresh_mr_cache() {
+  local _h _r _a _c _rev=0 _appr=0 _chg=0 _have=0
+  mkdir -p "$(dirname "$MR_CACHE")"
+  for _h in $GITLAB_HOSTS; do
+    read -r _r _a _c <<< "$(_fetch_mr_counts "$_h")"
+    if [[ ${_r:-} =~ ^[0-9]+$ && ${_a:-} =~ ^[0-9]+$ && ${_c:-} =~ ^[0-9]+$ ]]; then
+      printf '%s %s %s\n' "$_r" "$_a" "$_c" > "$MR_CACHE.$_h.tmp" \
+        && mv -f "$MR_CACHE.$_h.tmp" "$MR_CACHE.$_h"
     fi
+  done
+  # Sum only the hosts that are configured *now*, so a decommissioned instance's
+  # stale component stops counting the moment its creds leave the keyring.
+  for _h in $GITLAB_HOSTS; do
+    [[ -f "$MR_CACHE.$_h" ]] || continue
+    read -r _r _a _c < "$MR_CACHE.$_h"
+    [[ ${_r:-} =~ ^[0-9]+$ && ${_a:-} =~ ^[0-9]+$ && ${_c:-} =~ ^[0-9]+$ ]] || continue
+    _rev=$((_rev + _r)); _appr=$((_appr + _a)); _chg=$((_chg + _c)); _have=1
+  done
+  (( _have )) || return 1
+  printf '%s %s %s\n' "$_rev" "$_appr" "$_chg" > "$MR_CACHE.tmp" \
+    && mv -f "$MR_CACHE.tmp" "$MR_CACHE"
+  printf '%s %s %s' "$_rev" "$_appr" "$_chg"
+}
+
+case "$mode" in
+  left)
+    # Three MR counts (reviews-waiting / approved-to-merge / changes-returned). The
+    # source of truth is $MR_CACHE, refreshed by `tmux-sysstat --refresh-mr` on a
+    # systemd --user timer (which CAN read the @u keyring). This status line runs in
+    # the tmux server's context, which can NOT read the keyring, so it must not query
+    # live — it just renders the cache. Fall back to a live query only when creds are
+    # already in the env (an inline bwu'd shell without the timer set up).
+    if [[ -f $MR_CACHE ]]; then
+      read -r rev appr chg < "$MR_CACHE"
+    else
+      source "$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$0}")")/gl-load-creds"
+      counts=""
+      [[ -n ${GITLAB_HOSTS:-} ]] && command -v glab >/dev/null 2>&1 && counts="$(_refresh_mr_cache)"
+      read -r rev appr chg <<< "$counts"
+    fi
+    [[ ${rev:-} =~ ^[0-9]+$ && ${appr:-} =~ ^[0-9]+$ && ${chg:-} =~ ^[0-9]+$ ]] || { rev='?'; appr='?'; chg='?'; }
 
     compute_win
 
@@ -197,6 +268,27 @@ except Exception:
     printf '%s' "$out"
     ;;
 
+  api)
+    # The API chip alone: for the tests, and for a quick look from a shell.
+    api_chip
+    ;;
+
+  disk)
+    # Disk free (GB) for root and $HOME, colored by use% (high_bad: 80 warn /
+    # 90 danger). On the dev-server $HOME is its own disk (/dev/sdb); on WSL it
+    # usually shares /, so the two chips may show the same filesystem.
+    printf '%s  %s' "$(disk_chip / /)" "$(disk_chip "$HOME" '~')"
+    ;;
+
+  --refresh-mr)
+    # Refresh $MR_CACHE from a keyring-possessing context (the systemd --user timer).
+    # Only writes a host's component on a clean numeric fetch, so a transient failure
+    # leaves that host's last good value in place rather than blanking the bar. glab
+    # needs the mise shims on PATH — the unit's drop-in provides them.
+    source "$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$0}")")/gl-load-creds"
+    _refresh_mr_cache >/dev/null || exit 1
+    ;;
+
   right|*)
     compute_win
 
@@ -233,10 +325,11 @@ except Exception:
         "$lcpu_col" "$lcpu" "$RESET" \
         "$lfree_col" "$lfree" "$RESET"
     else
-      # Dev-server: only the local machine's CPU/mem (no Windows host to contrast).
-      printf '%s%s%%%s/%s%sG%s' \
+      # Dev-server: the local machine's CPU/mem (no Windows host to contrast), then API.
+      printf '%s%s%%%s/%s%sG%s  %s' \
         "$lcpu_col" "$lcpu" "$RESET" \
-        "$lfree_col" "$lfree" "$RESET"
+        "$lfree_col" "$lfree" "$RESET" \
+        "$(api_chip)"
     fi
     ;;
 esac

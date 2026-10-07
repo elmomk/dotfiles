@@ -15,6 +15,12 @@ description: >-
 
 # teach-me
 
+> **Write the output normally — caveman does not apply here.** The explanation is read by
+> other people, and compression is the opposite of teaching. Full sentences, articles and
+> connectives intact, whatever length the content needs. Caveman/compressed modes govern
+> chat replies, not artifacts: if one is active, keep it for the conversation around the
+> work and write the explanation itself in normal prose.
+
 Turn an explanation into something that actually *teaches*. The value isn't the medium —
 it's the method: lead with the gist, show the shape with a diagram, ground every concept
 before its rules, and prove it with a concrete worked example. This skill encodes that
@@ -98,9 +104,62 @@ Workflow:
    frontmatter `icon:`). Then **wire it in**: nest a nav block for the topic *inside* the
    `Tutorials` section of `zensical.toml`, between the `# >>> tutorials` / `# <<< tutorials`
    markers (pages referenced as `tutorials/<topic-slug>/page.md` — see the reference), and
-   add a row linking the section to the landing table in `docs/index.md`.
-4. **Build.** `cd ~/teach-me/library && uv run zensical build` — fast; it flags broken
-   links and missing pages. Fix until it reports "No issues found".
+   add a **card** to the right area group in `docs/tutorials/index.md`.
+
+    !!! danger "Two nav rules that are invisible until they bite"
+        **The topic's `index.md` goes in the nav as a bare string** — `"tutorials/<slug>/index.md",`
+        — never `{ "Overview" = "tutorials/<slug>/index.md" }`. The bare string makes it the
+        section's index page, so the sidebar shows the **topic title**. The `{ "Overview" = … }`
+        form labels it "Overview", and with 39 topics the sidebar becomes 39 identical
+        "Overview" rows. That happened here and was fixed 2026-07-17.
+
+        **Cards go on `docs/tutorials/index.md`, not the landing page.** `docs/index.md` links
+        the eight *areas*; it is not a topic list. It used to be a 39-row table whose
+        "one-line summary" cells had grown to **175 words** — 2,390 words on the first page a
+        reader meets. Keep a card to **one line**; the depth belongs on the topic's own page,
+        which is where the reader who clicked is going anyway.
+
+    A card looks like this (icon = the area's icon; areas come from `.nav-categories.json`):
+
+    ```markdown
+    -   :material-cube-outline:{ .lg .middle } __Topic Title__
+
+        ---
+
+        One line. What you'll learn, in a clause.
+
+        [:octicons-arrow-right-24: Read](tutorials/<slug>/index.md)
+    ```
+   The block is auto-grouped into sidebar categories from
+   `docs/tutorials/.nav-categories.json` (slug lists, ordered; the file rsyncs with
+   docs/): add the new slug to a category there and run
+   `python3 scripts/sync_topics_nav.py --regroup`, or leave it unmapped — ungrouped
+   topics stay visible at the top of the section until categorized. Write the topic's
+   nav chunk flat; never hand-edit the `# nav-cat` wrapper lines (the script owns them).
+4. **Stamp, lint, then build.**
+
+   ```bash
+   TM=~/.claude/skills/teach-me                     # this skill's dir — stamp.py lives here
+   cd ~/teach-me/library
+   python3 "$TM/scripts/stamp.py" docs/tutorials/<topic-slug>/index.md   # every page you rewrote
+   python3 tools/lint_readability.py    # readability gate — exit 1 means fix the page
+   uv run zensical build                # flags broken links / missing pages
+   ```
+
+   Note the `$TM` prefix: after `cd ~/teach-me/library`, a bare `scripts/…` would resolve to
+   the *library's* scripts dir, not this skill's. Same convention as `record_gif.sh`.
+
+   The stamp (`<!-- ts:start -->`, idempotent) tells a reader how old the explainer is.
+   An explainer that describes a system as it stood in April is not wrong so much as
+   *undateable* — and Zensical has no `last-updated` support ([backlog #18](https://github.com/zensical/backlog/issues/18),
+   open, no date), so it goes in the content. Re-stamp any page whose content you revised;
+   leave the others alone so the date keeps meaning something.
+
+   Fix until both are clean ("No issues found"). The gate enforces the budgets this method
+   already implies — ≤250w paragraphs, ≤10% bold in prose, ≤4 links/100w in prose, no raw
+   Unicode emoji (use `:material-*:`). It exists because those rules were stated everywhere
+   and measured nowhere. `tools/readability-baseline.txt` lists pages that already violated
+   when the gate landed: it is a **debt list that only shrinks** — never add a new page to it.
 5. **Serve**: `bash scripts/serve_library.sh 8042` — a normal foreground command; the
    server detaches into its own session and survives the Claude session (no
    `run_in_background`). The script **checks first** — if the library server already
@@ -112,12 +171,24 @@ Workflow:
 6. **Open** `bash scripts/open_site.sh 8042 tutorials/<topic-slug>/` to deep-link straight to
    the new section. Then tell the user the URL and the section's page list.
 
-   Note (headless dev box): the page the user sees is served by the **laptop**, not this
-   box — port 8042 is deliberately not forwarded. open_site.sh routes the URL through the
-   laptop's browser-bridge, whose *sync-on-view* pulls this box's `docs/`, merges the
-   tutorials nav from this box's `zensical.toml` (sync_topics_nav.py), regenerates the
-   daily nav, and rebuilds the laptop's library before the browser loads. So always open
-   via open_site.sh — that's what triggers the sync.
+   Note (headless dev box): port convention — **8042 is this box's live server**; the
+   user's browser reaches it through the dev-server SSH helper's `-L 8042` forward. The
+   laptop keeps a warm-standby copy of the library on **8043**, refreshed by the laptop
+   browser-bridge's *sync-on-view* (rsync `docs/` → merge tutorials nav via
+   sync_topics_nav.py → regen daily nav → rebuild) whenever a `:8042` URL passes through
+   it. So always open via open_site.sh — the bridge hop keeps the standby fresh. If the
+   page won't load, the SSH tunnel is down (this box's `.serve.log` records the user's
+   page hits when it's healthy).
+
+7. **Publish to the SIT hub** (background) so teammates can read the same site on the shared
+   internal gateway under **`/teach-me/`** (path-based — reachable by the gateway IP, no DNS;
+   `publish_sit.sh` prints the exact `http://<gw-ip>/teach-me/`). Don't block the local serve —
+   fire it and move on: run `bash scripts/publish_sit.sh` via the Bash tool with
+   `run_in_background: true`. It bakes the just-built `site/` into an nginx image, pushes it to
+   the registry, applies the idempotent Deployment/Service/HTTPRoute, and rolls the pod (~1–2 min;
+   you're notified on completion). Tell the user the SIT copy is refreshing. If it reports a GAR
+   `403 uploadArtifacts denied`, the one-time `project_iam` writer grant (a configs MR) isn't
+   applied yet — surface that and continue.
 
 ### Default section structure
 
@@ -142,10 +213,35 @@ Conventions:
 - Adapt freely: a small section might fold problem + mechanism into one page; a big one
   might add a safety/edge-cases page. The arc is a default, not a cage.
 
+### Terminal-demo GIFs
+
+An optional tool, not a checklist item. Do **not** add decorative closer GIFs — no
+"GIF of the day" block at the bottom of a page.
+
+- **Terminal-demo GIF.** When a page teaches a *workflow* (a CLI flow, a build, a failure
+  reproducing), show it instead of describing it: record with
+  `bash scripts/record_gif.sh docs/tutorials/<topic-slug>/gifs/<name>.gif -- "<command>"`
+  (one-shot; pass a `.tape` file instead of `-- <command>` for multi-step scripted demos —
+  vhs tape syntax: Type/Enter/Sleep lines like the one-shot template in the script). Run it
+  from `~/teach-me/library` so the GIF lands inside `docs/`, then embed with
+  `![what it shows](gifs/<name>.gif)`. zensical copies non-md files in `docs/` into the
+  built site. Toolchain (vhs/ttyd/ffmpeg) is installed via mise; the script tells you the
+  `mise use` line if it's missing. Keep demos short (< ~15s) and only record commands that
+  are safe to re-run.
+
 ## Before you call it done
 
 Check the explanation against its purpose — would a newcomer who read only the overview
 get the shape, and would someone who read it all be able to *reconstruct* the idea, not
 just recognize it? Concretely: gist is up top; every concept's nouns are defined before
 its rules; at least one real worked example with values; the why is stated, not just the
-what. For a site: `zensical build` is clean and the served pages render (diagrams included).
+what. For a site: `python3 tools/lint_readability.py` **and** `zensical build` are both
+clean, and the served pages render (diagrams included).
+
+Then one honesty check, because it is the failure mode this library actually had: **did you
+reach for a container, or just write more prose?** Depth is not the enemy — undifferentiated
+prose is. A set of parallel things is a table. A branch is a decision table. A before/after is
+content tabs. A flow is mermaid. The tail of a long explanation is a `???` collapsible. The
+daily logs here ran to 2,384 median words using **zero** tables-of-threads, **zero** mermaid
+and **zero** content tabs, while the tutorials used 647 code fences, 187 diagrams and 178 tabs
+— and the tutorials are the half people can actually read.

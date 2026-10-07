@@ -8,7 +8,7 @@
 #   collect.sh --since 2026-05-31 [--until 2026-06-01] [--repos "<glob> ..."]
 #
 # Env:
-#   DAILY_REPOS  space-separated repo path globs (default: ~/work/git/* and ~/git/*).
+#   DAILY_REPOS  space-separated repo path globs (default: ~/work/git/*, ~/work/idp/*, ~/git/*).
 #                Equivalent to passing --repos.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

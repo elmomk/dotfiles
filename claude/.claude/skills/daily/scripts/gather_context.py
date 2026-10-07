@@ -4,7 +4,8 @@
 Pulls, best-effort, from three local sources over a time window:
   - git    : commits by the user across known repos (git log, author-filtered)
   - gitlab : merge requests touched by the user (glab, per-repo)
-  - memory : claude-memory entries (the `hooks` binary, then ~/.memory fallback)
+  - memory : claude-memory entries (the per-project store under ~/.claude/projects, with
+             the `hooks` binary for keyword search and legacy ~/.memory as a fallback)
 
 Jira is NOT gathered here — it lives behind the Atlassian MCP, which is queried by
 Claude (the skill) directly, not by this script.
@@ -30,13 +31,15 @@ import sys
 
 HOME = os.path.expanduser("~")
 MEMORY_BIN = os.path.join(HOME, "work/git/claude-memory/bin/hooks")
-MEMORY_DIR = os.path.join(HOME, ".memory")
+PROJECTS_DIR = os.path.join(HOME, ".claude/projects")
+LEGACY_MEMORY_DIR = os.path.join(HOME, ".memory")
 GLAB_CANDIDATES = [
     "glab",
     os.path.join(HOME, ".local/share/mise/installs/asdf-mise-plugins-mise-glab/1.91.0/bin/glab"),
 ]
 DEFAULT_REPO_GLOBS = [
     os.path.join(HOME, "work/git/*"),
+    os.path.join(HOME, "work/idp/*"),
     os.path.join(HOME, "git/*"),
 ]
 
@@ -51,6 +54,7 @@ NOISE_MARKERS = (
     "fabricated h:",
 )
 DATE_FILE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n?", re.S)
 
 
 def is_noise(text):
@@ -207,8 +211,74 @@ def gather_gitlab(repos, since, glab, until=None):
     return out
 
 
-def _memory_from_files(since, until):
-    """Read ~/.memory/<date>.md within the window, split into entries, drop noise.
+def project_memory_dir(cwd=None):
+    """Locate the claude-memory store for the current project. Returns (path, exists).
+
+    Claude Code keeps per-project memories in ~/.claude/projects/<encoded-cwd>/memory/,
+    where <encoded-cwd> is the working directory with every non-alphanumeric character
+    replaced by '-'. Derived, not hardcoded, so this works from any project — but a
+    worktree or subdirectory has no store of its own, so walk up to the nearest ancestor
+    that does. When nothing matches, return the cwd-derived path anyway with exists=False
+    so the caller can report *which* directory it looked for.
+    """
+    path = os.path.abspath(cwd or os.getcwd())
+    derived = None
+    while True:
+        candidate = os.path.join(PROJECTS_DIR, re.sub(r"[^a-zA-Z0-9]", "-", path), "memory")
+        if derived is None:
+            derived = candidate
+        if os.path.isdir(candidate):
+            return candidate, True
+        parent = os.path.dirname(path)
+        if parent == path:  # reached the filesystem root
+            return derived, False
+        path = parent
+
+
+def _memory_entry(path):
+    """(header, body) for one memory file: 'name — description' from its YAML frontmatter
+    (falling back to the filename) and the markdown that follows."""
+    text = open(path, encoding="utf-8", errors="replace").read()
+    name = os.path.splitext(os.path.basename(path))[0]
+    desc, body = "", text
+    m = FRONTMATTER_RE.match(text)
+    if m:
+        body = text[m.end():]
+        for line in m.group(1).splitlines():  # top-level keys only; metadata is indented
+            if line.startswith("name:"):
+                name = line.split(":", 1)[1].strip().strip("\"'") or name
+            elif line.startswith("description:"):
+                desc = line.split(":", 1)[1].strip().strip("\"'")
+    return (f"{name} — {desc}" if desc else name), body.strip()
+
+
+def _memory_from_store(mem_dir):
+    """Read the per-project memory store: one markdown file per memory plus a MEMORY.md
+    index over them. These memories are topical and undated — unlike the legacy per-day
+    files there is nothing to window-filter on, and the daily uses them for standing
+    context and stated next-steps rather than as windowed activity. Returns
+    (kept_entries, dropped_count).
+    """
+    kept, dropped = [], 0
+    for path in sorted(glob.glob(os.path.join(mem_dir, "*.md"))):
+        if os.path.basename(path) == "MEMORY.md":
+            continue  # index over the other files, not a memory itself
+        try:
+            header, body = _memory_entry(path)
+        except OSError as e:
+            log(f"memory: {os.path.basename(path)}: {e}")
+            continue
+        if not body:
+            continue
+        if is_noise(body):
+            dropped += 1
+            continue
+        kept.append(f"### {header}\n{body}")
+    return kept, dropped
+
+
+def _memory_from_files(mem_dir, since, until):
+    """Read <mem_dir>/<date>.md within the window, split into entries, drop noise.
 
     Memory files are per-day, named YYYY-MM-DD.md; entries are '### HH:MM [project]'
     blocks with a <!-- session ... --> metadata line. There's no keyword to FTS-search
@@ -216,7 +286,7 @@ def _memory_from_files(since, until):
     that otherwise dominate the store. Returns (kept_entries, dropped_count).
     """
     kept, dropped = [], 0
-    for path in sorted(glob.glob(os.path.join(MEMORY_DIR, "*.md"))):
+    for path in sorted(glob.glob(os.path.join(mem_dir, "*.md"))):
         stem = os.path.splitext(os.path.basename(path))[0]
         if not DATE_FILE_RE.match(stem) or stem < since or (until and stem >= until):
             continue
@@ -241,11 +311,17 @@ def _memory_from_files(since, until):
 
 
 def gather_memory(since, until, query="", limit=40):
-    """claude-memory signal for the window.
+    """claude-memory signal for the daily.
 
     With a keyword `query`, use the FTS-backed `hooks search`. Without one (the daily
-    default), read memory files by date and strip prompt-injection-flag noise — an empty
-    `hooks search ""` is NOT used, since it errors with `fts5: syntax error near ""`.
+    default), read the per-project memory store under ~/.claude/projects — the store Claude
+    Code actually writes — falling back to the legacy per-day ~/.memory files where that is
+    all a box has. An empty `hooks search ""` is NOT used, since it errors with
+    `fts5: syntax error near ""`.
+
+    `source` always names the directory read and whether it existed, and an empty read is
+    reported as `empty` with a reason: a zero-length result must never be mistakable for a
+    healthy one. An empty store is legitimate, so this stays best-effort and never aborts.
     """
     if query and os.path.exists(MEMORY_BIN):
         rc, stdout, stderr = run(
@@ -253,14 +329,43 @@ def gather_memory(since, until, query="", limit=40):
             timeout=45,
         )
         if rc == 0 and stdout.strip():
-            return {"source": "hooks", "query": query, "text": stdout.strip()}
+            return {"source": f"hooks:{MEMORY_BIN}", "query": query, "text": stdout.strip()}
         log(f"memory: hooks search '{query}' rc={rc} {stderr.strip()[:120]}")
+
+    mem_dir, found = project_memory_dir()
+    label = "project-store"
+    if not found and os.path.isdir(LEGACY_MEMORY_DIR):
+        mem_dir, found, label = LEGACY_MEMORY_DIR, True, "legacy-files"
+    source = f"{label}:{mem_dir}:{'exists' if found else 'MISSING'}"
+
+    if not found:
+        log(f"memory: EMPTY — {mem_dir} does not exist, nothing was read")
+        return {"source": source, "dir": mem_dir, "dir_exists": False, "entries": 0,
+                "empty": True, "empty_reason": f"{mem_dir} does not exist", "text": ""}
     try:
-        kept, dropped = _memory_from_files(since, until)
-        return {"source": "files", "dropped_noise": dropped, "text": "\n\n".join(kept)[:8000]}
+        kept, dropped = (_memory_from_files(mem_dir, since, until) if label == "legacy-files"
+                         else _memory_from_store(mem_dir))
     except Exception as e:  # noqa: BLE001
-        log(f"memory: file read failed: {e}")
-        return {"source": "none", "text": ""}
+        log(f"memory: read of {mem_dir} failed: {e}")
+        return {"source": f"{source}:ERROR", "dir": mem_dir, "dir_exists": True, "entries": 0,
+                "empty": True, "empty_reason": f"read of {mem_dir} failed: {e}", "text": ""}
+    if not kept:
+        log(f"memory: EMPTY — {mem_dir} exists but yielded no entries "
+            f"({dropped} dropped as noise)")
+    text = "\n\n".join(kept)
+    return {
+        "source": source,
+        "dir": mem_dir,
+        "dir_exists": True,
+        "entries": len(kept),
+        "truncated": len(text) > 8000,  # `entries` counts more than `text` carries
+        "dropped_noise": dropped,
+        "empty": not kept,
+        "empty_reason": "" if kept else
+                        f"{mem_dir} exists but yielded no usable memories "
+                        f"({dropped} dropped as noise)",
+        "text": text[:8000],
+    }
 
 
 def main():

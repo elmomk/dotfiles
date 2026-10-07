@@ -46,10 +46,38 @@ fleet-check
 /claude/.claude/commands/mr-watch.md
 /claude/.claude/commands/create-mr.md
 /claude/.claude/commands/review-mr.md
-# mr-board skill references the internal Jira site + GitLab group/MR/ticket ids
-/claude/.claude/skills/mr-board/
 
 # machine-local: Claude Code writes model/permissions into it; seed from settings.template.json
 /claude/.claude/settings.json
 __pycache__/
 *.pyc
+
+# work-specific Claude skills/hooks synced from shared-dotfiles — they hardcode internal
+# hosts, GCP projects, kube contexts, GitLab groups/project ids. Kept on disk, never public.
+/claude/.claude/hooks/
+/claude/.claude/commands/sync-dotfiles.md
+/claude/.claude/skills/daily/scripts/board_links.py
+/claude/.claude/skills/teach-me/deploy/
+/claude/.claude/skills/teach-me/scripts/publish_sit.sh
+# skills are private by default (many are work-specific); only the ones listed here are public
+/claude/.claude/skills/*
+!/claude/.claude/skills/AAR/
+!/claude/.claude/skills/admiral/
+!/claude/.claude/skills/adr/
+!/claude/.claude/skills/architecture/
+!/claude/.claude/skills/buggy/
+!/claude/.claude/skills/creds-doctor/
+!/claude/.claude/skills/daily/
+!/claude/.claude/skills/dead-code/
+!/claude/.claude/skills/draw-design/
+!/claude/.claude/skills/edit-changes/
+!/claude/.claude/skills/goodmorning/
+!/claude/.claude/skills/home-storage/
+!/claude/.claude/skills/jira-ticket/
+!/claude/.claude/skills/kpr-writer/
+!/claude/.claude/skills/publish-plan/
+!/claude/.claude/skills/reminder/
+!/claude/.claude/skills/report/
+!/claude/.claude/skills/teach-me/
+!/claude/.claude/skills/wip/
+!/claude/.claude/skills/wsl-storage/

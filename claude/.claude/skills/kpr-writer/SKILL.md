@@ -6,6 +6,12 @@ argument-hint: "Optional: focus area or update instruction (e.g., 'update goal 3
 
 # KPR Writer (個人目標設定表)
 
+> **Write the output normally — caveman does not apply here.** The KPR content is read by
+> other people. Full sentences, articles and connectives intact, whatever length the
+> content needs. Caveman/compressed modes govern chat replies, not artifacts: if one is
+> active, keep it for the conversation around the work and write the KPR itself in normal
+> prose.
+
 Generate/update 年度員工考績表 spreadsheets. **First:** read `~/.secrets.json` → `kpr` key for paths.
 
 Setup: `bash ~/.claude/skills/kpr-writer/scripts/setup.sh`

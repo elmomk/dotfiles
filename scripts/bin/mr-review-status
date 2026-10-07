@@ -34,12 +34,34 @@ set -u
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/mr-review-status"
 CACHE_FILE="$CACHE_DIR/data.json"
 MAP_FILE="$CACHE_DIR/links.map"
+FOLD_STATE="$CACHE_DIR/folds.state"    # which personal buckets are folded (persisted)
+FOLD_MAP="$CACHE_DIR/folds.map"        # digit hotkey → bucket id, written by the renderer
 LOCK_FILE="$CACHE_DIR/daemon.lock"
+REFRESH_LOCK="$CACHE_DIR/refresh.lock"   # serialises do_refresh across popup / timer / daemon
 LOG_FILE="$CACHE_DIR/daemon.log"
 INTERVAL="${MR_REVIEW_INTERVAL:-120}"
 mkdir -p "$CACHE_DIR"
 
 die() { printf '\033[31merror:\033[0m %s\n\npress q to close\n' "$1"; while IFS= read -rsn1 k; do [[ "$k" == q || "$k" == ' ' || "$k" == $'\x1b' ]] && exit 1; done; sleep 86400; }
+
+# Interactive == the default render mode (runs inside the popup, reads keys). The
+# one-shot / launcher modes (--refresh/--size/--daemon/--popup) are not. This
+# picks the right failure register in `fail` below: a readable popup screen vs. a
+# plain stderr line that won't be swallowed by the caller's redirects.
+case "${1:-}" in --refresh|--size|--daemon|--popup) _INTERACTIVE=0 ;; *) _INTERACTIVE=1 ;; esac
+
+# Fatal error reported in the right register for the current mode: the popup-
+# friendly `die` screen when interactive (so it isn't dismissed before it can be
+# read), else a labelled stderr line + nonzero exit for the one-shot modes.
+fail() {
+  if (( _INTERACTIVE )); then die "$1"
+  else printf '\033[31mmr-review-status:\033[0m %s\n' "$1" >&2; exit 1; fi
+}
+
+# Hard dependency for every mode: both fetch and render shell out to python3.
+# Without this guard a missing python3 surfaces only as a bare 127 from inside a
+# subshell — exactly the kind of opaque exit this script tries to avoid.
+command -v python3 >/dev/null 2>&1 || fail "python3 not found on PATH — required to fetch and render the dashboard"
 
 # Open a URL in the Windows browser (WSL-aware), reusing open-url if present.
 _open() {
@@ -55,139 +77,339 @@ _open() {
 # ── config bootstrap: env → kernel keyring (bwu) → legacy files; see gl-* ─────
 # GITLAB_* and MR_REVIEW_* come from the kernel keyring populated once per boot
 # by `bwu` (kernel memory only, nothing on disk), or from the environment.
-source "$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$0}")")/gl-load-creds"
+_creds_loader="$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$0}")")/gl-load-creds"
+[[ -r "$_creds_loader" ]] || fail "credential loader missing: $_creds_loader — the stowed dotfiles symlinks are likely broken (re-run stow, or 'git checkout' the file in shared-dotfiles)"
+source "$_creds_loader"
+
+# Describe every configured GitLab as one JSON array the fetcher/renderer can loop
+# over: [{id, host, scheme, base, token, group, users}]. gl-load-creds decides which
+# ids are live; this only reshapes them.
+_hosts_json() {
+  python3 -c '
+import os, json
+SLOTS = {
+    "internal": ("GITLAB_SCHEME", "GITLAB_HOST", "GITLAB_TOKEN",
+                 "MR_REVIEW_GROUP", "MR_REVIEW_USERS"),
+    "saas":     ("GITLAB_SAAS_SCHEME", "GITLAB_SAAS_HOST", "GITLAB_SAAS_TOKEN",
+                 "MR_REVIEW_GROUP_SAAS", "MR_REVIEW_USERS_SAAS"),
+}
+out = []
+for hid in os.environ.get("GITLAB_HOSTS", "").split():
+    slot = SLOTS.get(hid)
+    if not slot:
+        continue
+    scheme, host, token, group, users = (os.environ.get(k, "") for k in slot)
+    out.append({"id": hid, "host": host, "scheme": scheme,
+                "base": f"{scheme}://{host}/api/v4", "token": token,
+                "group": group, "users": users})
+print(json.dumps(out))
+'
+}
 
 # ── fetch GitLab → write cache JSON (pure stdlib; no glab/mise dependency) ────
+# Serialise fetches. The popup fires these detached (r) while the systemd timer
+# and the self-spawned daemon fire their own; unguarded they stack, contend on the
+# network and each run takes progressively longer -- which looks exactly like the
+# refresh being broken.
+#
+# The lock MUST be scoped to one fetch, not to the caller. Holding it with a bare
+# `exec 8>` leaks the fd for the life of the process, so the long-running --daemon
+# grabbed it on its first iteration and locked out the timer and popup forever.
+# The subshell redirect closes fd 8 -- and releases the lock -- on every exit path.
 do_refresh() {
-  : "${GITLAB_HOST:?GITLAB_HOST not set}"
-  : "${GITLAB_TOKEN:?GITLAB_TOKEN not set}"
-  : "${MR_REVIEW_GROUP:?MR_REVIEW_GROUP not set}"
-  : "${MR_REVIEW_USERS:?MR_REVIEW_USERS not set}"
-  GITLAB_HOST="$GITLAB_HOST" GITLAB_TOKEN="$GITLAB_TOKEN" \
-  MR_REVIEW_GROUP="$MR_REVIEW_GROUP" MR_REVIEW_USERS="$MR_REVIEW_USERS" \
-  CACHE_FILE="$CACHE_FILE" python3 - <<'PYFETCH'
-import os, json, tempfile, urllib.request, urllib.parse
+  ( flock -n 8 2>/dev/null || { echo "refresh already in flight; skipping" >&2; exit 0; }
+    _do_refresh_inner "$@"
+  ) 8>"$REFRESH_LOCK"
+}
+
+_do_refresh_inner() {
+  [[ -n "${GITLAB_HOSTS:-}" ]] || fail "no GitLab host configured — run 'bwu' to load credentials"
+  HOSTS_JSON="$(_hosts_json)" CACHE_FILE="$CACHE_FILE" python3 - <<'PYFETCH'
+import os, json, tempfile, time, urllib.request, urllib.parse
 import concurrent.futures, datetime as dt
 
-HOST  = os.environ['GITLAB_HOST']
-TOKEN = os.environ['GITLAB_TOKEN']
-GROUP = urllib.parse.quote(os.environ['MR_REVIEW_GROUP'], safe='')
-USERS = os.environ['MR_REVIEW_USERS']
+HOSTS = json.loads(os.environ['HOSTS_JSON'])
 CACHE = os.environ['CACHE_FILE']
-BASE  = f'http://{HOST}/api/v4'
-
-def api(path):
-    req = urllib.request.Request(BASE + path, headers={'PRIVATE-TOKEN': TOKEN})
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return json.load(r)
-
-# Token owner == "me": used to pick whose approved MRs the dashboard surfaces.
-try:
-    ME_USER = api('/user').get('username')
-except Exception:
-    ME_USER = None
-
-pairs = []
-for p in USERS.split(','):
-    if '=' in p:
-        label, user = p.split('=', 1)
-        label, user = label.strip(), user.strip()
-        if label and user:
-            pairs.append((label, user))
-
-def fetch_user(pair):
-    label, user = pair
-    try:
-        q = urllib.parse.quote(user)
-        mrs = api(f'/groups/{GROUP}/merge_requests?reviewer_username={q}&state=opened&per_page=100')
-        return label, user, (mrs if isinstance(mrs, list) else []), None
-    except Exception as e:
-        return label, user, None, str(e)[:200]
-
-with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-    fetched = list(ex.map(fetch_user, pairs))
-
-def reviewer_state(pid, iid, user):
-    try:
-        for r in api(f'/projects/{pid}/merge_requests/{iid}/reviewers'):
-            if r['user']['username'] == user:
-                return r.get('state', 'unknown')
-    except Exception:
-        pass
-    return 'unknown'
-
-jobs = [(label, user, mr['project_id'], mr['iid'])
-        for label, user, mrs, err in fetched if mrs for mr in mrs]
-state = {}
-if jobs:
-    def do(j):
-        label, user, pid, iid = j
-        return (label, iid), reviewer_state(pid, iid, user)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
-        for k, v in ex.map(do, jobs):
-            state[k] = v
 
 KEEP = {'unreviewed', 'unknown'}   # "review requested"; keep unknown rather than hide
-def card(mr):
-    return {
-        'iid': mr['iid'],
-        'references_full': mr['references']['full'],
-        'web_url': mr.get('web_url', ''),
-        'created_at': mr['created_at'],
-        'title': mr['title'],
-        'detailed_merge_status': mr.get('detailed_merge_status', ''),
-        'has_conflicts': mr.get('has_conflicts', False),
-    }
 
-columns = []
-for label, user, mrs, err in fetched:
-    if err is not None:
-        columns.append({'label': label, 'user': user, 'error': err, 'mrs': []})
-        continue
-    kept = [card(mr) for mr in (mrs or [])
-            if state.get((label, mr['iid']), 'unknown') in KEEP]
-    columns.append({'label': label, 'user': user, 'error': None, 'mrs': kept})
+try:
+    with open(CACHE) as f:
+        PREV = json.load(f)
+except Exception:
+    PREV = {}
 
-# ── my own authored, open MRs needing *my* attention ─────────────────────────
-# Distinct from the reviewer columns above: these are MRs I opened, not ones I
-# review. Two buckets:
-#   my_approved — approved, ready for me to merge. The list endpoint ignores
-#                 `approved=yes` on this GitLab, so the approvals endpoint's
-#                 `approved` bool is authoritative.
-#   my_changes  — a reviewer returned the MR requesting changes (a reviewer's
-#                 state is 'requested_changes') — the "Returned to you" set.
-my_approved, my_changes = [], []
-if ME_USER:
+
+def carry_over(hid, err):
+    """One host's slice of the last good cache, tagged with why it's stale. An
+    instance we couldn't reach this round keeps showing its MRs — losing them
+    outright would be the dashboard failing at the one job it has."""
+    cols = []
+    for col in PREV.get('columns') or []:
+        cols.append({'label': col.get('label', '?'),
+                     'user': (col.get('users') or {}).get(hid) or col.get('user'),
+                     'error': None,
+                     'mrs': [m for m in (col.get('mrs') or []) if m.get('host') == hid]})
+    pick = lambda k: [m for m in (PREV.get(k) or []) if m.get('host') == hid]
+    return {'id': hid, 'me_user': (PREV.get('me_users') or {}).get(hid),
+            'columns': cols, 'error': err, 'my_approved': pick('my_approved'),
+            'my_changes': pick('my_changes'), 'my_stuck': pick('my_stuck')}
+
+
+def fetch_host(cfg):
+    """Everything this dashboard shows, for ONE GitLab. Returns a per-host result;
+    the caller merges. Any failure is captured, never raised — one dead instance
+    must not blank the other's columns."""
+    hid, token = cfg['id'], cfg['token']
+    base = cfg['base']
+    group = urllib.parse.quote(cfg['group'], safe='') if cfg['group'] else ''
+
+    def api(path):
+        # The route to gitlab.com from this box drops connections often enough that a
+        # single reset would otherwise blank a whole instance. Retry the transport,
+        # never a refusal: a 4xx is an answer and repeating it just wastes time.
+        req = urllib.request.Request(base + path, headers={'PRIVATE-TOKEN': token})
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(req, timeout=15) as r:
+                    return json.load(r)
+            except urllib.error.HTTPError as e:
+                if e.code < 500 or attempt == 2:
+                    raise
+            except Exception:
+                if attempt == 2:
+                    raise
+            time.sleep(0.4 * (attempt + 1))
+
+    # Token owner == "me" on this host: usernames differ between instances, so this
+    # is resolved per host rather than assumed shared.
     try:
-        mine = api(f'/groups/{GROUP}/merge_requests'
-                   f'?author_username={urllib.parse.quote(ME_USER)}'
-                   f'&state=opened&per_page=100')
-        mine = mine if isinstance(mine, list) else []
-    except Exception:
-        mine = []
-    def classify_mine(mr):
-        pid, iid = mr['project_id'], mr['iid']
-        approved = changes = False
+        me_user = api('/user').get('username')
+        host_err = None
+    except Exception as e:
+        return carry_over(hid, str(e)[:200])
+
+    def card(mr):
+        return {
+            'host': hid,
+            'iid': mr['iid'],
+            'references_full': mr['references']['full'],
+            'web_url': mr.get('web_url', ''),
+            'created_at': mr['created_at'],
+            'title': mr['title'],
+            'detailed_merge_status': mr.get('detailed_merge_status', ''),
+            'has_conflicts': mr.get('has_conflicts', False),
+        }
+
+    # ── reviewer columns ─────────────────────────────────────────────────────
+    # Need a group to bound them: without one, `reviewer_username=` would sweep
+    # every project the token can see. A host with no group map contributes only
+    # my own buckets below.
+    pairs = []
+    if group:
+        for p in cfg['users'].split(','):
+            if '=' in p:
+                label, user = p.split('=', 1)
+                label, user = label.strip(), user.strip()
+                if label and user:
+                    pairs.append((label, user))
+
+    def fetch_user(pair):
+        label, user = pair
         try:
-            approved = bool(api(f'/projects/{pid}/merge_requests/{iid}/approvals').get('approved'))
+            q = urllib.parse.quote(user)
+            mrs = api(f'/groups/{group}/merge_requests?reviewer_username={q}&state=opened&per_page=100')
+            return label, user, (mrs if isinstance(mrs, list) else []), None
+        except Exception as e:
+            return label, user, None, str(e)[:200]
+
+    fetched = []
+    if pairs:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+            fetched = list(ex.map(fetch_user, pairs))
+
+    def reviewer_state(pid, iid, user):
+        try:
+            for r in api(f'/projects/{pid}/merge_requests/{iid}/reviewers'):
+                if r['user']['username'] == user:
+                    return r.get('state', 'unknown')
         except Exception:
             pass
-        try:
-            changes = any(r.get('state') == 'requested_changes'
-                          for r in api(f'/projects/{pid}/merge_requests/{iid}/reviewers'))
-        except Exception:
-            pass
-        return approved, changes
-    if mine:
+        return 'unknown'
+
+    # Keyed by project too: iids only count up per project, so (label, iid) alone
+    # collides between two repos — and, once hosts merge, between instances.
+    jobs = [(label, user, mr['project_id'], mr['iid'])
+            for label, user, mrs, err in fetched if mrs for mr in mrs]
+    state = {}
+    if jobs:
+        def do(j):
+            label, user, pid, iid = j
+            return (label, pid, iid), reviewer_state(pid, iid, user)
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
-            flags = list(ex.map(classify_mine, mine))
-        # Changes-requested wins if both somehow hold — it's the actionable state.
-        my_changes  = [card(mr) for mr, (ap, ch) in zip(mine, flags) if ch]
-        my_approved = [card(mr) for mr, (ap, ch) in zip(mine, flags) if ap and not ch]
+            for k, v in ex.map(do, jobs):
+                state[k] = v
+
+    columns = []
+    for label, user, mrs, err in fetched:
+        if err is not None:
+            columns.append({'label': label, 'user': user, 'error': err, 'mrs': []})
+            continue
+        kept = [card(mr) for mr in (mrs or [])
+                if state.get((label, mr['project_id'], mr['iid']), 'unknown') in KEEP]
+        columns.append({'label': label, 'user': user, 'error': None, 'mrs': kept})
+
+    # ── my own authored, open MRs needing *my* attention ─────────────────────
+    # Distinct from the reviewer columns above: these are MRs I opened, not ones I
+    # review. Three buckets:
+    #   my_approved — someone actually approved it, so it's ready for me to merge.
+    #   my_changes  — a reviewer returned the MR for fixes: the formal
+    #                 'requested_changes' toggle OR a note-based review
+    #                 ('review_started', as `gl-mr request-changes` leaves) — the
+    #                 "Returned to you" set.
+    #   my_stuck    — open, non-draft, in neither bucket above, yet NOT idle: it has
+    #                 conflicts or a reviewer has already engaged (state reviewed/
+    #                 approved). Once a reviewer acts, the reviewer columns' KEEP
+    #                 filter drops it; without this bucket such an MR shows in no
+    #                 column at all and silently goes invisible (see !798).
+    my_approved, my_changes, my_stuck = [], [], []
+    mine, mine_err = [], None
+    if me_user:
+        author_q = f'author_username={urllib.parse.quote(me_user)}&state=opened&per_page=100'
+        try:
+            mine = api(f'/groups/{group}/merge_requests?{author_q}' if group
+                       else f'/merge_requests?scope=created_by_me&state=opened&per_page=100')
+            mine = mine if isinstance(mine, list) else []
+        except Exception as e:
+            mine_err = str(e)[:200]
+
+        def classify_mine(mr):
+            """(approved, changes, reviewed, asked). `asked` is False when a call
+            failed: over a lossy link that is NOT the same as "nobody approved it",
+            and treating it as such makes MRs flicker in and out of the buckets."""
+            pid, iid = mr['project_id'], mr['iid']
+            approved = changes = reviewed = False
+            asked = True
+            try:
+                # approved_by, not the `approved` bool: that bool is true whenever the
+                # project requires zero approvals — every project on gitlab.com — and
+                # would flag all my open MRs as ready to merge. On the internal
+                # instance the two agree exactly.
+                approved = bool(api(f'/projects/{pid}/merge_requests/{iid}/approvals')
+                                .get('approved_by'))
+            except Exception:
+                asked = False
+            try:
+                states = [r.get('state') for r in
+                          api(f'/projects/{pid}/merge_requests/{iid}/reviewers')]
+                changes  = any(s in ('requested_changes', 'review_started') for s in states)
+                reviewed = any(s in ('reviewed', 'approved') for s in states)
+            except Exception:
+                asked = False
+            return approved, changes, reviewed, asked
+
+        def conflicted(mr):
+            return bool(mr.get('has_conflicts')) or mr.get('detailed_merge_status') == 'conflict'
+
+        # Where each MR sat last time, to fall back on when this round can't ask.
+        prev_buckets = {}
+        for bucket in ('my_approved', 'my_changes', 'my_stuck'):
+            for c in PREV.get(bucket) or []:
+                prev_buckets.setdefault(c.get('references_full'), set()).add(bucket)
+
+        if mine_err:
+            # Couldn't even list my MRs on this host. Show the previous round's and
+            # say so — an empty bucket would read as "nothing needs you", which is
+            # the one thing this dashboard must never say by accident.
+            host_err = host_err or mine_err
+            my_approved = [m for m in (PREV.get('my_approved') or []) if m.get('host') == hid]
+            my_changes  = [m for m in (PREV.get('my_changes') or []) if m.get('host') == hid]
+            my_stuck    = [m for m in (PREV.get('my_stuck') or []) if m.get('host') == hid]
+        elif mine:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
+                flags = list(ex.map(classify_mine, mine))
+            for mr, (ap, ch, rv, asked) in zip(mine, flags):
+                c = card(mr)
+                if not asked:
+                    was = prev_buckets.get(c['references_full'], set())
+                    if 'my_changes' in was:
+                        my_changes.append(c)
+                    elif 'my_approved' in was:
+                        my_approved.append(c)
+                    elif 'my_stuck' in was:
+                        my_stuck.append(c)
+                    continue
+                # Changes-requested wins if both somehow hold — it's the actionable state.
+                if ch:
+                    my_changes.append(c)
+                elif ap:
+                    my_approved.append(c)
+                # Fell-through-the-cracks: open, not draft, in neither bucket above, but
+                # conflicted or already reviewed → would otherwise be invisible.
+                elif not mr.get('draft', False) and (conflicted(mr) or rv):
+                    my_stuck.append(c)
+
+    return {'id': hid, 'me_user': me_user, 'columns': columns, 'error': host_err,
+            'my_approved': my_approved, 'my_changes': my_changes, 'my_stuck': my_stuck}
+
+
+# Hosts in parallel: the whole refresh costs one slow instance, not their sum.
+with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(HOSTS))) as ex:
+    results = list(ex.map(fetch_host, HOSTS))
+
+# ── merge the hosts into one dashboard ───────────────────────────────────────
+# Columns merge by *label*, not by host: "Alice" is one column holding her MRs
+# from both instances, even though her username differs between them. First host
+# to introduce a label fixes its position.
+merged, order = {}, []
+for res in results:
+    hid = res['id']
+    me = res['me_user']
+    for col in res['columns']:
+        label = col['label']
+        if label not in merged:
+            merged[label] = {'label': label, 'user': col['user'], 'users': {},
+                             'is_me': False, 'error': None, 'errors': {}, 'mrs': []}
+            order.append(label)
+        m = merged[label]
+        m['users'][hid] = col['user']
+        m['is_me'] = m['is_me'] or (me is not None and col['user'] == me)
+        m['mrs'].extend(col['mrs'])
+        if col['error']:
+            m['errors'][hid] = col['error']
+            # `error` predates per-host errors; keep it populated so an older reader
+            # (or an older cache read by a newer renderer) still sees something.
+            m['error'] = m['error'] or col['error']
+    if res['error']:
+        # Whole-host failure: attach to every column so a dead instance reads as an
+        # error rather than as "✓ all clear".
+        for label in order:
+            merged[label]['errors'][hid] = res['error']
+
+columns = [merged[label] for label in order]
+host_errors = {r['id']: r['error'] for r in results if r['error']}
+me_users = {r['id']: r['me_user'] for r in results if r['me_user']}
+
+# My own buckets render *under* my column, so without one they vanish — which is
+# exactly what happens when the instance that defines the reviewer columns is down,
+# or when a host has no user map yet. Synthesise the column so my MRs always have a
+# home, and hang the host errors on it so the outage is visible rather than implied.
+if me_users and not any(c['is_me'] for c in columns):
+    columns.insert(0, {'label': 'me', 'user': next(iter(me_users.values())),
+                       'users': dict(me_users), 'is_me': True,
+                       'error': next(iter(host_errors.values()), None),
+                       'errors': dict(host_errors), 'mrs': []})
 
 out = {'generated_at': dt.datetime.now(dt.timezone.utc).isoformat(),
-       'me_user': ME_USER, 'my_approved': my_approved,
-       'my_changes': my_changes, 'columns': columns}
+       # me_user stays scalar for back-compat; me_users is the per-host truth.
+       'me_user': next(iter(me_users.values()), None),
+       'me_users': me_users,
+       'hosts': {c['id']: {'host': c['host'], 'scheme': c['scheme']} for c in HOSTS},
+       'host_errors': host_errors,
+       'my_approved': [c for r in results for c in r['my_approved']],
+       'my_changes':  [c for r in results for c in r['my_changes']],
+       'my_stuck':    [c for r in results for c in r['my_stuck']],
+       'columns': columns}
 os.makedirs(os.path.dirname(CACHE), exist_ok=True)
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(CACHE))
 with os.fdopen(fd, 'w') as f:
@@ -199,14 +421,16 @@ PYFETCH
 # ── render / measure the cache (MODE=render draws; MODE=size prints "W H") ────
 render_py() {
   CACHE_FILE="$CACHE_FILE" MAP_FILE="$MAP_FILE" WIDTH="${WIDTH:-120}" \
-  MODE="${1:-render}" GITLAB_HOST="${GITLAB_HOST:-}" python3 - <<'PY'
+  FOLD_STATE="$FOLD_STATE" FOLD_MAP="$FOLD_MAP" \
+  MODE="${1:-render}" python3 - <<'PY'
 import os, re, json, sys, string, datetime as dt
 
 MODE  = os.environ.get('MODE', 'render')
 WIDTH = max(40, int(os.environ.get('WIDTH', 120)))
 CACHE = os.environ['CACHE_FILE']
 MAP_FILE = os.environ.get('MAP_FILE', '')
-HOST  = os.environ.get('GITLAB_HOST', '')
+FOLD_STATE = os.environ.get('FOLD_STATE', '')
+FOLD_MAP = os.environ.get('FOLD_MAP', '')
 
 try:
     with open(CACHE) as f:
@@ -214,23 +438,52 @@ try:
 except Exception:
     blob = {'generated_at': None, 'columns': []}
 
+# id → web base, for the (rare) card with no web_url. Recorded by the fetcher, so
+# the renderer needs no credentials of its own.
+HOST_BASE = {hid: f'{h.get("scheme", "https")}://{h.get("host", "")}'
+             for hid, h in (blob.get('hosts') or {}).items()}
+# Which host a card came from is shown only when it's *not* the default: gitlab.com
+# is where everything lives now, so the internal instance is the one worth marking.
+HOST_MARK = {'internal': 'ⁱ'}
+
+# Sort an MR list by repo so every column and personal bucket groups MRs by
+# project; within a repo, lowest iid first (stale MRs surface first). Applied to
+# the reviewer columns and the personal buckets alike — see parsed / MY_* below.
+def by_repo(mrs):
+    def k(mr):
+        ref = mr.get('references_full', '')
+        return (ref.rsplit('!', 1)[0], mr.get('iid', 0))
+    return sorted(mrs or [], key=k)
+
 cols = blob.get('columns', [])
 # parsed: list of (label, is_me, mrs|None, err) — None data means "errored
 # column". `is_me` marks my own column (token owner blob['me_user']); below it we
 # render MY_APPROVED — MRs I authored that are approved and waiting for me to
 # merge. Fall back to a label match if the cache predates me_user.
 ME_USER = blob.get('me_user')
-MY_APPROVED = blob.get('my_approved', [])
-MY_CHANGES = blob.get('my_changes', [])
+MY_APPROVED = by_repo(blob.get('my_approved', []))
+MY_CHANGES = by_repo(blob.get('my_changes', []))
+MY_STUCK = by_repo(blob.get('my_stuck', []))
 def _is_me(c):
+    # The fetcher resolves this per host (my username can differ between instances);
+    # fall back to the old guesses for a cache written before that existed.
+    if 'is_me' in c:
+        return bool(c['is_me'])
     if ME_USER:
         return c.get('user') == ME_USER
     return c.get('label', '').strip().lower() in ('me',) or '(me)' in c.get('label', '').lower()
-parsed = [(c.get('label', '?'),
-           _is_me(c),
-           (None if c.get('error') else c.get('mrs', [])),
-           c.get('error'))
+
+def _errors(c):
+    """{host_id: msg} — a column can fail on one instance and still hold the other's
+    MRs, so errors never blank the data."""
+    errs = c.get('errors')
+    if isinstance(errs, dict):
+        return errs
+    return {'?': c['error']} if c.get('error') else {}
+
+parsed = [(c.get('label', '?'), _is_me(c), by_repo(c.get('mrs', [])), _errors(c))
           for c in cols]
+HOST_ERRORS = blob.get('host_errors') or {}
 
 # ─── ANSI / OSC8 helpers ───────────────────────────────────────────
 R   = '\033[0m'
@@ -279,9 +532,10 @@ def mr_url(mr):
     if u:
         return u
     ref = mr.get('references_full', '')
-    if '!' in ref and HOST:
+    base = HOST_BASE.get(mr.get('host'))
+    if '!' in ref and base:
         path, iid = ref.rsplit('!', 1)
-        return f'http://{HOST}/{path}/-/merge_requests/{iid}'
+        return f'{base}/{path}/-/merge_requests/{iid}'
     return ''
 
 now = dt.datetime.now(dt.timezone.utc)
@@ -318,10 +572,12 @@ def age_fmt(days):
 
 def card_parts(mr):
     iid  = mr['iid']
+    # The repo's leaf name is the tag, whichever instance and namespace it sits in —
+    # `group-a/configs` and `group-b/…/configs` both read as
+    # configs, which is the one repo common enough to leave untagged.
     proj = mr.get('references_full', '').rsplit('!', 1)[0]
-    if proj.startswith('my-group/'):
-        proj = proj[len('my-group/'):]
-    proj_tag = '' if proj == 'configs' else f'[{proj.split("/")[-1]}] '
+    leaf = proj.rsplit('/', 1)[-1]
+    proj_tag = '' if leaf == 'configs' else f'[{leaf}] '
     created = dt.datetime.fromisoformat(mr['created_at'])
     if created.tzinfo is None:
         created = created.replace(tzinfo=dt.timezone.utc)
@@ -330,9 +586,25 @@ def card_parts(mr):
     if   cls == 'conflict':  icon = f'{RED}⚠️{R} '
     elif cls == 'mergeable': icon = f'{GRN}✅{R}'
     else:                    icon = f'{YEL}⏳{R}'
+    # The host mark lives in the head, not the body, so truncation can never eat it.
+    mark = HOST_MARK.get(mr.get('host'), '')
     head_v = 3 + 1 + (1 + len(str(iid))) + 1 + len(age_s)   # icon sp !iid sp age
+    if mark:
+        head_v += 1 + vlen(mark)                            # sp mark
     body = f'{proj_tag}{mr["title"]}'
-    return iid, age_s, age_c, icon, head_v, body
+    return iid, age_s, age_c, icon, head_v, body, mark
+
+def status_line(n, err):
+    """A column's second header line. A per-host failure is named rather than hidden:
+    the whole point is that an empty column must not be able to mean 'couldn't ask'."""
+    if err:
+        hosts = ','.join(sorted(err))
+        if not n:
+            return f'{D}fetch error ({hosts}){R}'
+        return f'{YEL}{n} pending{R} {BRED}⚠ {hosts}{R}'
+    if not n:
+        return f'{GRN}✓ all clear{R}'
+    return f'{YEL}{n} pending{R}'
 
 GAP      = 2
 HOTKEY_W = 4                  # "[x] " prefix on every card
@@ -340,22 +612,43 @@ COLS     = max(1, len(parsed))
 # Hotkeys for opening MRs — exclude keys the loop reserves (q quit, r refresh).
 ALPHABET = [c for c in (string.ascii_lowercase + string.ascii_uppercase) if c not in set('qQrR')]
 
+# ─── foldable personal buckets (shown under my column only) ──────────────────
+# Each renders as a collapsible section with a digit hotkey; the key loop toggles
+# its fold state via FOLD_STATE. Default (no state file yet): stuck folded, the
+# other buckets open — the new MR I most need to act on stays one keypress away
+# without crowding the column. Both size and render iterate `present_buckets`.
+has_me = any(is_me for _l, is_me, _d, _e in parsed)
+MY_BUCKETS = [
+    ('changes',  MY_CHANGES,  BRED, '✗ changes requested — needs my fix'),
+    ('stuck',    MY_STUCK,    BYEL, '⚠ stuck — needs attention'),
+    ('approved', MY_APPROVED, BGRN, '✅ approved — ready to merge'),
+]
+present_buckets = [b for b in MY_BUCKETS if b[1]] if has_me else []
+if FOLD_STATE and os.path.exists(FOLD_STATE):
+    folded = set(x.strip() for x in open(FOLD_STATE) if x.strip())
+else:
+    folded = {'stuck'}
+
 # ─── size mode: natural interior width/height to fit content snugly ─────────
 if MODE == 'size':
     maxN = 0
     colw = len('✓ all clear')
     for label, is_me, data, err in parsed:
         mrs = data or []
-        appr = MY_APPROVED if is_me else []
-        chg  = MY_CHANGES if is_me else []
-        # me column is taller: pending cards + (blank + hdr + cards) per extra section.
-        col_lines = (len(mrs) + ((2 + len(chg)) if chg else 0)
-                     + ((2 + len(appr)) if appr else 0))
+        buckets = present_buckets if is_me else []
+        # me column is taller: pending cards + (blank + hdr + cards) per bucket.
+        # Sized for fully-expanded buckets so unfolding one never overflows the popup.
+        col_lines = len(mrs) + sum(2 + len(items) for _b, items, _c, _l in buckets)
         maxN = max(maxN, col_lines)
         colw = max(colw, 2 + vlen(label))                       # "▎ <label>"
-        colw = max(colw, len('fetch error') if err else len(f'{len(mrs)} pending'))
-        for mr in mrs + chg + appr:
-            _, _, _, _, head_v, body = card_parts(mr)
+        colw = max(colw, vlen(status_line(len(mrs), err)))
+        for _b, items, _c, lbl in buckets:                      # "[n] ▾ <label> (k)"
+            colw = max(colw, HOTKEY_W + 2 + vlen(lbl) + len(f' ({len(items)})'))
+        cards = list(mrs)
+        for _b, items, _c, _l in buckets:
+            cards += items
+        for mr in cards:
+            _, _, _, _, head_v, body, _ = card_parts(mr)
             colw = max(colw, HOTKEY_W + head_v + 1 + vlen(body)) # untruncated card
     colw = min(colw, 54)                                        # don't go ultra-wide
     iw = max(48, COLS * colw + GAP * (COLS - 1))                # 48 = min for header
@@ -367,6 +660,7 @@ if MODE == 'size':
 total = n_ok = n_warn = n_wait = 0
 n_merge = len(MY_APPROVED)
 n_chg = len(MY_CHANGES)
+n_stuck = len(MY_STUCK)
 for label, is_me, data, _ in parsed:
     if not data:
         continue
@@ -393,13 +687,21 @@ if n_ok:    chips.append(f'{GRN}✅ {n_ok}{R}')
 if n_warn:  chips.append(f'{RED}⚠️  {n_warn}{R}')
 if n_wait:  chips.append(f'{YEL}⏳ {n_wait}{R}')
 if n_chg:   chips.append(f'{BRED}✗ {n_chg} returned to me{R}')
+if n_stuck: chips.append(f'{BYEL}⚠ {n_stuck} stuck{R}')
 if n_merge: chips.append(f'{BGRN}✅ {n_merge} to merge{R}')
+# An instance we couldn't fully reach belongs in the header, not just in one column —
+# otherwise the numbers above look complete when they're half a picture. Its cards
+# are still shown, carried over from the last good fetch, hence "stale".
+if HOST_ERRORS:
+    chips.append(f'{BRED}⚠ {",".join(sorted(HOST_ERRORS))} stale{R}')
 chips_str = '   '.join(chips)
 pad2 = max(1, inner - 2 - vlen(chips_str) - 2)
 print(f'{BYEL}│{R}  {chips_str}{" " * pad2}  {BYEL}│{R}')
 print(f'{BYEL}╰{"─" * inner}╯{R}')
 
-FOOTER_TEXT = f'  {D}[a-z] open · r refresh · esc/q close{R}'
+_nfb = len(present_buckets)
+_fold_hint = (' · 1 fold' if _nfb == 1 else (f' · 1-{_nfb} fold' if _nfb > 1 else ''))
+FOOTER_TEXT = f'  {D}[a-z] open{_fold_hint} · r refresh · esc/q close{R}'
 
 if not parsed:
     try:
@@ -415,24 +717,29 @@ if not parsed:
 COL_W = (WIDTH - GAP * (COLS - 1)) // COLS
 
 def section_header_lines(label, data, err):
-    if err is not None:
-        return [f'{BRED}▎ {label}{R}', f'{D}fetch error{R}']
     n = 0 if data is None else len(data)
-    if n == 0:
-        return [f'{D}▎{R} {BWHT}{label}{R}', f'{GRN}✓ all clear{R}']
-    return [f'{BCYN}▎{R} {BWHT}{label}{R}', f'{YEL}{n} pending{R}']
+    if err and not n:
+        head = f'{BRED}▎ {label}{R}'
+    elif n == 0:
+        head = f'{D}▎{R} {BWHT}{label}{R}'
+    else:
+        head = f'{BCYN}▎{R} {BWHT}{label}{R}'
+    return [head, status_line(n, err)]
 
 def card_lines(mr, hotkey):
-    iid, age_s, age_c, icon, head_v, body = card_parts(mr)
+    iid, age_s, age_c, icon, head_v, body, mark = card_parts(mr)
     rest_w = max(8, COL_W - HOTKEY_W - head_v - 1)
     body_v = vtrunc(body, rest_w)
-    inner_txt = f'{icon} {BYEL}!{iid}{R} {age_c}{age_s}{R} {WHT}{body_v}{R}'
+    mark_txt = f' {D}{mark}{R}' if mark else ''
+    inner_txt = f'{icon} {BYEL}!{iid}{R} {age_c}{age_s}{R}{mark_txt} {WHT}{body_v}{R}'
     tag = f'{D}[{hotkey}]{R} ' if hotkey else ' ' * HOTKEY_W
     return [f'{tag}{inner_txt}']
 
 columns = []
 hk_i = 0
 maplines = []
+fold_digit = 0
+fold_maplines = []
 
 def emit_card(col, mr):
     global hk_i
@@ -444,23 +751,31 @@ def emit_card(col, mr):
             maplines.append(f'{letter}\t{mr["iid"]}\t{u}')
     col.extend(card_lines(mr, letter))
 
+def emit_bucket(col, bid, items, color, lbl):
+    # A foldable personal bucket. Gets a digit hotkey (1,2,3…) the key loop uses
+    # to toggle its fold; the digit→bid map goes to FOLD_MAP. Folded → header
+    # only, so its cards claim no [a-z] hotkey and can't be opened while hidden.
+    global fold_digit
+    fold_digit += 1
+    d = fold_digit
+    fold_maplines.append(f'{d}\t{bid}')
+    arrow = '▸' if bid in folded else '▾'
+    col.append('')
+    col.append(f'{D}[{d}]{R} {color}{arrow} {lbl} ({len(items)}){R}')
+    if bid not in folded:
+        for mr in items:
+            emit_card(col, mr)
+
 for label, is_me, data, err in parsed:
     col = section_header_lines(label, data, err)
     col.append('')
     for mr in (data or []):
         emit_card(col, mr)
-    # under my column: MRs I authored returned to me with changes requested
-    # (needs my fix), then ones approved and waiting for me to merge.
-    if is_me and MY_CHANGES:
-        col.append('')
-        col.append(f'{BRED}✗ changes requested — needs my fix{R}')
-        for mr in MY_CHANGES:
-            emit_card(col, mr)
-    if is_me and MY_APPROVED:
-        col.append('')
-        col.append(f'{BGRN}✅ approved — ready to merge{R}')
-        for mr in MY_APPROVED:
-            emit_card(col, mr)
+    # under my column, foldable buckets of MRs I authored: returned-to-me (needs
+    # my fix), stuck (conflict / reviewed but unmerged), approved (ready to merge).
+    if is_me:
+        for bid, items, color, lbl in present_buckets:
+            emit_bucket(col, bid, items, color, lbl)
     columns.append(col)
 
 try:
@@ -468,6 +783,13 @@ try:
         f.write('\n'.join(maplines) + ('\n' if maplines else ''))
 except Exception:
     pass
+
+if FOLD_MAP:
+    try:
+        with open(FOLD_MAP, 'w') as f:
+            f.write('\n'.join(fold_maplines) + ('\n' if fold_maplines else ''))
+    except Exception:
+        pass
 
 max_lines = max(len(c) for c in columns)
 print()
@@ -482,6 +804,8 @@ PY
 
 # ── open a tmux popup sized to fit the cached content ────────────────────────
 do_popup() {
+  command -v tmux >/dev/null 2>&1 || fail "tmux not found — the popup needs tmux; run 'mr-review-status' with no arguments to render inline"
+  [[ -n "${TMUX:-}" ]] || fail "not inside a tmux session — bind '--popup' to a tmux key, or run 'mr-review-status' with no arguments to render inline"
   [[ -f "$CACHE_FILE" ]] || do_refresh 2>/dev/null || true
   local dims iw ih cw ch w h
   dims="$(render_py size 2>/dev/null)"
@@ -522,17 +846,27 @@ case "${1:-}" in
 esac
 
 # ── default: render mode + interactive key loop ──────────────────────────────
-: "${GITLAB_HOST:?}"     2>/dev/null || die "GITLAB_HOST not set — add gitlab.host to ~/.secrets.json"
-: "${GITLAB_TOKEN:?}"    2>/dev/null || die "GITLAB_TOKEN not set — add gitlab.token to ~/.secrets.json"
-: "${MR_REVIEW_GROUP:?}" 2>/dev/null || die "MR_REVIEW_GROUP not set — add mr_review.group to ~/.work.json"
-: "${MR_REVIEW_USERS:?}" 2>/dev/null || die "MR_REVIEW_USERS not set — add mr_review.users to ~/.work.json"
+# Creds let us refresh live. Without them — e.g. this popup was launched by the
+# tmux server, whose session keyring doesn't possess @u, so gl-load-creds can't
+# read the kernel keyring — we render the cache the systemd --user timer keeps warm
+# (mr-review-status.timer), read-only. Only hard-fail if there's nothing to show.
+_HAVE_CREDS=0
+[[ -n "${GITLAB_HOSTS:-}" ]] && _HAVE_CREDS=1
+if (( ! _HAVE_CREDS )) && [[ ! -f "$CACHE_FILE" ]]; then
+  die "no credentials here and no cache yet — run 'bwu' (from a login shell), or wait for mr-review-status.timer to warm the cache"
+fi
 
-# First-ever run: warm the cache once (slow only this time).
-[[ -f "$CACHE_FILE" ]] || do_refresh 2>/dev/null || true
-
-# Make sure the background refresher is running (flock keeps it a singleton).
-setsid bash "$0" --daemon </dev/null >/dev/null 2>&1 &
-disown 2>/dev/null || true
+# With creds (an inline bwu'd shell) keep the legacy behaviour: warm the cache and
+# run the self-daemon. Without creds we lean on mr-review-status.timer instead — it
+# refreshes from a context that *can* read the keyring, so don't spawn a self-daemon
+# here that would only fail (and, historically, wedge on a full disk).
+if (( _HAVE_CREDS )); then
+  # First-ever run: warm the cache once (slow only this time).
+  [[ -f "$CACHE_FILE" ]] || do_refresh 2>/dev/null || true
+  # Make sure the background refresher is running (flock keeps it a singleton).
+  setsid bash "$0" --daemon </dev/null >/dev/null 2>&1 &
+  disown 2>/dev/null || true
+fi
 
 # Detect terminal width (tmux popup may not set $COLUMNS).
 if [[ -z "${COLUMNS:-}" ]]; then
@@ -545,6 +879,31 @@ C_D=$'\033[2m'; C_G=$'\033[32m'; C_C=$'\033[36m'; C_R=$'\033[0m'
 
 # Write a one-line message on the popup's bottom row (overwrites the footer hint).
 status() { printf '\033[%s;1H\033[2K%s' "$LINES" "$1"; }
+
+# Toggle a foldable bucket's collapse state by its digit hotkey, then persist to
+# FOLD_STATE. FOLD_MAP (digit→bucket id) is rewritten by the renderer each draw.
+# Returns non-zero for an unmapped digit so the caller skips the redraw. The
+# "file absent ⇒ stuck folded" default mirrors the renderer, so the first toggle
+# materialises the same baseline the user already sees.
+toggle_fold() {
+  local digit="$1" bucket b d bid
+  [[ -f "$FOLD_MAP" ]] || return 1
+  bucket=''
+  while IFS=$'\t' read -r d bid; do
+    [[ "$d" == "$digit" ]] && { bucket="$bid"; break; }
+  done < "$FOLD_MAP"
+  [[ -n "$bucket" ]] || return 1
+  declare -A folded=()
+  if [[ -f "$FOLD_STATE" ]]; then
+    while IFS= read -r b; do [[ -n "$b" ]] && folded["$b"]=1; done < "$FOLD_STATE"
+  else
+    folded[stuck]=1
+  fi
+  if [[ -n "${folded[$bucket]:-}" ]]; then unset "folded[$bucket]"; else folded["$bucket"]=1; fi
+  : > "$FOLD_STATE"
+  for b in "${!folded[@]}"; do printf '%s\n' "$b" >> "$FOLD_STATE"; done
+  return 0
+}
 
 draw() {
   printf '\033[2J\033[3J\033[H\033[?25l'        # clear screen + scrollback, home, hide cursor
@@ -564,14 +923,56 @@ draw
 trap 'printf "\033[?25h"' EXIT                  # always restore the cursor
 trap 'exit 0' HUP INT TERM
 [[ -r /dev/tty ]] && exec </dev/tty
-while IFS= read -rsn1 key 2>/dev/null; do
+_cache_mtime() { stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0; }
+
+# Kick a refresh off detached and return immediately. A refresh now costs ~70s
+# (it queries gitlab.com as well as the internal instance), so doing it inline
+# froze the popup — q/Esc went unread for over a minute. The key loop below
+# polls the cache mtime instead and redraws when new data lands.
+start_refresh_async() {
+  if (( _HAVE_CREDS )); then
+    setsid bash "$0" --refresh </dev/null >/dev/null 2>&1 &
+  else
+    # No keyring access here; the systemd --user service can read it. --no-block
+    # so we don't sit waiting on the oneshot to finish.
+    systemctl --user start --no-block mr-review-status.service >/dev/null 2>&1 &
+  fi
+  disown 2>/dev/null || true
+}
+
+_DRAWN_MTIME=$(_cache_mtime)
+_REFRESHING=0
+
+while :; do
+  # -t 1 keeps the loop breathing so a refresh finishing elsewhere still redraws.
+  # A timeout returns >128; a real EOF returns 1 and means we have no usable tty.
+  IFS= read -rsn1 -t 1 key 2>/dev/null; _rc=$?
+  if (( _rc != 0 )); then
+    (( _rc > 128 )) || break
+    m=$(_cache_mtime)
+    if [[ "$m" != "$_DRAWN_MTIME" ]]; then
+      # Confirm on the status line when the redraw came from a refresh the user
+      # asked for. Without it an unchanged board is indistinguishable from r
+      # having done nothing at all.
+      _was=$_REFRESHING
+      _DRAWN_MTIME=$m; _REFRESHING=0; draw
+      (( _was )) && status "  ${C_G}✓${C_R} ${C_D}refreshed just now · esc/q closes${C_R}"
+    fi
+    continue
+  fi
   case "$key" in
     q|Q|$'\x1b')
       exit 0 ;;
     r|R)
-      status "  ${C_D}refreshing…${C_R}"
-      do_refresh >/dev/null 2>&1 || true
-      draw ;;
+      if (( _REFRESHING )); then
+        status "  ${C_D}already refreshing — esc/q closes${C_R}"
+      else
+        _REFRESHING=1
+        start_refresh_async
+        status "  ${C_D}refreshing in background… board updates when it lands · esc/q closes${C_R}"
+      fi ;;
+    [1-9])
+      toggle_fold "$key" && draw ;;
     *)
       u="${LINK[$key]:-}"
       if [[ -n "$u" ]]; then

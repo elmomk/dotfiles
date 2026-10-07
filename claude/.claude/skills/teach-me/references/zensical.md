@@ -50,16 +50,16 @@ site_description = "A library of teach-me explainers — one section per topic."
 nav = [
   { "Home" = "index.md" },
   { "Tutorials" = [
-    { "Overview" = "tutorials/index.md" },
+    "tutorials/index.md",
     # >>> tutorials
     { "OAuth 2.0 + PKCE" = [
-        { "Overview"               = "tutorials/oauth-pkce/index.md" },
+        "tutorials/oauth-pkce/index.md",
         { "Why PKCE exists"        = "tutorials/oauth-pkce/the-problem.md" },
         { "The flow, step by step" = "tutorials/oauth-pkce/the-flow.md" },
         { "Worked example"         = "tutorials/oauth-pkce/walkthrough.md" },
     ] },
     { "Raft consensus" = [
-        { "Overview"        = "tutorials/raft/index.md" },
+        "tutorials/raft/index.md",
         { "Leader election" = "tutorials/raft/leader-election.md" },
     ] },
     # <<< tutorials
@@ -67,10 +67,59 @@ nav = [
 ]
 ```
 
+## Dating a generated page — the `ts` block
+
+Every page here is machine-written, and several render state that is true only at the moment
+of writing (a daily's merge backlog, a bundle's GitLab status, a plan's "blocked on"). A
+reader cannot tell a page written four minutes ago from one written four weeks ago, and the
+two deserve very different trust. Zensical has **no `last-updated` support**
+([backlog #18](https://github.com/zensical/backlog/issues/18) — open, no date), so the stamp
+lives in the content.
+
+One helper, one convention, used by `/daily`, `/teach-me` and `/publish-plan`:
+
+```bash
+python3 <teach-me>/scripts/stamp.py <page.md> [--note "evening run"] [--label "Live GitLab state as of"]
+```
+
+```markdown
+<!-- ts:start -->
+*Updated 2026-07-17 17:52 (+08:00) · evening run*
+<!-- ts:end -->
+```
+
+Rules that matter:
+
+- **Immediately after the H1**, never at the foot. Age is the first thing a reader needs, not
+  a footnote they reach after already trusting the page. (One skill used to stamp at the
+  bottom; it doesn't now.)
+- **Always carry the UTC offset.** This library is published to a shared internal hub — a bare
+  `17:52` is ambiguous to everyone not on this box.
+- **Idempotent.** Re-running replaces the block, so a morning and an evening run on the same
+  page agree instead of stacking two stamps.
+- **Only re-stamp what you rewrote.** Stamping an untouched page makes the date a lie.
+
+!!! danger "A topic's `index.md` MUST be a bare string, never `{ "Overview" = … }`"
+    A **bare string** as a section's first entry makes it that section's *index page*
+    (`navigation.indexes`), so the sidebar labels it with the **section title** —
+    "OAuth 2.0 + PKCE". Writing `{ "Overview" = "tutorials/oauth-pkce/index.md" }` instead
+    labels it **"Overview"**, and with 39 topics the sidebar becomes 39 identical
+    "Overview" rows with the topic names nowhere on screen. This actually happened here
+    (fixed 2026-07-17) and it is invisible until `navigation.tabs` is on.
+
+    Same rule for the section overviews: `"tutorials/index.md"`, not
+    `{ "Overview" = "tutorials/index.md" }`.
+
+    Why it matters beyond tidiness: nav depth is only expensive when labels are ambiguous
+    (Larson & Czerwinski 1998; Miller & Remington 2004) — an uninformative label multiplies
+    the cost of every wrong guess.
+
 Add a new topic by appending another `{ "Topic Title" = [ … ] }` block **between the
-`# >>> tutorials` / `# <<< tutorials` markers** (and a row to the landing table in
-`docs/index.md`). Intra-topic links stay relative (`the-flow.md`), so a topic's pages keep
-working as long as they live together under `docs/tutorials/<topic>/`.
+`# >>> tutorials` / `# <<< tutorials` markers**, and a card to the grid in
+`docs/tutorials/index.md` (grouped by its area from `.nav-categories.json`) — the landing
+page `docs/index.md` links areas, not individual topics. Intra-topic links stay relative
+(`the-flow.md`), so a topic's pages keep working as long as they live together under
+`docs/tutorials/<topic>/`.
 
 ## Authoring features (Material-style Markdown)
 

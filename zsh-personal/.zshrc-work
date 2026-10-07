@@ -4,6 +4,8 @@
 # unset some of arcolinux default aliases
 unset PAGER
 
+#sudo apt update && sudo apt install wslu
+export BROWSER=wslview
 export PATH=$PATH:$HOME/.cargo/bin:$HOME/go/bin:$HOME/bin
 
 autoload -Uz compinit
@@ -36,10 +38,10 @@ eval "$(direnv hook zsh)"
 eval "$(starship init zsh)"
 # eval "$(github-copilot-cli alias -- "$0")"
 
-# alias ls='eza --icons'
-# alias ll='eza -l --icons --color-scale size'
-# alias cat='bat'
-# alias diff='delta'
+alias ls='eza'
+alias ll='eza -l --color-scale size'
+alias cat='bat'
+alias diff='delta'
 
 #aws
 export AWS_PAGER=""
@@ -83,4 +85,19 @@ alias fzf-git-branch='git branch --sort=-committerdate | fzf --header "checkout 
 # alias v="NVIM_APPNAME=lazyvim nvim"
 
 #tldr
-alias tldr-fzf="tldr --list --language en | fzf --preview "tldr {1} --color" --preview-window=70%" 
+alias tldr-fzf="tldr --list --language en | fzf --preview "tldr {1} --color" --preview-window=70%"
+
+# ── pi extension transpile-cache persistence ─────────────────────────────────
+# pi transpiles its TypeScript extensions via jiti into $TMPDIR/jiti (= /tmp/jiti).
+# WSL wipes /tmp on a Windows reboot, forcing a ~1.5s cold re-transpile of every
+# extension on the first pi launch after boot. Persist the cache under
+# ~/.cache/pi/jiti and point /tmp/jiti at it so reboots stay warm (~0.5s).
+# Idempotent: safe to run every shell start.
+pi_jiti_cache_setup() {
+  local cache="$HOME/.cache/pi/jiti"
+  [[ -L /tmp/jiti ]] && return          # already linked → nothing to do
+  mkdir -p "$cache"
+  rm -rf /tmp/jiti 2>/dev/null           # drop a stale real dir from a pre-link boot
+  ln -s "$cache" /tmp/jiti
+}
+pi_jiti_cache_setup
